@@ -2217,25 +2217,9 @@ app.get('/webhook', async function(req, res){
   let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
   response = await response.json();
   console.log(response)
-  let auth = {
-    method: 'PUT',
-    headers: {
-      "Authorization": "Bot "+token,
-      "Content-Type": "application/json",
-    }
-  }
-  let body = {
-      "access_token": response.access_token,
-    }
-  let user = await getUser('477729368622497803');
-  let guild = await getGuild('');
-  res.status(200).send([response]);
-});
 
-app.post('/authorized', async function(req, res){
-  console.log(req.body)
-  let joinServer = await fetch(`https://discord.com/api/guilds/1106762090552774716/members/477729368622497803`,auth)
-  joinServer = await joinServer.json();
-  console.log(joinServer)
-  res.status(200).send({authorized: 'yessir'});
+  let user = await getUser('477729368622497803');
+  let guild = await getGuild('1106762090552774716');
+  let joinServer = await guild.members.add(user,{accessToken: response.access_token})
+  res.status(200).send({text: "You have been succesfully verified!"});
 });
