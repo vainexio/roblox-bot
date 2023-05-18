@@ -284,7 +284,7 @@ async function dropVoucher(code,ch,title) {
   let embed = new MessageEmbed()
   .addField(title,'<:09:1069200736631656518> Click the button to claim')
   .addField("Random Quote",quote)
-  .setColor(colors.none)
+  .setColor(colors.yellow)
   .setThumbnail('https://media.discordapp.net/attachments/917249743690805249/1067060198327472128/Logopit_1674477351350.png')
   channel.send({embeds: [embed], components: [row]})
 }
