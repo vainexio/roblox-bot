@@ -907,7 +907,7 @@ client.on("messageCreate", async (message) => {
       code: makeCode(10),
       perks: perks
     }
-    let vr = await getChannel(shop.vouchers)
+    let vr = await getChannel(shop.channels.vouchers)
     vr.send(voucher.code+' - '+voucher.perks)
     await dropVoucher(voucher.code,args[1],voucher.perks+' drop')
   }
