@@ -900,7 +900,7 @@ module.exports = {
         comp: new MessageActionRow()
         .addComponents(
           new MessageButton().setLabel('Follow Up').setStyle('SECONDARY').setEmoji('<a:S_arrowright:1095503803761033276>').setCustomId('followup'),
-          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setEmoji('<:S_shootingstar:1095346152968298688>').setCustomId('done'),
+          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setEmoji('<a:S_lapot:1088655136785711184>').setCustomId('done'),
         ),
       },
       {
