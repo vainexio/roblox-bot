@@ -1812,7 +1812,7 @@ client.on('interactionCreate', async inter => {
     else if (id.startsWith('done')) {
       if (!await getPerms(inter.member,4)) return inter.deferUpdate();
       inter.reply({content: emojis.check+" Order marked as done! `"+inter.channel.name+"`"})
-      inter.channel.setName('order-done')
+      inter.channel.setName('done-'+inter.channel.name)
     }
     else if (id.startsWith('none')) {
       inter.deferUpdate();
