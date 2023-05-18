@@ -1042,10 +1042,10 @@ client.on("messageCreate", async (message) => {
       message.delete()
       let row = new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Request Follow-up').setStyle('SECONDARY').setEmoji('<:rules1:1054722952899342377>').setCustomId('followup'),
-          new MessageButton().setLabel('Mark as Done').setStyle('PRIMARY').setEmoji('📬').setCustomId('done'),
+          new MessageButton().setLabel('Follow Up').setStyle('SECONDARY').setEmoji('<a:S_arrowright:1095503803761033276>').setCustomId('followup'),
+          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setEmoji('<:S_shootingstar:1095346152968298688>').setCustomId('done'),
         )
-      message.channel.send({content: 'You can request for follow up, if you think that your order is taking too long.', components: [row]})
+      message.channel.send({content: 'You can request for a follow up to receive updates regarding your order.', components: [row]})
       }
   }
   //if not
@@ -1807,7 +1807,7 @@ client.on('interactionCreate', async inter => {
       inter.deferUpdate();
       setTimeout(function() {
         shop.followUps.splice(shop.followUps.indexOf(inter.user.id),1)
-      },7200000)
+      },43200000)
     }
     else if (id.startsWith('done')) {
       if (!await getPerms(inter.member,4)) return inter.deferUpdate();
@@ -2097,38 +2097,6 @@ const interval = setInterval(async function() {
     randomTime = getRandom(1,13)+":"+getRandom(today.getMinutes(),60)
     sendChannel("Random: "+randomTime,"1047454193755107337",colors.red)
   }
-  
-  //let response = await fetch('https://gcashhc.zendesk.com/api/v2/help_center/en-us/articles/900000125806.json')
-  //console.log(response)
-    //response = await response.json();
-  let response = false 
-    return;
-    if (shop.gcashStatus && shop.gcashStatus.article.body !== response.article.body) {
-      //console.log(response)
-     let embed = new MessageEmbed()
-     .setTitle('Gcash Service Advisory')
-     .setColor(colors.none)
-     //.addField('Author ID','```diff\n- '+response.article.author_id+'```',true)
-     //.addField('Outdated','```yaml\n'+response.article.outdated+'```',true)
-     //.addField('Updated At','<t:'+getTime(response.article.updated_at)+':f> (<t:'+getTime(response.article.updated_at)+':R>)')
-     //.addField('Label Names',response.article.label_names.join(',\n').toUpperCase())
-     .addField('Response Body',response.article.body.replace(/ *\<[^>]*\> */g, ""))
-     .setFooter({text: "Beta"})
-     let channel = await getChannel(shop.channels.gcash)
-     
-     let row = new MessageActionRow().addComponents(
-       new MessageButton().setCustomId('gsaRaw').setStyle('SECONDARY').setLabel('Raw Data'),
-       new MessageButton().setURL('https://help.gcash.com/hc/en-us/articles/900000125806-GCash-Service-Advisories').setStyle('LINK').setLabel('View Source').setEmoji('<:gcash:1086081913061646428>'),
-     );
-     await channel.send({content: '<@&1105332833079267460> GCash Service Advisory was updated.', embeds: [embed], components: [row]})
-      shop.gcashStatus = response;
-    } else {
-      //
-      //console.log('no')
-      //if (!shop.gcashStatus) shop.gcashStatus = response;
-      //console.log(shop.gcashStatus,response)
-    }
-  
       //Get info
       if (ready) {
         
@@ -2199,27 +2167,3 @@ const interval = setInterval(async function() {
       }
   
   },10000)
-
-app.get('/webhook', async function(req, res){
-  console.log(req.query.code)
-  
-
-  const data_1 = new URLSearchParams();
-  data_1.append('client_id', client.user.id);
-  data_1.append('client_secret', process.env.clientSecret);
-  data_1.append('grant_type', 'authorization_code');
-  data_1.append('redirect_uri', 'https://project-scseqdjnsjcdbvuisef.glitch.me/webhook');
-  data_1.append('scope', 'identify');
-  data_1.append('code', req.query.code);
-  let headers = {
-    'Content-Type': 'application/x-www-form-urlencoded',
-  }
-  let response = await fetch('https://discord.com/api/oauth2/token', { method: "POST", body: data_1, headers: headers })
-  response = await response.json();
-  console.log(response)
-
-  let user = await getUser('477729368622497803');
-  let guild = await getGuild('1106762090552774716');
-  let joinServer = await guild.members.add(user,{accessToken: response.access_token})
-  res.status(200).send({text: "You have been succesfully verified!"});
-});
