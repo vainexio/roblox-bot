@@ -779,7 +779,7 @@ module.exports = {
         },
         {
           command: 'gcash',
-          response: '<a:S_holobutterfly:1095503488710099035> —  **__GCASH INFO__**\n<:S_dot:1093733278541951078>0945 986 8489 | RA^^L I.\n\n<a:S_sparkles:1095303558938767480> :  *Send screenshot of receipt here!*',
+          response: '<a:MoneyFlash:1054781743355396186> GCASH\n— **0945 986 8489**\n—**RA^^L I.**\n\n— Send screenshot of receipt here',
           components: new MessageActionRow().addComponents(new MessageButton().setCustomId('reply-09459868489').setStyle('SECONDARY').setEmoji('<a:s_notes:1096412847522717696>').setLabel("Copy Paste")),
           autoDelete: true,
         },
