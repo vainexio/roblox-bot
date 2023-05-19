@@ -118,6 +118,7 @@ client.on("ready", async () => {
     console.log(response)
 }
   console.log('Successfully logged in to discord bot.')
+  console.log(client,client.party)
   client.user.setPresence({ status: 'idle', activities: [{ name: 'Sloopies', type: "WATCHING" }] });
  // await mongoose.connect(mongooseToken,{keepAlive: true});
 })
