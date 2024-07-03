@@ -1,4 +1,3 @@
-const {getPerms, noPerms, client} = require('../server.js');
 const Discord = require('discord.js');
 const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton} = Discord;
 
@@ -13,11 +12,17 @@ const cmdHandler = require('../functions/commands.js')
 const {getTemplate} = cmdHandler
 
 const get = require('../functions/get.js')
-const {getRandom, getChannel} = get
+const {getRandom, getChannel, getMember, getGuild} = get
+
+const roles = require('../functions/roles.js')
+const {getRole, addRole, removeRole, hasRole} = roles
 
 module.exports = {
   makeTicket: async function (data) {
     //var author = message.author;
+    let guild = await getGuild(data.guild.id)
+    let member = await getMember(data.user.id,guild)
+    if (await hasRole(member,['1109020434520887321'])) data.ticketName = data.ticketName.replace('ticket',data.user.username.replace(/ /g,''))
     let ch = null
     await data.guild.channels.create(data.ticketName, {
       type: "text", 
@@ -53,17 +58,22 @@ module.exports = {
       
       let embed = new MessageEmbed()
       .setTitle(data.name)
-      .setDescription("Welcome **"+data.user.username+"**! Any available <@&"+data.support+"> will assist you soon.\n\n"+data.context)
+      .setDescription("welcome **"+data.user.username+"** *!*\n<:hb_rule_book:1138712613769990254> any available <@&"+data.support+"> will assist you soon.\n\n"+data.context)
       .setColor(colors.yellow)
       .setFooter({text: 'Sloopie Tickets'})
+      .setThumbnail(data.guild.iconURL())
       
       let row = new MessageActionRow().addComponents(
         new MessageButton().setCustomId('closedTicket-'+data.user.id).setStyle('SECONDARY').setLabel('Close').setEmoji('🔒'),
         //new MessageButton().setCustomId('transcript-ticket').setStyle('SECONDARY').setLabel('Save Transcript').setEmoji('<:S_letter:1092606891240198154>'),
       );
-      let BotMsg = channel.send({ content: "<@"+data.user.id+"> - <@&"+data.support+"> Ticket opened *!*", embeds: [embed] , components: [row]})
+      let BotMsg = channel.send({ content: "<a:S_whiteheart02:1138715896077090856> <@"+data.user.id+">\n<a:S_whiteheart02:1138715896077090856> <@&"+data.support+">\n\n<:S_letter:1138714993425125556> ticket opened ("+data.name.toLowerCase()+") *!*", embeds: [embed] , components: [row]})
       
-      }).catch(console.error);
+      })
+      .catch(async err => {
+      let log = await getChannel('1109020437096181831')
+      log.send('Error creating tix for <@'+data.user.id+'>\n```diff\n- '+err+'```')
+    });
     
     return ch;
 }

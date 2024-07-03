@@ -1,10 +1,9 @@
-//const others = require('../functions/others.js')
 const Discord = require('discord.js');
 const {Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord;
 let colors = {
   red: "#ea3737",
   blue: "#1200ff",
-  green: "#00ff04",
+  green: "#00c554",
   yellow: "#fff4a1",
   orange: "#ff6300",
   purple: "#b200ff",
@@ -19,197 +18,152 @@ let emojis = {
   gude_cheer: '<:gude_cheer:1056588910794387466>',
   gude_smile: '<:gude_smile:1056580031536697424>',
   //
-  check: '<a:check:969936488739512340>',
-  x: '<a:Xmark:969401924736651284>',
-  loading: '<a:loading:968743431528669210>',
-  warning: '<a:S_error:1095504279042805820>',
+  check: '<a:CHECK:1138778694983356450>',
+  x: '<a:Xmark:1138778760628424735>',
+  loading: '<a:Loading:1138778730785943614>',
+  warning: '⚠️',
   online: '<:online_:1004014930959286342>',
   idle: '<:Idle_:1004014897417424938>',
   dnd: '<:dnd_:1004017480613773422>',
   offline: '<:offline_:1004015005282340916>',
   on: '<:on:1107664866484953178>',
   off: '<:off:1107664839372964010>',
+  robux: '<:Robux:1174546499087122464>',
+  nboost: '<:nitroboost:1138778798792384616>',
+  nbasic: '<:nitrobasic:1138778772540235786>',
+  nclassic: '<:nitrobasic:1138778772540235786>',
 }
-let keys = [
-  'basic',
-  'netflix',
-  'nf',
-  'spoti',
-  'nitro',
-  'nb',
-  'swc',
-  'robux',
-  'pending',
-  'prem',
-  'comm',
-  'noted',
-  'sb',
-  'badge',
-  'db',
-  'canva',
-]
+let keys = [ 'basic', 'netflix', 'nf', 'spoti', 'nitro', 'nb', 'swc', 'robux', 'pending', 'prem', 'comm', 'noted', 'sb', 'badge', 'db', 'vp', 'valorant', 'canva' ]
 module.exports = {
+  config: {
+    backupVouches: [
+      {
+        original: '1154845315673886801', //ethan
+        backup: 'https://discord.com/api/webhooks/1212761577283911721/zBoUMoaCNOu_-tY4Ef6RuneJq_kc7OqfCcnAQ7-rQuE2r2153CCqDz4K0GpDqtfkr3tn',
+      }
+    ],
+    AI: {
+      maxTokens: 4000,//,
+      maintenance: {
+        enabled: false,
+        day: 'Thursday',
+        until: 12,
+        state: 'AM',
+        desc: 'aaaaa',
+      },
+      modelCount: 0,
+      users: [],
+      filter: function(string,acc) {
+        string = string.replace(/As an AI language model, /g,'')
+          .replace(/ As an AI language model, /g,'')
+          .replace(/As the language model AI, /g,'')
+          .replace(/an AI language model/g,acc.name)
+          .replace('/laguna/campus-life/','/nu-laguna/')
+          .replace('/laguna/','/nu-laguna/')
+        
+        string = string.replace(/ChatGPT/g,acc.name)
+        return string;
+      },
+    chatAPI: 'https://api.openai.com/v1/chat/completions',
+    imageAPI: 'https://api.openai.com/v1/images/generations',
+    models: [
+      'gpt-3.5-turbo-1106',
+      'gpt-3.5-turbo',
+      'gpt-3.5-turbo-0613',
+      'gpt-3.5-turbo-16k-0613',
+    ]//  
+  },
+  },
   shop: {
+    scannerWhitelist: [
+      "1139165021398642788", //baratie
+      "1154694567166222336", //ethan shop
+      "1109020434449575936", //sloopies
+      "1125106413681787050", //unika
+      "1132616889047187467", //xoxos4e
+      "1101335700655321100",
+      "1211259967009718302",
+      "1138851239833108714", //misha
+      "1233474066950656123", //saeko
+      "1080873188512239737", //kaorei
+      "1139154917446136000", //yumi alt
+      "1057338848247554111", //krstnmrll
+      "1138805895527149641", //angieie
+      "1172102666239885372", //xx
+      "972866920560865371", //https.saki
+      "1126710270123847720", //nini
+      "1231185865217278112", //
+      "995937596163248169", //
+      "1136827388458713139", //
+      "1117225138656641024",
+      "1227954892430114877",
+      "1250782779646410854",
+      "1253669931174854676",
+      "1237780185063886869",
+      "1253353418333093909",
+      "978345853242716170",
+      "1254794686388895774",
+      "1255501665721782272",
+    ],
+    checkerWhitelist: [
+      '1066284097879670824', //vai
+      '497918770187075595', //iam
+      '746575754678239395', //pucca
+      "775026782776721409", //july 7, 2024
+      "800901213905616976", //july 7, 2024
+      "1041043609908170823", //
+      "1151149525294125077", //july 15, 2024
+      "1022544127033872394", //july 20, 2024
+      "1143110478428647566", //aug 02, 2024
+      "1254555394672562380", //aug 02, 2024
+    ],
+    scanner: [],
+    expected: [],
+    refIds: [],
+    apiCheckers: [],
+    orderForm: [],
+    
+    //TICKET SYSTEM
     tixSettings: {
-      support: '1047454193184682040',
-      transcripts: '1054713463739531304',
-      closed: '1055288190669443072',
+      support: '1109020434554433548',
+      transcripts: '1109020437096181832',
+      closed: '1109020437524008981',
+      processing: '1256238648484167700',
+      completed: '1256230400938999808'
     },
     
     gcashStatus: null,
     breakChecker: false,
     orderStatus: new MessageActionRow().addComponents(
           new MessageSelectMenu().setCustomId('orderStatus').setPlaceholder('Update Order Status').addOptions([
-            {label: 'Noted',description: 'Change Order Status',value: 'noted', emoji: '<a:S_diamond:1093738450156535859>'},
-            {label: 'Processing',description: 'Change Order Status',value: 'processing', emoji: '<a:S_bearheart:1094190497179910225>'},
-            {label: 'Completed',description: 'Change Order Status',value: 'completed', emoji: '<a:S_checkmark:1095303661648892006>'},
-            {label: 'Cancelled',description: 'Change Order Status',value: 'cancelled', emoji: '<:S_exclamation:1093734009005158450>'},
+            {label: 'Noted',description: 'Change Order Status',value: 'noted', emoji: '<:S_yellowheart:1141708792141189200>'},
+            {label: 'Processing',description: 'Change Order Status',value: 'processing', emoji: '<a:yt_chickclap:1138707159287345263>'},
+            {label: 'Completed',description: 'Change Order Status',value: 'completed', emoji: '<a:checkmark_yellow:1151123927691694110>'},
+            {label: 'Cancelled',description: 'Change Order Status',value: 'cancelled', emoji: '<:yl_exclamation:1138705048562581575>'},
           ]),
         ),
     channels: {
-      gcash: '1105332833079267460',
-      announcements: '1102417073642164274',
-      status: '1054766857552396419', //vc
-      reportsVc: '1079713500731015209', //c
-      vouch: '1054724474659946606',
-      stocks: '1054929031881035789',
-      otherStocks: '1080087813032263690',
-      orders: '1054731027240726528',
-      templates: '1079712339122720768',
-      shopStatus: '1102416143152578681',
-      vouchers: '1066945318060556378',
-      financeLogs: '1100456798932185138',
-      feedbacks: '1094975726127685726',
-      logs: '1060786672201105419',
-      dmTemplate: '1075782410509226095',
-      alerts: '1047454193755107337',
-      apps: '1085504963955916810',
-      drops: '1102827132201226260',
+      smsReader: '1138638222902165565',
+      checker: '1138638208633159773',
+      announcements: '1109020434978054230',
+      status: '1109020434810294345', //vc
+      reportsVc: '1109020434810294346', //vc
+      vouch: '1109020436026634260',
+      boostStocks: '1138638092580962465',
+      basicStocks: '1181886826022187068',
+      itemStocks: '1181888499532713994',
+      otherStocks: '1138638111585357976',
+      orders: '1109020436026634261',
+      templates: '1109020434810294344',
+      shopStatus: '1109020434978054231',
+      vouchers: '1109020434810294343',
+      logs: '1109020437096181831',
+      dmTemplate: '1138638121576177714',
+      alerts: '1109020437096181830',
+      drops: '1138638129054633984',
     },
     pricelists: [
-      {
-        //Category
-        name: 'Spotify',
-        keywords: ['spoti','spotify'],
-        channel: '1054989652416798750',
-        status: 2,
-        id: '1096319564662448198',
-        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077186379624478/Logopit_1680918508558.png?width=1440&height=360',
-        types: [
-          //Types
-          {
-            parent: 'Solo',
-            children: [
-              //
-              { name: '1 month', price: 30 },
-              { name: '2 months', price: 40 },
-              { name: '3 months', price: 50 },
-              { name: '4 months', price: 70 },
-              { name: '6 months', price: 110 },
-              { name: '8 months', price: 145 },
-              { name: '12 months', price: 130 },
-              //
-            ],
-          },
-          {
-            parent: '\u200b',
-            children: [
-              //
-              { name: '+₱15 if own account', price: 0 },
-              //
-            ],
-          },
-          //
-        ],
-      },
-      {
-        //Category
-        name: 'Youtube',
-        keywords: ['yt', 'yt prem','youtube'],
-        channel: '1054989652416798750',
-        status: 2,
-        id: '1096319565606174800',
-        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077235713028126/Logopit_1680918525501.png?width=1440&height=360',
-        types: [
-          //Types
-          {
-            parent: 'Via Invite',
-            children: [
-              //
-              { name: '1 month', price: 15 },
-              //
-            ],
-          },
-          {
-            parent: 'Solo',
-            children: [
-              //
-              { name: '1 month', price: 40 },
-              { name: '4 months', price: 60 },
-              { name: '6 months', price: 80 },
-              //
-            ],
-          },
-          {
-            parent: 'Famhead',
-            children: [
-              //
-              { name: '1 month', price: 60 },
-              //
-            ],
-          },
-          {
-            parent: '\u200b',
-            children: [
-              //
-              { name: '+₱15 if own account', price: 0 },
-              //
-            ],
-          },
-          //
-        ],
-      },
-      {
-        //Category
-        name: 'Netflix',
-        keywords: ['nf','netflix','netplix'],
-        channel: '1054989652416798750',
-        status: 2,
-        id: '1096319566902218813',
-        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077235939512320/Logopit_1680918539369.png?width=1440&height=360',
-        types: [
-          //Types
-          {
-            parent: 'Shared Profile',
-            children: [
-              //
-              { name: '1 month', price: 90 },
-              { name: '3 months', price: 180 },
-              //
-            ],
-          },
-          {
-            parent: 'Solo Profile',
-            children: [
-              //
-              { name: '1 month', price: 120 },
-              { name: '3 months', price: 210 },
-              //
-            ],
-          },
-          {
-            parent: 'Solo Account',
-            children: [
-              //
-              { name: '1 month', price: 395 },
-              { name: '3 months', price: 830 },
-              //
-            ],
-          },
-          //
-        ],
-      },
-      {
+      /*{
         //Category
         name: 'Crunchyroll',
         keywords: ['crunchy','crunchyroll'],
@@ -255,48 +209,15 @@ module.exports = {
           },
           //
         ],
-      },
-      {
-        //Category
-        name: 'TIDAL',
-        keywords: ['tidal','hifi'],
-        channel: '1054989652416798750',
-        status: 2,
-        id: '',
-        image: 'https://media.discordapp.net/attachments/1093391705753002064/1105784399347318854/Logopit_1683709816535.png?width=1440&height=360',
-        types: [
-          //Types
-          {
-            parent: 'HiFi',
-            children: [
-              //
-              { name: '1 month', price: 35 },
-              { name: '3 months', price: 55 },
-              { name: '6 months', price: 80 },
-              { name: '8 months', price: 90 },
-              { name: '12 months', price: 110 },
-              //
-            ],
-          },
-          {
-            parent: '\u200b',
-            children: [
-              //
-              { name: '+15 if HiFi+', price: 0 },
-              //
-            ],
-          },
-          //
-        ],
-      },
+      },*/
       {
         //Category
         name: 'Developer Badge',
-        keywords: ['dev','badge'],
-        channel: '1057249812656955514',
+        keywords: ['dev','badge','db'],
+        channel: '1109020436764827698',
         rs: '1078708594188496987',
         status: 1,
-        id: '1096319569771118612',
+        id: '1109020436764827698',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237004865556/Logopit_1680918616490.png?width=1440&height=360',
         types: [
           //Types
@@ -304,10 +225,10 @@ module.exports = {
             parent: 'Monthly',
             children: [
               //
-              { name: '1 month', price: 20, rs: 15 },
-              { name: '2 months', price: 25, rs: 20 },
-              { name: '3 months', price: 30, rs: 25  },
-              { name: '4 months', price: 40, rs: 35 },
+              { name: '1 month', price: 10, rs: 15 },
+              { name: '2 months', price: 15, rs: 20 },
+              { name: '3 months', price: 25, rs: 25  },
+              { name: '4 months', price: 35, rs: 35 },
               //
             ],
           },
@@ -315,7 +236,7 @@ module.exports = {
             parent: 'Permanent',
             children: [
               //
-              { name: 'Permanent', price: 80, rs: 70 },
+              { name: 'Permanent', price: 40, rs: 70 },
               { name: 'Lifetime warranty until patched', price: 0 },
               //
             ],
@@ -324,7 +245,7 @@ module.exports = {
             parent: '\u200b',
             children: [
               //
-              { name: 'Via developer team invite', price: 0 },
+              { name: 'via developer team invite', price: 0 },
               //
             ],
           },
@@ -335,8 +256,8 @@ module.exports = {
         //Category
         name: 'E-Wallet Exchange',
         keywords: ['exchange','paypal to gcash'],
-        channel: '1072434004873195540',
-        status: 1,
+        channel: '1138621401381740554',
+        status: 4,
         id: '1096319572614860810',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237348794368/Logopit_1680918656290.png?width=1440&height=360',
         types: [
@@ -356,56 +277,93 @@ module.exports = {
       },
       {
         //Category
-        name: 'Bot Commission',
-        keywords: ['bot comms','comms','stocks dropper','dropper'],
-        channel: '1081107027054571550',
+        name: 'Nitro Stocks Dropper',
+        keywords: ['nsd','stocks dropper','dropper'],
+        channel: '1138621480440188940',
         status: 2,
         id: '1096319574284193842',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
         types: [
           //Types
           {
-            parent: 'Nitro stocks dropper',
+            parent: 'Nitro Stocks Dropper',
             children: [
               //
-              { name: 'Uncovered hosting', price: 300 },
-              { name: 'Covered hosting', price: 500 },
-              { name: 'Features:\n+ </drop:1102423261914091530> command\n+ </stocks:1102433613116616734> command\n+ auto queue\n+ nitro links checker\n+ can do different item drops'}
+              { name: 'Covered hosting', price: 199 },
+              { name: 'Features:\n+ </drop:1102423261914091530> command\n+ </stocks:1102433613116616734> command\n+ nitro checker (50 links/sec)\n\u200b'}
               //
             ],
           },
+        ],
+      },
+      {
+        //Category
+        name: 'Nitro Links Checker',
+        keywords: ['nitro checker','checker'],
+        channel: '1138621480440188940',
+        status: 2,
+        id: '1096319574284193842',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
+        types: [
+          //Types
+          {
+            parent: '1m nitro checker',
+            children: [
+              //
+              { name: 'through bot dms', price: 60 },
+              { name: 'through server channel', price: 200 },
+              { name: 'Features:\n+ Provided Bot (gudetama)\n+ Can scan 50 links per second\n+ Shows difference between valid, calimed and invalid links\n+ Shows accurate expiration (date & time) of links\n+ Fool proof (avoids scanning duplicated links)\n\u200b'}
+              //
+            ],
+          },
+        ],
+      },
+      {
+        //Category
+        name: 'Server Backup Bot',
+        keywords: ['backup','server backup'],
+        channel: '1138621480440188940',
+        status: 2,
+        id: '1096319574284193842',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
+        types: [
+          //Types
+          {
+            parent: 'Server Backup Bot',
+            children: [
+              //
+              { name: 'Slot', price: 170 },
+              { name: 'Features:\n+ Provided Bot\n+ Via Discord OAuth2\n+ Can join all verified users in an instant\n+ Can use in all sorts of servers\n\u200b'}
+              //
+            ],
+          },
+        ],
+      },
+      {
+        //Category
+        name: 'Custom Comms',
+        keywords: ['backup','server backup'],
+        channel: '1138621480440188940',
+        status: 2,
+        id: '1096319574284193842',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
+        types: [
+          //Types
           {
             parent: 'Custom Commission',
             children: [
               //
-              { name: 'Allows you to choose freely from anything you want your bot function. The price may range depending on the proposed functionality.', price: 0 },
-              //
-            ],
-          },
-          {
-            parent: 'Uncovered Hosting',
-            children: [
-              //
-              { name: 'This indicates that your bot will not be online, unless you are too. You will have to keep your device turned on, alongside the project website of the bot.', price: 0 },
-              //
-            ],
-          },
-          {
-            parent: 'Covered Hosting',
-            children: [
-              //
-              { name: 'All discord bots require paid hosting services (if not manually hosted) to stay up and working.', price: 0 },
-              { name: 'Covered hosting keeps your bot alive 24/7.', price: 0 },
+              { name: 'We accept custom commissions! The **PRICE** may range depending on the proposed functionality.', price: 0 },
               //
             ],
           },
           //
         ],
       },
-      {
+      /*{
         //Category
         name: 'Server Boosting',
-        keywords: ['server boost','sb','boosting'],
+        keywords: ['sb','boosting','boost'],
         channel: '1054720561277841438',
         rs: '1078708432091226112',
         status: 4,
@@ -465,25 +423,45 @@ module.exports = {
           },
           //
         ],
-      },
+      },*/
       {
         //Category
         name: 'Canva',
         keywords: ['canva'],
-        channel: '1054989652416798750',
+        channel: '',
         status: 2,
-        id: '1096319578482671646',
+        id: '1109020436764827699',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1104012111346151494/Logopit_1683287379481.png?width=1440&height=360',
         types: [
           //Types
           {
-            parent: 'Canva Pro',
+            parent: 'Via Invite',
             children: [
               //
               { name: '1 month', price: 25, rs: 0 },
               { name: '2 months', price: 30, rs: 0 },
               { name: '3 months', price: 35, rs: 0 },
-              { name: '12 months', price: 45, rs: 0 },
+              //
+            ],
+          },
+          {
+            parent: 'Provided Account',
+            children: [
+              //
+              { name: '1 month', price: 35, rs: 0 },
+              { name: '2 months', price: 40, rs: 0 },
+              { name: '3 months', price: 45, rs: 0 },
+              { name: '6 months', price: 55, rs: 0 },
+              { name: '12 months', price: 80, rs: 0 },
+              //
+            ],
+          },
+          {
+            parent: 'Notes',
+            children: [
+              //
+              { name: '1 month is a straight subscription', price: 0 },
+              { name: '+10 if own email (for 1 month only)', price: 0},
               //
             ],
           },
@@ -493,10 +471,11 @@ module.exports = {
       {
         //Category
         name: 'Discord Nitro',
-        keywords: ['nitro','nitor','nb'],
-        channel: '1054720561277841438',
+        lowest: 100,
+        keywords: ['nitro','nitor','nb','basic','classic'],
+        channel: '1109020436278300812',
         rs: '1078708432091226112',
-        status: 2,
+        status: 4,
         id: '1096319579787116544',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077186127970414/Logopit_1680918484757.png?width=1440&height=360',
         types: [
@@ -505,8 +484,9 @@ module.exports = {
             parent: 'Monthly Subscription',
             children: [
               //
-              { name: 'Nitro Basic (MTO)', price: 85, rs: 0 },
-              { name: 'Nitro Boost', price: 155, rs: 0 },
+              { name: 'Nitro Basic (MTO)', price: 90, rs: 0 },
+              { name: 'Nitro Boost', price: 230, rs: 140 }, //<@&1109020434520887323>
+              //{ name: 'Nitro Boost <@&1138634227169112165> (server booster)', price: 165, rs: 125 },
               //
             ],
           },
@@ -515,7 +495,7 @@ module.exports = {
             children: [
               //
               { name: 'Nitro Basic (Not avail)', price: 0 },
-              { name: 'Nitro Boost (Not avail)', price: 0},
+              { name: 'Nitro Boost (Not avail)', price: 1000},
               //
             ],
           },
@@ -524,9 +504,46 @@ module.exports = {
       },
       {
         //Category
+        name: 'Profile Effects',
+        lowest: 100,
+        keywords: ['decos'],
+        channel: '1109020436278300812',
+        rs: '',
+        status: 2,
+        id: '',
+        image: 'https://media.discordapp.net/attachments/1142625548800098424/1205388569183526942/Logopit_1707457364718.png?ex=65d83095&is=65c5bb95&hm=413beb7dd01f093d3238901f104fb79ff417ed78cb539e428a82f39f1d62fdcf&=&format=webp&quality=lossless',
+        types: [
+          //Types
+          {
+            parent: 'Avatar Decorations',
+            children: [
+              //
+              { name: 'Lunar New Year Deco', price: 190, rs: 0 },
+              { name: 'Fantasy Avatar Deco', price: 255, rs: 0 },
+              { name: 'Anime Avatar Deco', price: 220, rs: 0 },
+              { name: 'Cyberpunk Avatar Deco', price: 199, rs: 0 },
+              //
+            ],
+          },
+          {
+            parent: 'Profile Effects',
+            children: [
+              //
+              { name: 'Lunar New Year', price: 199 },
+              { name: 'Fantasy', price: 325 },
+              { name: 'Anime ', price: 325 },
+              { name: 'Cyberpunk ', price: 199 },
+              //
+            ],
+          },
+          //
+        ],
+      },
+      /*{
+        //Category
         name: 'Steam',
         keywords: ['swc','steam'],
-        channel: '1054989628765122571',
+        channel: '1109020436764827700',
         status: 4,
         id: '1096319581393535036',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077185125535844/Logopit_1680918431372.png?width=1440&height=360',
@@ -552,8 +569,8 @@ module.exports = {
         //Category
         name: 'Genshin Impact',
         keywords: ['genesis crystals','genshin','welkin'],
-        channel: '1054989628765122571',
-        status: 2,
+        channel: '1109020436764827700',
+        status: 4,
         id: '1096319582240788490',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077185406550136/Logopit_1680918406428.png?width=1440&height=360',
         types: [
@@ -572,26 +589,27 @@ module.exports = {
           },
           //
         ],
-      },
+      },*/
       {
         //Category
-        name: 'Robux',
-        keywords: ['roblox','robux','rbx'],
-        channel: '1054989628765122571',
-        rs: '1078710810806853704',
-        status: 2,
-        id: '1096319583121584208',
-        image: "https://media.discordapp.net/attachments/1093391705753002064/1094077237839532123/Logopit_1680918693719.png?width=1440&height=360",
+        name: 'Spotify',
+        keywords: ['spoti','spotify'],
+        channel: '',
+        status: 4,
+        id: '1096319564662448198',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077186379624478/Logopit_1680918508558.png?width=1440&height=360',
         types: [
           //Types
           {
-            parent: 'Via Gamepass',
+            parent: 'Solo',
             children: [
               //
-              { name: '250  Robux', price: 115, rs: 0 },
-              { name: '500 Robux', price: 195, rs: 0 },
-              { name: '700 Robux', price: 205, rs: 0 },
-              { name: '1000 Robux', price: 320, rs: 0 },
+              { name: '1 month', price: 30 },
+              { name: '2 months', price: 40 },
+              { name: '3 months', price: 50 },
+              { name: '4 months', price: 70 },
+              { name: '6 months', price: 110 },
+              { name: '12 months', price: 130 },
               //
             ],
           },
@@ -599,7 +617,78 @@ module.exports = {
             parent: '\u200b',
             children: [
               //
-              { name: 'Covered tax', price: 0 },
+              { name: '+₱15 if own account', price: 0 },
+              //
+            ],
+          },
+          //
+        ],
+      },
+      {
+        //Category
+        name: 'Youtube',
+        keywords: ['yt','youtube'],
+        channel: '',
+        status: 4,
+        id: '1096319565606174800',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077235713028126/Logopit_1680918525501.png?width=1440&height=360',
+        types: [
+          //Types
+          {
+            parent: 'Via Invite',
+            children: [
+              //
+              { name: '1 month', price: 15 },
+              //
+            ],
+          },
+          {
+            parent: 'Solo',
+            children: [
+              //
+              { name: '1 month', price: 30 },
+              { name: '4 months', price: 60 },
+              { name: '6 months', price: 99 },
+              //
+            ],
+          },
+          //
+        ],
+      },
+      {
+        //Category
+        name: 'Netflix',
+        keywords: ['nf','netflix','netplix'],
+        channel: '',
+        status: 4,
+        id: '1096319566902218813',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077235939512320/Logopit_1680918539369.png?width=1440&height=360',
+        types: [
+          //Types
+          {
+            parent: 'Shared Profile',
+            children: [
+              //
+              { name: '1 month', price: 90 },
+              { name: '3 months', price: 180 },
+              //
+            ],
+          },
+          {
+            parent: 'Solo Profile',
+            children: [
+              //
+              { name: '1 month', price: 120 },
+              { name: '3 months', price: 230 },
+              //
+            ],
+          },
+          {
+            parent: 'Solo Account',
+            children: [
+              //
+              { name: '1 month', price: 410 },
+              { name: '3 months', price: 1200 },
               //
             ],
           },
@@ -610,7 +699,7 @@ module.exports = {
         //Category
         name: 'Valorant',
         keywords: ['vp','valorant','balo'],
-        channel: '1054989628765122571',
+        channel: '1109020436764827699',
         status: 2,
         id: '1096319584514080859',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077185666592768/Logopit_1680918349259.png?width=1440&height=360',
@@ -621,11 +710,11 @@ module.exports = {
             children: [
               //
               { name: '125 vp', price: 50 },
-              { name: '380 vp', price: 150 },
+              { name: '380 vp', price: 143 },
               { name: '790 vp', price: 285 },
               { name: '1650 vp', price: 560 },
-              { name: '2850 vp', price: 910 },
-              { name: '5800 vp', price: 1880 },
+              { name: '2850 vp', price: 930 },
+              { name: '5800 vp', price: 1850 },
               //
             ],
           },
@@ -634,22 +723,88 @@ module.exports = {
       },
       {
         //Category
+        name: 'Robux',
+        keywords: ['roblox','robux','rbx','bobux'],
+        channel: '1109020436764827700',
+        rs: '1078710810806853704',
+        status: 2,
+        id: '1096319583121584208',
+        image: "https://media.discordapp.net/attachments/1093391705753002064/1094077237839532123/Logopit_1680918693719.png?width=1440&height=360",
+        types: [
+          //Types
+          {
+            parent: 'Via Group Payout',
+            children: [
+              //
+              { name: '100 robux', price: 25, rs: 0 },
+              { name: '200 robux', price: 50, rs: 0 },
+              { name: '300 robux', price: 75, rs: 0 },
+              { name: '400 robux', price: 100, rs: 0 },
+              { name: '500 robux', price: 125, rs: 0 },
+              { name: '600 robux', price: 150, rs: 0 },
+              { name: '700 robux', price: 175, rs: 0 },
+              { name: '800 robux', price: 200, rs: 0 },
+              { name: '900 robux', price: 225, rs: 0 },
+              { name: '1000 robux', price: 250, rs: 0 },
+              { name: 'Must be in the group for 14 days! Make sure to remember your join date.\n> Group: [click me](https://www.roblox.com/groups/33092141/ValerieVin#!/about)', price: 0, rs: 0 },
+              //
+            ],
+          },
+          {
+            parent: 'Via Gamepass (Covered Tax)',
+            children: [
+              //
+              { name: '100 robux', price: 39, rs: 0 },
+              { name: '200 robux', price: 62, rs: 0 },
+              { name: '300 robux', price: 93, rs: 0 },
+              { name: '400 robux', price: 124, rs: 0 },
+              { name: '500 robux', price: 155, rs: 0 },
+              { name: '600 robux', price: 174, rs: 0 },
+              { name: '700 robux', price: 205, rs: 0 },
+              { name: '800 robux', price: 239, rs: 0 },
+              { name: '900 robux', price: 250, rs: 0 },
+              { name: '1000 robux', price: 280, rs: 0 },
+              { name: '*covered tax (hrs-2d processing time)*', price: 0, rs: 0 },
+              //
+            ],
+          },
+          /*{
+            parent: 'Via Gifting',
+            children: [
+              //
+              { name: '100 robux', price: 22, rs: 0 },
+              { name: '200 robux', price: 44, rs: 0 },
+              { name: '300 robux', price: 66, rs: 0 },
+              { name: '400 robux', price: 88, rs: 0 },
+              { name: '500 robux', price: 110, rs: 0 },
+              { name: '600 robux', price: 132, rs: 0 },
+              { name: '700 robux', price: 154, rs: 0 },
+              { name: '800 robux', price: 176, rs: 0 },
+              { name: '900 robux', price: 198, rs: 0 },
+              { name: '1000 robux', price: 205, rs: 0 },
+              { name: '*or via gamepass not covered tax*', price: 0, rs: 0 },
+              //
+            ],
+          },*/
+          //
+        ],
+      },
+      {
+        //Category
         name: 'Vyper VPN',
         keywords: ['vyper'],
-        channel: '1094056028938698833',
+        channel: '1138621712221610034',
         status: 2,
         id: '1096319586640609280',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077236648345710/Logopit_1680918601382.png?width=1440&height=360',
         types: [
           //Types
           {
-            parent: 'Solo',
+            parent: 'Shared',
             children: [
               //
-              { name: '1 month', price: 60 },
-              { name: '2 months', price: 85 },
-              { name: '3 months', price: 95 },
-              { name: '12 months', price: 230 },
+              { name: '1 month', price: 40 },
+              { name: '2 months', price: 55 },
               //
             ],
           },
@@ -660,8 +815,8 @@ module.exports = {
         //Category
         name: 'Windscribe VPN',
         keywords: ['windscribe','wind'],
-        channel: '1094056028938698833',
-        status: 2,
+        channel: '1138621712221610034',
+        status: 4,
         id: '',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1105784399875813496/Logopit_1683709883410.png?width=1440&height=360',
         types: [
@@ -683,21 +838,26 @@ module.exports = {
         //Category
         name: 'Express VPN',
         keywords: ['express'],
-        channel: '1094056028938698833',
+        channel: '1138621712221610034',
         status: 2,
         id: '',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1105784399636733982/Logopit_1683709898945.png?width=1440&height=360',
         types: [
           //Types
           {
+            parent: 'Shared',
+            children: [
+              //
+              { name: '1 month', price: 65 },
+              //
+            ],
+          },
+          //
+          {
             parent: 'Solo',
             children: [
               //
-              { name: '7 days', price: 80 },
-              { name: '14 days', price: 70 },
-              { name: '1 month', price: 85 },
-              { name: '2 months', price: 120 },
-              { name: '3 months', price: 165 },
+              { name: '1 month', price: 95 },
               //
             ],
           },
@@ -713,7 +873,7 @@ module.exports = {
           command: 'form',
           response: null,
           components: new MessageActionRow().addComponents(
-            new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Click me').setEmoji('<a:S_arrowright:1095503803761033276>'),
+            new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('order form').setEmoji('<:S_letter:1138714993425125556>'),//.setEmoji('<a:S_arrowright:1095503803761033276>'),
           ),
           autoDelete: true,
         },
@@ -745,7 +905,7 @@ module.exports = {
         },
         {
           command: 'boost',
-          response: '<a:Nitro:1054725579192160306> **Server Boosting**\n— Send **permanent** invite link of the server (not vanity).\n— The server must have a boost announcement channel (see attachments below)\n— This will be required once you vouch and report.\n—Do not forget your invite link.\n\n**Void warranty if:**\n— Invite link is not permanent or was removed.\n— Did not have a **system messages channel** for boosters.\n— The channel **is not** PUBLICLY visible.',
+          response: emojis.nboost+' **Server Boosting**\n— Send **permanent** invite link of the server (not vanity).\n— The server must have a boost announcement channel (see attachments below)\n— This will be required once you vouch and report.\n—Do not forget your invite link.\n\n**Void warranty if:**\n— Invite link is not permanent or was removed.\n— Did not have a **system messages channel** for boosters.\n— The channel **is not** PUBLICLY visible.',
           files: [{attachment: 'https://media.discordapp.net/attachments/1093391705753002064/1093391789223850044/image.png?width=1135&height=527',name: 'file.png'},{attachment: 'https://media.discordapp.net/attachments/1093391705753002064/1093391724249878560/image.png?width=791&height=117',name: 'file.png'}],
           autoDelete: true,
         },
@@ -760,32 +920,20 @@ module.exports = {
           autoDelete: true,
         },
         {
-          command: 'gcash4',
-          response: '<a:MoneyFlash:1054781743355396186> GCASH\n— **0906 412 6440**\n— **LE•••N K•• F.**\n\n— Send screenshot of receipt here',
-          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('reply-09064126440').setStyle('SECONDARY').setEmoji('<a:s_notes:1096412847522717696>').setLabel("Copy Paste")),
-          autoDelete: true,
-        },
-        {
-          command: 'gcash3',
-          response: '<a:MoneyFlash:1054781743355396186> GCASH\n— **0966 208 4534**\n— **EL•A I.**\n\n— Send screenshot of receipt here',
-          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('reply-09662084534').setStyle('SECONDARY').setEmoji('<a:s_notes:1096412847522717696>').setLabel("Copy Paste")),
-          autoDelete: true,
-        },
-        {
           command: 'gcash2',
-          response: '<a:MoneyFlash:1054781743355396186> GCASH\n— **0945 326 3549**\n— **I^^ PA••O I.**\n\n— Send screenshot of receipt here',
-          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('reply-09453263549').setStyle('SECONDARY').setEmoji('<a:s_notes:1096412847522717696>').setLabel("Copy Paste")),
+          response: '<a:yl_exclamationan:1138705076395978802> **gcash**\n<:indent:1174738613330788512> 0945-326-3549 [ **I. P. I.** ]\n\n<a:S_whiteheart02:1138715896077090856>  send a screenshot of your receipt *!*',
+          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('replyCopy-09453263549').setStyle('SECONDARY').setEmoji('<:bullet:1138710447835578388>').setLabel("copy number")),
           autoDelete: true,
         },
         {
           command: 'gcash',
-          response: '<a:MoneyFlash:1054781743355396186> GCASH\n— **0945 986 8489**\n—**RA^^L I.**\n\n— Send screenshot of receipt here',
-          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('reply-09459868489').setStyle('SECONDARY').setEmoji('<a:s_notes:1096412847522717696>').setLabel("Copy Paste")),
+          response: '<a:yl_exclamationan:1138705076395978802> **gcash**\n<:indent:1174738613330788512> 0945-986-8489 [ **R. I.** ]\n\n<a:S_whiteheart02:1138715896077090856>  send a screenshot of your receipt *!*',
+          components: new MessageActionRow().addComponents(new MessageButton().setCustomId('replyCopy-09459868489').setStyle('SECONDARY').setEmoji('<:bullet:1138710447835578388>').setLabel("copy number")),
           autoDelete: true,
         },
         {
           command: 'paypal',
-          response: '<a:MoneyFlash:1054781743355396186> Paypal (w/ fee)\n— Link: https://www.paypal.me/KaiNagraski\n— Email: alternative107697@gmail.com\n— Please make sure to set the payment type to **friends and family**!\n\n— Send screenshot of receipt here',
+          response: '<a:yl_flowerspin:1138705226082304020> Paypal (w/ fee)\n— Link: https://paypal.me/marcoplaton\n— Email: narcshin3@gmail.com\n— Please make sure to set the payment type to **friends and family**!\n\n— Send screenshot of receipt here',
           autoDelete: true,
         },
         {
@@ -803,7 +951,7 @@ module.exports = {
     customRoles: [
       {
         user: '482603796371865603', //mimi
-        role: '1070267838922752060',
+        role: '1109020434554433549',
       },
     ],
     randomVouchers: {
@@ -818,50 +966,50 @@ module.exports = {
     },
     stickyChannels: [
       {
+        id: '1169573502022602752',
+        message: 'Type </search:1169591423566368840> to determine whether or not a user has a history of blacklist!',
+      },
+      {
         id: '1094975726127685726',
         message: "<a:S_bearheart:1094190497179910225> Type `;feedback` on <@1057167023492300881>'s DMs to submit a feedback."
       },
       {
-        id: '1081107027054571550',
-        message: '<:S_letter:1092606891240198154> **Stocks dropper showcase**',
+        id: '1109020436026634265',
+        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1109020434978054230> for stock updates *!*',
+      },
+      {
+        id: '1168377722712621108',
+        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1109020434978054230> for stock updates *!*',
+      },
+      {
+        id: '0',
+        message: '<:S_letter:1092606891240198154> **Stocks dropper showcase** (outdated showcase)',
         files: ['https://cdn.discordapp.com/attachments/1101501538293252136/1102772107424833536/2023-05-02_09-39-15.mp4']
       },
       {
-        id: '1047454193595732049',
-        message: '<a:nitroboost:1057999297787985960> **Server Booster Perks**\n<:S_dot:1093733278541951078> ₱5 discount on certain products\n<:S_dot:1093733278541951078> Image/Gif perms in <#1047454193595732055> \n<:S_dot:1093733278541951078> **Sloopier** role\n<:S_dot:1093733278541951078> **Sloopiest** role (2x boost)\n<:S_dot:1093733278541951078> 2x giveaway entries',
+        id: '1109020434978054233', //1109020434978054233
+        message: emojis.nboost+' **Server Booster Perks**\n- ₱5 discount on certain products\n- **Sloopier** role\n- **Sloopiest** role (2x boost)\n- 2x giveaway entries',
       },
       {
-        id: '1054724474659946606',
-        message: '<a:catpet:1054020868650578081> __**Vouch here!**__\n\n• Send any message of acknowledgement\n• Send screenshot of your purchase\n\n<:mark:1056579773989650543> **Void warranty if:**\n• no vouch/improper vouch\n• no screenshot/proof of login\n• did not vouch within 12 hours\n• reference code is not visible',
+        id: '1109020436026634260', //1109020436026634260
+        message: '__**Vouch here!**__\n\n• Send any message of acknowledgement\n• Send screenshot of your purchase\n\n**Void warranty if:**\n• no vouch/improper vouch\n• no screenshot/proof of login\n• did not vouch within 12 hours\n• reference code is not visible',
       },
       {
-        id: '0',
-        message: '<:gude1:1056579657828417596> — Noted\n<:gude2:1056579660353372160> — Processing\n<:gude3:1056579662572179586> — Completed',
-      },
-      {
-        id: '1055030500508569620',
-        message: '<:gude1:1056579657828417596> — Noted\n<:gude2:1056579660353372160> — Ready to claim\n<:gude3:1056579662572179586> — Claimed',
-      },
-      {
-        id: '1101833714704601168',
-        message: '<:gude1:1056579657828417596> — Noted\n<:gude2:1056579660353372160> — Fixing\n<:gude3:1056579662572179586> — Fixed',
-      },
-      {
-        id: '0',
-        message: '',
+        id: '1109020436278300810',
+        message: 'Click the button below to access our pricelists.',
         comp: new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Order Here').setURL('https://discord.com/channels/1047454193159503904/1054711675045036033/1095603406632144936').setStyle('LINK').setEmoji('<:09:1069200736631656518>')
+          new MessageButton().setLabel('Access').setCustomId('prVerify').setStyle('SECONDARY').setEmoji('<a:yl_exclamationan:1138705076395978802>')
         ),
       },
       {
-        id: '1054711675045036033',
-        message: 'Click the button below to create a ticket!\n\nOrder — Availing products\nSupport — General concerns and inquiries\nReport — Reporting revoked products',
+        id: '1109020435754000423',
+        message: 'Click the button below to create a ticket!\n\n<:y_seperator:1138707390657740870> Order — Availing products\n<:y_seperator:1138707390657740870> Support — General concerns and inquiries\n<:y_seperator:1138707390657740870> Report — Reporting revoked products',
         comp: new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Create Order').setCustomId('createTicket-order').setStyle('SECONDARY').setEmoji('<a:S_bearheart:1094190497179910225>'),
-          new MessageButton().setLabel('Support Ticket').setCustomId('createTicket-support').setStyle('SECONDARY').setEmoji('<a:S_pastelheart:1093737606451298354> '),
-          new MessageButton().setLabel('Submit Report').setCustomId('createTicket-report').setStyle('SECONDARY').setEmoji('<:S_exclamation:1093734009005158450>')
+          new MessageButton().setLabel('Create Order').setCustomId('createTicket-order').setStyle('SECONDARY').setEmoji('🌄'),
+          new MessageButton().setLabel('Support Ticket').setCustomId('createTicket-support').setStyle('SECONDARY').setEmoji('🌅'),
+          new MessageButton().setLabel('Submit Report').setCustomId('createTicket-report').setStyle('SECONDARY').setEmoji('☀️')
         ),
       },
       {
@@ -873,12 +1021,12 @@ module.exports = {
         ),
       },
       {
-        id: '1102417073642164274',
-        message: '',
+        id: '1109020434978054230',
+        message: '** **\nBoost the server to get the Sloopier role *!*',
         order: true,
         comp: new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Order Here').setURL('https://discord.com/channels/1047454193159503904/1054711675045036033/1095603406632144936').setStyle('LINK').setEmoji('<:09:1069200736631656518>')
+          new MessageButton().setLabel('Order Here').setURL('https://discord.com/channels/1109020434449575936/1109020435754000423').setStyle('LINK').setEmoji('<a:y_catheart:1138704838360830044>')
         )
       },
       {
@@ -894,17 +1042,17 @@ module.exports = {
         comp: null,
       },
       {
-        id: '1054731483656499290',
-        message: 'You can request for a follow up to receive updates regarding your order.',
-        condition: message => keys.find(k => message.channel.name.includes(k) && !message.channel.name.includes('done')),
+        id: '', //1109020435523326025
+        message: '',
+        condition: message => message.channel.name.includes('。') && !message.channel.name.includes('done'),//keys.find(k => message.channel.name.includes(k) && !message.channel.name.includes('done')),
         comp: new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Follow Up').setStyle('SECONDARY').setEmoji('<a:S_arrowright:1095503803761033276>').setCustomId('followup'),
-          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setEmoji('<a:S_lapot:1088655136785711184>').setCustomId('done'),
+          //new MessageButton().setLabel('Follow Up').setStyle('SECONDARY').setEmoji('<a:S_arrowright:1095503803761033276>').setCustomId('followup'),
+          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setCustomId('done')//.setEmoji('<a:S_lapot:1088655136785711184>'),
         ),
       },
       {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick your age*',
         comp: new MessageActionRow()
         .addComponents(
@@ -915,7 +1063,7 @@ module.exports = {
         ),
       },
       {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick which games you play*',
         comp: new MessageActionRow()
         .addComponents(
@@ -927,7 +1075,7 @@ module.exports = {
         ),
       },
       {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick which games you play (2)*',
         comp: new MessageActionRow()
         .addComponents(
@@ -939,7 +1087,7 @@ module.exports = {
         ),
       },
       {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick your pronouns*',
         comp: new MessageActionRow()
         .addComponents(
@@ -949,7 +1097,7 @@ module.exports = {
         ),
       },
       {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick which notifications you want to get*',
         comp: new MessageActionRow()
         .addComponents(
@@ -959,7 +1107,7 @@ module.exports = {
         ),
       },
       {
-        id: '1102416143152578681',
+        id: '1109020434978054231',
         message: 'Click the button to gain the **Shop Status** role and get notified when the shop opens or closes!',
         comp: new MessageActionRow()
         .addComponents(
@@ -967,15 +1115,7 @@ module.exports = {
         ),
       },
       {
-        id: '1105332833079267460',
-        message: 'Click the button to gain the **GCash Status** role and get notified when the gcash service advisory releases an update!',
-        comp: new MessageActionRow()
-        .addComponents(
-          new MessageButton().setLabel('GCash Status').setStyle('SECONDARY').setEmoji('🔔').setCustomId('roles-GCash_Status')
-          ),
-      },
-      {
-        id: '1047454193197252644',
+        id: '1109020434978054226',
         message: '*Pick your language*',
         comp: new MessageActionRow()
         .addComponents(
@@ -987,7 +1127,6 @@ module.exports = {
     deleteChannels: [],
     checkers: [],
     vouchers: [],
-    scanner: [],
     followUps: [],
   },
   interExpire: 300000,
@@ -1083,42 +1222,30 @@ module.exports = {
   ],
   permissions: [
     {
-      id: "920903240617451581", //collateral
+      id: "1066284097879670824", //my user
       level: 5,
     },
     {
-      id: "1047454193184682040", //collateral
+      id: "1109020434554433548", //collateral
       level: 3,
     },
     {
-      id: "1047454193184682040", //sloopie mod
-      level: 4,
-    },
-    {
-      id: "1047454193197252639",
+      id: "1109020434554433552", //owner role
       level: 5,
     },
     {
-      id: '1060780494909870230',
-      level: 5
+      id: '1109020434554433548',
+      level: 4
+    },
+    {
+      id: '1109338607170367548', //backup server admin
+      level: 5,
     }
   ],
   botlog: '901759430457167872',
-  prefix: ';',
+  prefix: '.',
   filteredWords: [],
-  AI: {
-    filter: function(string) {
-      string = string.replace('As an AI language model, ','')
-      string = string.replace(' As an AI language model, ','')
-      string = string.replace('an AI language model','gudetama')
-      string = string.replace('OpenAI','Sloopies')
-      return string;
-    },
-    chatAPI: 'https://api.openai.com/v1/chat/completions',
-    imageAPI: 'https://api.openai.com/v1/images/generations',
-    model: "gpt-3.5-turbo"//  
-  },
   colors: colors,
-  theme: colors.none,
+  theme: colors.yellow,
   emojis: emojis,
 };

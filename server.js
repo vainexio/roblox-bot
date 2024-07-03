@@ -1,4 +1,3 @@
-//Glitch Project
 const express = require('express');
 const https = require('https');
 const app = express();
@@ -8,6 +7,10 @@ const moment = require('moment')
 const HttpsProxyAgent = require('https-proxy-agent');
 const url = require('url');
 const discordTranscripts = require('discord-html-transcripts');
+const { joinVoiceChannel } = require('@discordjs/voice');
+const cheerio = require('cheerio');
+const cors = require('cors');
+const body_parser = require('body-parser');
 //
 //Discord
 const Discord = require('discord.js');
@@ -16,9 +19,10 @@ const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionR
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES);
 const client = new Client({ intents: myIntents , partials: ["CHANNEL"] });
-
+const client2 = new Client({ intents: myIntents , partials: ["CHANNEL"] });
 //Env
 const token = process.env.SECRET;
+const token2 = process.env.SECRET2;
 const open_ai = process.env.OPEN_AI
 const mongooseToken = process.env.MONGOOSE;
 
@@ -28,7 +32,13 @@ async function startApp() {
     promise.catch(function(error) {
       console.error("Discord bot login | " + error);
       process.exit(1);
-      
+    });
+  
+  let promise2 = client2.login(token2)
+    console.log("Starting 2...");
+    promise2.catch(function(error) {
+      console.error("Discord bot login 2 | " + error);
+      process.exit(1);
     });
 }
 startApp();
@@ -40,14 +50,52 @@ let ticketModel
 let tixSchema
 let tixModel
 
+let stickySchema
+let stickyModel
+
+let embedSchema
+let embedModel
+
 let ticketId = 10
 //When bot is ready
 client.on("ready", async () => {
-  await mongoose.connect(mongooseToken,{keepAlive: true});
+  let guildsID = [];
+  let channel = await getChannel('1109020434810294345')
+  /*const connection = joinVoiceChannel({
+      channelId: channel.id,
+      guildId: channel.guild.id,
+      adapterCreator: channel.guild.voiceAdapterCreator // Should be referring to the correct client
+  });*/
+    client.guilds.cache.forEach(guild => {
+     guildsID.push(guild.id)
+    });
+  //Database
+  await mongoose.connect(mongooseToken);
+  
+  stickySchema = new mongoose.Schema({
+    channelId: String,
+    message: String,
+  })
+  
+  embedSchema = new mongoose.Schema({
+    id: String,
+    title: String,
+    description: String,
+    color: String,
+    thumbnail: String,
+    image: String,
+    footer: String,
+    fields: [{
+        name: String,
+        value: String
+    }]
+  });
+  
   ticketSchema = new mongoose.Schema({
     id: String,
     count: Number,
   })
+  
   tixSchema = new mongoose.Schema({
     id: String,
     number: Number,
@@ -63,8 +111,13 @@ client.on("ready", async () => {
       }
     ],
   })
+  
+  
   tixModel = mongoose.model("SloopieTix", tixSchema);
   ticketModel = mongoose.model("SloopieTickets", ticketSchema);
+  embedModel = mongoose.model('SloopiesEmbed', embedSchema);
+  stickyModel = mongoose.model("Sloopies Sticky", stickySchema);
+  ///
   let doc = await ticketModel.findOne({id: ticketId})
   if (!doc) {
     let newDoc = new ticketModel(ticketSchema)
@@ -72,57 +125,38 @@ client.on("ready", async () => {
     newDoc.count = 0
     await newDoc.save()
   }
-  if (cmd) {
-  let discordUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands"
-  let deleteUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands/"
-  let json = {
-    "name": "refund",
-    "type": 1,
-    "description": "Calculate the amount to refund",
-    "options": [
-      {
-        "name": 'price',
-        "description": 'Price paid',
-        "type": 10,
-        "required": true,
-      },
-      {
-        "name": 'subscription',
-        "description": 'Subscription days',
-        "type": 10,
-        "required": true,
-      },
-      {
-        "name": 'remaining',
-        "description": 'Remaining days',
-        "type": 10,
-        "required": true,
-      },
-      ],
+  //Register
+  if (slashCmd.register) {
+    let discordUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands"
+    let headers = {
+      "Authorization": "Bot "+token,
+      "Content-Type": 'application/json'
+    }
+    for (let i in slashes) {
+      let json = slashes[i]
+      await sleep(1000)
+      let response = await fetch(discordUrl, {
+        method: 'post',
+        body: JSON.stringify(json),
+        headers: headers
+      });
+      console.log(json.name+' - '+response.status)
+    }
+    for (let i in slashCmd.deleteSlashes) {
+      let deleteUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands/"+slashCmd.deleteSlashes[i]
+      let deleteRes = await fetch(deleteUrl, {
+        method: 'delete',
+        headers: headers
+      })
+      console.log('Delete - '+deleteRes.status)
+      }
   }
-  
-  let headers = {
-    "Authorization": "Bot "+token,
-    'Content-Type': 'application/json'
-  }
-  let response = await fetch(discordUrl, {
-    method: 'post',
-    body: JSON.stringify(json),
-    headers: headers
-  });
-    /*let deleteRes = await fetch(deleteUrl, {
-      method: 'delete',
-      headers: headers
-    })*/
-    response = await response.json();
-    console.log(response)
-}
   console.log('Successfully logged in to discord bot.')
-  console.log(client,client.party)
-  client.user.setPresence({ status: 'idle', activities: [{ name: 'Sloopies', type: "WATCHING" }] });
- // await mongoose.connect(mongooseToken,{keepAlive: true});
+  client.user.setPresence({ status: 'offline', activities: [{ name: '.gg/sloopies', type: "WATCHING" }] });
 })
-
+client2.on("ready", async () => {
+  console.log('Successfully logged in to discord bot 2.')
+})
 module.exports = {
   client: client,
   getPerms,
@@ -142,7 +176,10 @@ let listener = app.listen(process.env.PORT, function() {
 //LOG VARIABLES
 var output = "901759430457167872";
 const settings = require('./storage/settings_.js')
-const {filteredWords, AI, shop, notices, auth, prefix, colors, status, theme, commands, permissions, emojis} = settings
+const {config, filteredWords, AI, shop, notices, auth, prefix, colors, status, theme, commands, permissions, emojis} = settings
+//Slash Commands
+const slashCmd = require("./storage/slashCommands.js");
+const { slashes } = slashCmd;
 /*
 ██████╗░███████╗██████╗░███╗░░░███╗░██████╗
 ██╔══██╗██╔════╝██╔══██╗████╗░████║██╔════╝
@@ -169,7 +206,7 @@ async function guildPerms(message, perms) {
 	return true;
 } else {
   let embed = new MessageEmbed()
-  .addField('Insufficient Permissions',emojis.x+" You don't have the required server permissions to use this command.\n\n`"+perms.toString().toUpperCase()+"`")
+  .addFields({name: 'Insufficient Permissions',value: emojis.x+" You don't have the required server permissions to use this command.\n\n`"+perms.toString().toUpperCase()+"`"})
   .setColor(colors.red)
   message.channel.send({embeds: [embed]})
 }
@@ -198,7 +235,7 @@ const cmdHandler = require('./functions/commands.js')
 const {checkCommand, isCommand, isMessage, getTemplate} = cmdHandler
 //Others
 const others = require('./functions/others.js')
-const {stringJSON, fetchKey, ghostPing, sleep, moderate, getPercentage, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
+const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 //Roles Handler
 const roles = require('./functions/roles.js')
 const {getRole, addRole, removeRole, hasRole} = roles
@@ -215,369 +252,429 @@ const {makeTicket} = tickets
 ░╚════╝░╚══════╝╚═╝╚══════╝╚═╝░░╚══╝░░░╚═╝░░░  ╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═════╝░╚═╝░░╚═╝░╚═════╝░╚══════╝*/
 //ON CLIENT MESSAGE
 let errors = 0
-let expCodes = []
-async function setVouchers() {
-  let channel = await getChannel(shop.channels.vouchers)
-  shop.vouchers = []
-  const options = { limit: 100 };
-  
-  let messages = await channel.messages.fetch(options).then(async messages => {
-      await messages.forEach(async (gotMsg) => {
-        let args = await getArgs(gotMsg.content)
-        let id = args[0]
-        let perks = args.slice(1).join(" ").replace('- ','');
-        let fromNow = moment(gotMsg.createdAt).fromNow()
-        //
-        if (fromNow == '5 days ago') {
-          sendChannel('Expired Voucher: '+gotMsg.content,'1047454193755107337',colors.none)
-          gotMsg.delete();
-        } 
-        else {
-         let found = shop.vouchers.find(b => b.code === id)
-        !found ? shop.vouchers.push({code: id, perks: perks}) : null 
-        }
-      })
-    })
-}
-async function useVoucher(code) {
-  let channel = await getChannel(shop.vouchers)
-  const options = { limit: 100 };
-  
-  let messages = await channel.messages.fetch(options).then(async messages => {
-      await messages.forEach(async (gotMsg) => {
-        let args = await getArgs(gotMsg.content)
-        let id = args[0]
-        let perks = args.slice(1).join(" ").replace(' - ','');
-        if (id === code) {
-          gotMsg.delete()
-          await setVouchers()
-          return true;
-        }
-      })
-    })
-}
-function getVoucher(code) {
-  let found = shop.vouchers.find(v => v.code === code)
-  if (found) return found;
-}
-async function dropVoucher(code,ch,title) {
-  await setVouchers()
-  let channel = await getChannel(ch)
-  let voucher = await getVoucher(code)
-  let row = new MessageActionRow().addComponents(
-    new MessageButton().setCustomId('voucher-'+voucher.code).setStyle('SECONDARY').setLabel('Claim Voucher').setEmoji('<:08:1069200741807435866>'),
-  );
-  //
-  let quote = "Oop, I can't think of a quote right now."
-  let context = ['cats','life','dogs',,'love','stupidity','anything']
-  let chosenContext = context[getRandom(0,context.length)]
-  let data = await chatAI("write a random inspirational quote about "+chosenContext)
-    if (data.response.error) console.log('⚠️ An unexpected error occurred `'+data.response.error.message+'`')
-    else if (data.chosenAPI === AI.chatAPI) {
-      let msg = data.response.choices[0].message.content
-      let filtered = AI.filter(msg)
-      if (filtered.length > 500) {
-        console.log("⚠️ The message generated was longer than 500 characters. Unable to send due to discord's limitations.")
-      } else {
-        quote = filtered
-      }
-    }  
-  let embed = new MessageEmbed()
-  .addField(title,'<:09:1069200736631656518> Click the button to claim')
-  .addField("Random Quote",quote)
-  .setColor(colors.yellow)
-  .setThumbnail('https://media.discordapp.net/attachments/917249743690805249/1067060198327472128/Logopit_1674477351350.png')
-  channel.send({embeds: [embed], components: [row]})
-}
-function makeCode(length) {
-    var result           = '';
-    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    var charactersLength = characters.length;
-    for ( var i = 0; i < length; i++ ) {
-        result += characters.charAt(Math.floor(Math.random() * charactersLength));
-    }
-    return result;
-}
-let truck = false
-client.on("messageCreate", async (message) => {
-  //Ping
-  if (message.channel.id === '1047454193595732055' && message.author.id === '968378766260846713') {
-    let user = message.mentions.members.first()
-    let id = user.id
-    
-    let webhook = new WebhookClient({ url: process.env.ChatWebhook})
-    let zarche = await getUser('900011518714847282')
-    webhook.send({
-      content: 'welcome po <:gude_heart:1056580152852762694>',
-      username: zarche.username,
-      avatarURL: zarche.avatarURL()
-    })
-    let ji = await getUser('699388207539945532')
-    webhook.send({
-      content: 'welcome to sloopies, im a jicken',
-      username: ji.username,
-      avatarURL: ji.avatarURL()
-    })
-  } 
-  else if (message.channel.parent?.name.toLowerCase().includes('orders')) {
-    //
-    let embed = new MessageEmbed()
-      .addField('Terms and Conditions','<:S_letter:1092606891240198154> Before proceeding, you must read and accept our terms and conditions.\n\n<:S_seperator:1093733778633019492> By clicking the button, you indicate that you have read, understood and accepted the terms stated in <#1055070784843948052> and the rules implied in <#1055883558918561913> for the product you want to avail.\n\n<:S_seperator:1093733778633019492> You will be held liable for any violation of our rules, for you have accepted the terms and agreed to comply.',true)
-      .setColor(colors.yellow)
-      .setThumbnail(message.channel.guild.iconURL())
-      
-      let row = await makeRow('terms','Agree and continue','SECONDARY','<a:S_bearheart:1094190497179910225>')
-      //
-    if (message.author.id === client.user.id && message.content?.toLowerCase().includes('ticket opened')) {
-      
-    let member = message.mentions.members.first()
-    if (member) {
-    let shopStatus = await getChannel(shop.channels.status);
-      if (shopStatus.name === 'shop : CLOSED') {
-        message.channel.send("<@"+member.id+"> The shop is currently **CLOSED**, please come back at <t:1677542400:t> to proceed with your order.")
-      }
-    if (!await hasRole(member,['1094909481806205009'],message.channel.guild)) {
-      
-      message.channel.send({content: "<@"+member.id+">", embeds: [embed], components: [row]})
-    } else if (await hasRole(member,['1077462108381388873'],message.guild)) {
-      let row = new MessageActionRow().addComponents(
-        new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Click me').setEmoji('<a:S_arrowright:1095503803761033276>'),
-      );
-      message.channel.send({components: [row]})
-      //message.channel.setName(message.channel.name.replace('ticket',member.user.username.replace(/ /g,'')))
-    }
-    }
-    }
+client2.on("messageCreate", async (message) => {
+  return;
+  let checkerVersion = 'Checker version 2.9'
+  if (message.author.id === client.user.id) {
+    console.log(message.components[0]?.components[0])
   }
-  else if (message.channel.parent?.name.toLowerCase() === 'reports') {
-   if (message.author.id === "557628352828014614") {
-     let vc = await getChannel(shop.channels.reportsVc)
-     let member = message.mentions.members.first()
-     let state = await hasRole(member,["Accepted TOS"]) ? "You have accepted our terms.\n— Therefore, we shall not be liable for any mistakes or excuses made once you've violated our rules." : "We shall not be liable for any mistakes or excuses made once you've violated our rules."
-     if (vc.name === 'reports : CLOSED') {
-     message.channel.send(emojis.warning+" **Void Warranty**\nReport was submitted outside reporting hours.\n\n<:07:1069200743959109712> Remarks\n— Void warranty means no replacement nor refund.\n— "+state)
-     await addRole(member,['void'],message.guild)
-     } else if (await hasRole(member,['void'],message.guild)) {
-       message.channel.send(emojis.warning+' **Void Warranty**\nA recent remark was detected that you violated our terms.\n\n— '+state)
-       await removeRole(member,['void'])
-     }
-   } 
-  }
-  
-  //
-  for (let i in shop.stickyChannels) {
-    if (message.applicationId) return;
-  let sticky = shop.stickyChannels[i]
-  let foundSticky = message.content.length > 0 ? shop.stickyChannels.find(s => s.message === message.content) : null
-  if (sticky.id === message.channel.id || sticky.id === message.channel.parent?.id) {
-    const options = { limit: 10 };
-    //
-    if (message.channel.id === shop.channels.orders || message.channel.id === '1101833714704601168') {
-      let member = message.mentions.members.first()
-      if (member) {
-      await addRole(member,['pending','buyer'],message.guild)
-      }
-    }
-
-    if (((sticky.condition && sticky.condition(message)) || !sticky.condition) && message.content !== sticky.message && !foundSticky) {
-    message.channel.send({content: sticky.message == '' ? null : sticky.message, components: sticky.comp ? [sticky.comp] : [], files: sticky.files ? sticky.files : []});
-      
-      let messages = await message.channel.messages.fetch(options).then(messages => {
-      messages.forEach(async (gotMsg) => {
-        if (gotMsg.author.id === '1057167023492300881' && gotMsg.content === sticky.message && (message.author.id !== '1057167023492300881' || (message.author.id === '1057167023492300881' && message.content !== sticky.message))) {
-          gotMsg.delete();
-          //
-        }
-      })
-    });
-    }
-  }
-}
-  if (message.author.bot) return;
-  if (isCommand('feedback',message)) {
-    if (message.channel.type !== 'DM') return message.reply(emojis.x+' This function can only be used in Dms.')
-    
-    let botMsg = message.channel.send("<:S_seperator:1093733778633019492> Please type and send your feedback here!")
-    const filter = m => m.author.id === message.author.id;
-    message.channel.awaitMessages({filter,max: 1,time: 900000 ,errors: ['time']})
-    .then(async responseMsg => {
-    responseMsg = responseMsg.first()
-      if (responseMsg.content.length === 0) return message.channel.send(emojis.warning+' No message content was collected.')
-      
-      let embed = new MessageEmbed()
-      .setTitle('Your Feedback')
-      .setDescription(responseMsg.content)
-      .setColor(colors.yellow)
-      
-      let row = new MessageActionRow().addComponents(
-        new MessageButton().setCustomId('feedback').setStyle('SUCCESS').setLabel('Send Publicly'),
-        new MessageButton().setCustomId('feedbackAnon').setStyle('DANGER').setLabel('Send Anonymously'),
-        new MessageButton().setCustomId('cancel').setStyle('SECONDARY').setLabel('Cancel'),
-      );
-      message.channel.send({embeds: [embed], components: [row]})
-    })
-    .catch(collected => {
-    
-    console.log("Msg Collection Error: "+collected)
-    sendUser("**[Timed-out]** No response collected. Please rerun the command if you wish to retry.\n",message.author.id,colors.red)
-  });
-  }
-  if (isCommand('apply',message)) { 
-    if (message.channel.type !== 'DM') return message.reply(emojis.x+' This function can only be used in Dms.')
-    
-    let embed = new MessageEmbed()
-    .setTitle('Reseller Application')
-    .setDescription('**Please provide the following information by sending it here**\n\n<:S_dot:1093733278541951078>Shop Link:\n<:S_dot:1093733278541951078>Age:\n<:S_dot:1093733278541951078>Your GCash/Paypal:\n<:S_dot:1093733278541951078>Joined sloopies since:\n<:S_dot:1093733278541951078>Why do you want to become a reseller in sloopies:\n\n')
-    .addField('Remarks','<a:S_starspin:1094191195074334720>You should be aware that you can still be removed as a reseller, for any reason, with or without notice.\n\n<a:S_starspin:1094191195074334720>Any false information submitted will result in immediate decline of your application.\n\n<a:S_starspin:1094191195074334720>Resellers have a quota of 1 order per week before being removed.\n\n<a:S_starspin:1094191195074334720>You can still re-apply if you were removed as a reseller before. However, your application will not be easily regarded unlike other applicants.')
-    .setColor(colors.yellow)
-    .setThumbnail(message.author.avatarURL())
-    
-    let botMsg = null
-    await message.channel.send({embeds: [embed]}).then(msg => botMsg = msg)
-    const filter = m => m.author.id === message.author.id;
-    botMsg.channel.awaitMessages({filter,max: 1,time: 900000 ,errors: ['time']})
-          
-    .then(async responseMsg => {
-    responseMsg = responseMsg.first()
-    
-    let attachments = Array.from(responseMsg.attachments.values())
-    if (responseMsg.content.toLowerCase().startsWith('cancel')) {
-      sendUser(emojis.check+" Verification cancelled! Please rerun the command if you wish to retry.",responseMsg.author.id,colors.lime,true)
-    }
-    else if (responseMsg.content.length > 0) {
-    let log = await getChannel(shop.channels.apps)
+   if (message.author.bot) return;
+  if (message.content.length > 0 && message.content.toLowerCase().startsWith('.invite')) {
     let row = new MessageActionRow().addComponents(
-      new MessageButton().setCustomId('approve-'+responseMsg.author.id).setStyle('SECONDARY').setLabel('Approve').setEmoji(emojis.check),
-      new MessageButton().setCustomId('decline-'+responseMsg.author.id).setStyle('SECONDARY').setLabel('Decline').setEmoji(emojis.x),
-    );
-      let embed = new MessageEmbed()
-      .setTitle(responseMsg.author.tag)
-      .setThumbnail(responseMsg.author.avatarURL())
-      .setColor(colors.yellow)
-      .addField("Application",responseMsg.content)
-      .addField("Ping","<@"+responseMsg.author.id+">")
-      .setFooter({text: responseMsg.author.id})
-      
-      log.send({embeds: [embed], components: [row]})
-      sendUser(emojis.loading+" Your application was submmited | Waiting for response",responseMsg.author.id,colors.white)
-    }
-    })
-    .catch(collected => {
-    
-    console.log("Msg Collection Error: "+collected)
-    sendUser("**[Timed-out]** No response collected. Please rerun the command if you wish to retry.\n",message.author.id,colors.red)
-  });
+          new MessageButton().setURL('https://discord.com/api/oauth2/authorize?client_id=1178955230608625704&permissions=8&scope=bot').setStyle('LINK').setEmoji('📩').setLabel("Invite Checkor"),
+        );
+    message.reply({components: [row]})
   }
-  else if (message.content.toLowerCase() === 'truck') {
-    if (truck) return message.reply('A truck animation is currently in progress.')
-    truck = true
-    let botMsg
-    let waitingTime = 1000
-    await message.channel.send('** **               <:trucked_runner:1103701285091422288>               ** **:truck:').then(msg => botMsg = msg)
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288>             ** **:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288>          ** **:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288>       ** **:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288>    ** **:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288> ** **:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:trucked_runner:1103701285091422288>:truck:')
-    sleep(waitingTime)
-    await botMsg.edit('** **               <:truck_runner:1103701244331167815>')
-    sleep(waitingTime)
-    await botMsg.edit('** **        :truck:<:trucked_runner:1103701285091422288>')
-    sleep(waitingTime)
-    await botMsg.edit('** **      :truck:  <:trucked_runner:1103701285091422288>')
-    sleep(waitingTime)
-    await botMsg.edit('** **   :truck:     <:trucked_runner:1103701285091422288>')
-    sleep(waitingTime)
-    await botMsg.edit('** ** :truck:       <:trucked_runner:1103701285091422288>')
-    truck = false
-  }
-  //
-  if (message.channel.type === 'DM') return;
-  //
-  if (message.content === 'test') {
-    let response = await fetch('https://gcashhc.zendesk.com/api/v2/help_center/en-us/articles/900000125806.json')
-    response = await response.json();
-    shop.gcashStatus = response
-     let embed = new MessageEmbed()
-     .setTitle('Gcash Service Advisory')
-     .setColor(colors.none)
-     .addField('Author ID','```diff\n- '+response.article.author_id+'```',true)
-     .addField('Outdated','```yaml\n'+response.article.outdated+'```',true)
-     .addField('Updated At','<t:'+getTime(response.article.updated_at)+':f> (<t:'+getTime(response.article.updated_at)+':R>)')
-     //.addField('Label Names',response.article.label_names.join(',\n').toUpperCase())
-     .addField('Response Body',response.article.body.replace(/ *\<[^>]*\> */g, "").replace(/\n\n/g,''))
-     .setFooter({text: "Beta"})
-     
-     let row = new MessageActionRow().addComponents(
-       new MessageButton().setCustomId('gsaRaw').setStyle('SECONDARY').setLabel('Raw Data'),
-       new MessageButton().setURL('https://help.gcash.com/hc/en-us/articles/900000125806-GCash-Service-Advisories').setStyle('LINK').setLabel('View Source').setEmoji('<:gcash:1086081913061646428>'),
-     );
-     await message.channel.send({content: 'GCash Service Advisory was updated.', embeds: [embed], components: [row]})
-  }
-  if (isCommand("remove",message)) {
-    if (!await getPerms(message.member,4)) return;
-    let args = await requireArgs(message,2)
-    if (!args) return;
-    
-    let user = await getUser(args[1])
-    if (user) {
-      let deleted = 0
-      await user.send('.').then(async msg => {
-        
-        await msg.channel.messages.fetch({limit: 100}).then(async (messages) => {
-          await messages.forEach(async gotMsg => {
-            let content = gotMsg.content
-            if (gotMsg.author.id === client.user.id && (gotMsg.content.toLowerCase().includes(args[2]) || args[2].toLowerCase() === 'all')) {
-              gotMsg.delete()
-              deleted++
-            }
-          })
-          
-          await message.reply(emojis.check+" Deleted "+deleted+" bot messages in "+user.tag+"'s DMs that contains the word `"+args[2]+"`.")
-        })
-        await msg.delete();
+  let backupVouch = config.backupVouches.find(v => v.original === message.channel.id)
+  if (backupVouch && message.channel.type !== 'DM') {
+    if (message.attachments.size === 0) return;
+    else {
+      //await removeRole(message.member,['1109020434533458016'])
+      //
+      let attachments = Array.from(message.attachments.values())
+      let webhook = new WebhookClient({ url: backupVouch.backup})
+      let files = []
+
+      for (let i in attachments) { files.push(attachments[i].url) }
+
+      webhook.send({
+        content: message.content+'\n\n'+message.author.toString(),
+        username: message.author.tag,
+        avatarURL: message.author.avatarURL(),
+        files: files,
       })
     }
   }
-  else if (isCommand("boost",message)) {
-    let vai = process.env.vaiToken
-    let invite = 'J5jW47fF'
-    let cToken = 'AWjri72c8Y45IpMtcIOzETxmb5Tu06'
-    let auth = {
-      method: 'POST',
-      headers: {
-        "Authorization": "Bot "+token,
-        "Content-Type": "application/json",
+  if (message.content.toLowerCase() === 'scan' && shop.scannerWhitelist.find(g => g === message.guild?.id)) {
+    if (message.type === 'REPLY') {
+      let msg = await message.channel.messages.fetch(message.reference.messageId)
+      if (msg) {
+        try {
+          let args = getArgs(msg.content)
+          let content = ''
+          let count = 0
+          if (args < 1 || !msg.content.includes('roblox.com')) return message.reply('⚠️ No roblox links was found!')
+          await message.react(emojis.loading)
+          
+          for (let i in args) {
+            //await sleep(100)
+            if (args[i].includes('roblox.com')) {
+              console.log('scan')
+              let auth = {
+                method: 'GET',
+                headers: {
+                  'Cookie': process.env.robloxCookie,
+                  'Host': 'www.roblox.com',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-US,en;q=0.5',
+                  'Accept-Encoding': 'gzip, deflate',
+                  'Upgrade-Insecure-Requests': '1',
+                  'Sec-Fetch-Dest': 'document',
+                  'Sec-Fetch-Mode': 'navigate',
+                  'Sec-Fetch-Site': 'none',
+                  'Sec-Fetch-User': '?1',
+                  'Te': 'trailers',
+                  'Referer': 'https://www.roblox.com/login?returnUrl=https%3A%2F%2Fwww.roblox.com%2Fcatalog%2F14189234649%2FGP',
+                  'Content-Type': 'application/json'
+                }
+              }
+              let auth2 = {
+                method: 'GET',
+                headers: {
+                  'Host': 'catalog.roblox.com',
+                  'Authorization': process.env.robloxCookie,
+                  'Content-Type': 'application/json'
+                }
+              }
+              count++
+              let response = await fetch(args[i].replace(',','')+'?nl=true',auth)
+            
+              let htmlContent = await response.text()
+              let $ = cheerio.load(htmlContent);
+              let price = null
+              //
+              const itemContainer = $('#item-container');
+              
+              if ($('.text-robux-lg').length > 0) {
+                price = 'Price: '+$('.text-robux-lg').text().trim()
+                console.log(price);
+              } else {
+                let itemId = itemContainer.attr('data-item-id');
+                let res = await fetch('https://catalog.roblox.com/v1/catalog/items/'+itemId+'/details?itemType=Asset')
+                res = await res.json();
+                if (res.errors) price = "Can't scan catalog items"
+                  else {
+                  price = 'Price: '+res.price.toString();
+                  console.log(price);
+                }
+              }
+              let raw = price !== "Can't scan catalog items" ? Number(price.replace(/,|Price: /g,'')) : price
+              let ct = !isNaN(raw) ? '\nYou will receive: **'+Math.floor(raw*0.7)+'** '+emojis.robux : ''
+              content +=  count+'. '+args[i]+'\n'+price+' '+emojis.robux+ct+'\n\n'
+            }
+          }
+          await message.channel.send(content)
+        } catch (err) {
+          message.reply(err.message)
+        }
       }
     }
-    let joinServer = await fetch(`https://discord.com/api/guilds/1106762090552774716/members/477729368622497803?access_token=`+cToken,auth)
-    console.log(await joinServer)
-    console.log(await joinServer.json(),'json')
   }
-  //Nitro checker
-  if (message.channel.name?.includes('nitro-checker') && !message.author.bot) {
+  if (message.content.toLowerCase() === 'nct' && shop.scannerWhitelist.find(g => g === message.guild?.id)) {
+    if (message.type === 'REPLY') {
+      let msg = await message.channel.messages.fetch(message.reference.messageId)
+      if (msg) {
+        try {
+          let args = getArgs(msg.content)
+          let content = ''
+          let count = 0
+          if (args < 1 || !msg.content.includes('roblox.com')) return message.reply('⚠️ No roblox links was found!')
+          await message.react(emojis.loading)
+          let total = 0
+          for (let i in args) {
+            //await sleep(100)
+            if (args[i].includes('roblox.com')) {
+              console.log('scan')
+              let auth = {
+                method: 'GET',
+                headers: {
+                  'Cookie': process.env.robloxCookie,
+                  'Host': 'www.roblox.com',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-US,en;q=0.5',
+                  'Accept-Encoding': 'gzip, deflate',
+                  'Upgrade-Insecure-Requests': '1',
+                  'Sec-Fetch-Dest': 'document',
+                  'Sec-Fetch-Mode': 'navigate',
+                  'Sec-Fetch-Site': 'none',
+                  'Sec-Fetch-User': '?1',
+                  'Te': 'trailers',
+                  'Referer': 'https://www.roblox.com/login?returnUrl=https%3A%2F%2Fwww.roblox.com%2Fcatalog%2F14189234649%2FGP',
+                  'Content-Type': 'application/json'
+                }
+              }
+              let auth2 = {
+                method: 'GET',
+                headers: {
+                  'Host': 'catalog.roblox.com',
+                  'Authorization': process.env.robloxCookie,
+                  'Content-Type': 'application/json'
+                }
+              }
+              count++
+              let response = await fetch(args[i].replace(',','')+'?nl=true',auth)
+            
+              let htmlContent = await response.text()
+              let $ = cheerio.load(htmlContent);
+              let price = null
+              //
+              const itemContainer = $('#item-container');
+              
+              if ($('.text-robux-lg').length > 0) {
+                price = $('.text-robux-lg').text().trim()
+                total += Number($('.text-robux-lg').text().trim().replace(',',''))
+                console.log(price);
+              } else {
+                let itemId = itemContainer.attr('data-item-id');
+                let res = await fetch('https://catalog.roblox.com/v1/catalog/items/'+itemId+'/details?itemType=Asset')
+                res = await res.json();
+                if (res.errors) price = "Can't scan catalog items"
+                  else {
+                  price = res.price.toString();
+                  total += res.price
+                  console.log(price);
+                }
+              }
+              let raw = price !== "Can't scan catalog items" ? Number(price.replace(/,|Price: /g,'')) : price
+              let ct = !isNaN(raw) ? '\nYou will receive: **'+Math.floor(raw*0.7)+'** '+emojis.robux : ''
+              content +=  price+': '+args[i]+'\n'
+              //console.log("Total price: "+total)
+            }
+          }
+          let err = content.includes('NaN') ? "\n"+emojis.warning+" A link resulted an invalid price. Rescan is recommended." : ""
+          await message.channel.send(content+'\n\nTotal gamepass price (NCT): '+total+err)
+        } catch (err) {
+          message.reply(err.message)
+        }
+      }
+    }
+  }
+  if (message.content.toLowerCase() === 'ct' && shop.scannerWhitelist.find(g => g === message.guild?.id)) {
+    if (message.type === 'REPLY') {
+      let msg = await message.channel.messages.fetch(message.reference.messageId)
+      if (msg) {
+        try {
+          let args = getArgs(msg.content)
+          let content = ''
+          let count = 0
+          if (args < 1 || !msg.content.includes('roblox.com')) return message.reply('⚠️ No roblox links was found!')
+          await message.react(emojis.loading)
+          let total = 0
+          for (let i in args) {
+            //await sleep(100)
+            if (args[i].includes('roblox.com')) {
+              console.log('scan')
+              let auth = {
+                method: 'GET',
+                headers: {
+                  'Cookie': process.env.robloxCookie,
+                  'Host': 'www.roblox.com',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-US,en;q=0.5',
+                  'Accept-Encoding': 'gzip, deflate',
+                  'Upgrade-Insecure-Requests': '1',
+                  'Sec-Fetch-Dest': 'document',
+                  'Sec-Fetch-Mode': 'navigate',
+                  'Sec-Fetch-Site': 'none',
+                  'Sec-Fetch-User': '?1',
+                  'Te': 'trailers',
+                  'Referer': 'https://www.roblox.com/login?returnUrl=https%3A%2F%2Fwww.roblox.com%2Fcatalog%2F14189234649%2FGP',
+                  'Content-Type': 'application/json'
+                }
+              }
+              let auth2 = {
+                method: 'GET',
+                headers: {
+                  'Host': 'catalog.roblox.com',
+                  'Authorization': process.env.robloxCookie,
+                  'Content-Type': 'application/json'
+                }
+              }
+              count++
+              let response = await fetch(args[i].replace(',','')+'?nl=true',auth)
+            
+              let htmlContent = await response.text()
+              let $ = cheerio.load(htmlContent);
+              let price = null
+              //
+              const itemContainer = $('#item-container');
+              
+              if ($('.text-robux-lg').length > 0) {
+                price = Number($('.text-robux-lg').text().trim().replace(',',''))*0.7
+                total += Math.floor(price)
+                console.log(price);
+              } else {
+                let itemId = itemContainer.attr('data-item-id');
+                let res = await fetch('https://catalog.roblox.com/v1/catalog/items/'+itemId+'/details?itemType=Asset')
+                res = await res.json();
+                if (res.errors) price = "Can't scan catalog items"
+                  else {
+                  price = Math.floor(res.price*0.7)
+                  total += price
+                  console.log(price);
+                }
+              }
+              let raw = price !== "Can't scan catalog items" ? price : price
+              let ct = !isNaN(raw) ? '\nYou will receive: **'+Math.floor(raw)+'** '+emojis.robux : ''
+              content +=  Math.floor(price)+': '+args[i]+'\n'
+              //console.log("Total gamepass price (CT): "+total)
+            }
+          }
+          let err = content.includes('NaN') ? "\n"+emojis.warning+" A link resulted an invalid price. Rescan is recommended." : ""
+          await message.channel.send(content+'\n\nTotal amount (CT): '+total+err)
+        } catch (err) {
+          message.reply(err.message)
+        }
+      }
+    }
+  }
+  if (message.content.toLowerCase().startsWith('max:') && shop.scannerWhitelist.find(g => g === message.guild?.id)) {
+    if (message.type === 'REPLY') {
+      let msg = await message.channel.messages.fetch(message.reference.messageId)
+      if (msg) {
+        try {
+          let args = getArgs(msg.content)
+          let msgArgs = getArgs(message.content)
+          let count = 0
+          let max = msgArgs[1]
+          if (isNaN(max)) return message.reply(emojis.warning+" Please input a valid maximum amount!")
+          max = Number(max)
+          if (args < 1 || !msg.content.includes('roblox.com')) return message.reply('⚠️ No roblox links was found!')
+          await message.react(emojis.loading)
+          let total = 0
+          let prices = []
+          //Maximizer
+          function findClosestSum(items, maxSum) {
+            // Helper function for recursive calculation
+            function helper(i, remainingSum, memo) {
+              // Base cases
+              if (i === items.length || remainingSum === 0) return { sum: 0, chosen: [], notChosen: items.slice(i) };
+              if (memo[i][remainingSum] !== undefined) return memo[i][remainingSum];
+
+              // Case 1: Skip the current item
+              let result1 = helper(i + 1, remainingSum, memo);
+              result1.notChosen = [items[i], ...result1.notChosen];
+
+              // Case 2: Include the current item (if it doesn't exceed remaining sum)
+              let result2 = { sum: 0, chosen: [], notChosen: [] };
+              if (items[i].price <= remainingSum) {
+                let subResult = helper(i + 1, remainingSum - items[i].price, memo);
+                result2.sum = subResult.sum + items[i].price;
+                result2.chosen = [items[i], ...subResult.chosen];
+                result2.notChosen = subResult.notChosen;
+              }
+
+              // Choose the option that gets closest to maxSum without exceeding it
+              let result;
+              if (result2.sum > result1.sum) {
+                result = result2;
+              } else {
+                result = result1;
+              }
+
+              memo[i][remainingSum] = result;
+              return result;
+            }
+
+            // Initialize memoization array
+            let memo = Array.from({ length: items.length + 1 }, () => Array(maxSum + 1).fill(undefined));
+
+            // Start the recursive process
+            return helper(0, maxSum, memo);
+          }
+          for (let i in args) {
+            //await sleep(100)
+            if (args[i].includes('roblox.com')) {
+              //Authorization
+              let auth = {
+                method: 'GET',
+                headers: {
+                  'Cookie': process.env.robloxCookie,
+                  'Host': 'www.roblox.com',
+                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+                  'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                  'Accept-Language': 'en-US,en;q=0.5',
+                  'Accept-Encoding': 'gzip, deflate',
+                  'Upgrade-Insecure-Requests': '1',
+                  'Sec-Fetch-Dest': 'document',
+                  'Sec-Fetch-Mode': 'navigate',
+                  'Sec-Fetch-Site': 'none',
+                  'Sec-Fetch-User': '?1',
+                  'Te': 'trailers',
+                  'Referer': 'https://www.roblox.com/login?returnUrl=https%3A%2F%2Fwww.roblox.com%2Fcatalog%2F14189234649%2FGP',
+                  'Content-Type': 'application/json'
+                }
+              }
+              let auth2 = {
+                method: 'GET',
+                headers: {
+                  'Host': 'catalog.roblox.com',
+                  'Authorization': process.env.robloxCookie,
+                  'Content-Type': 'application/json'
+                }
+              }
+              count++
+              let response = await fetch(args[i].replace(',','')+'?nl=true',auth)
+            
+              let htmlContent = await response.text()
+              let $ = cheerio.load(htmlContent);
+              let price = null
+              //
+              const itemContainer = $('#item-container');
+              
+              //If gamepass
+              if ($('.text-robux-lg').length > 0) {
+                price = Number($('.text-robux-lg').text().trim().replace(',',''))
+                console.log(price);
+              } 
+              //If shirt
+              else {
+                let itemId = itemContainer.attr('data-item-id');
+                let res = await fetch('https://catalog.roblox.com/v1/catalog/items/'+itemId+'/details?itemType=Asset')
+                res = await res.json();
+                if (res.errors) price = "Can't scan catalog items"
+                  else {
+                  price = Math.floor(res.price)
+                  console.log(price);
+                }
+              }
+              //Handle prices
+              let raw = price !== "Can't scan catalog items" ? price : price
+              let content =  raw+': '+args[i]
+              prices.push({ price: raw, content: content})
+            }
+          }
+          
+          let result = findClosestSum(prices, max);
+          let content = emojis.check+" **INCLUDED**\n"
+          
+          for (let i in result.chosen) {
+            total += result.chosen[i].price
+            content += result.chosen[i].content+'\n'
+          }
+          content += emojis.x+" **EXCLUDED**\n"
+          for (let i in result.notChosen) {
+            content += result.notChosen[i].content+'\n'
+          }
+          content += "\nTotal summary: "+total+"/"+max
+          
+          let err = content.includes('NaN') ? "\n"+emojis.warning+" A link resulted an invalid price. Rescan is recommended." : ""
+          await message.channel.send(content+err)
+        } catch (err) {
+          console.log(err)
+          message.reply(err.message)
+        }
+      }
+    }
+  }
+  if ((message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
     let args = getArgs(message.content)
     if (args.length === 0) return;
+    //if (shop.checkers.length > 0) return message.reply(emojis.warning+' Someone is currently scanning links.\nPlease use the checker one at a time to prevent rate limitation.')
     let codes = []
     let text = ''
-    let ind = emojis.check+' = Claimable\n'+emojis.x+' = Claimed/Invalid'
     let msg = null
     for (let i in args) {
-      if (args[i].toLowerCase().includes('discord.gift')) {
-      let code = args[i].replace(/https:|discord.gift|\/|/g,'').replace(/ /g,'')
+      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+      let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g,'').replace(/ /g,'').replace(/[^\w\s]/gi,'').replace(/\\n|\|'|"/g,'')
       let found = codes.find(c => c.code === code)
       !found ? codes.push({code: code, expire: null, emoji: null, user: null, state: null}) : null
     }
     }
     if (codes.length === 0) return;
-    if (codes.length > 100) return message.reply('You can only request a maximum of 100 giftcodes per message')
     
     let scanData = shop.checkers.find(c => c.id === message.author.id)
     if (!scanData) {
@@ -586,43 +683,30 @@ client.on("messageCreate", async (message) => {
         valid: 0,
         claimed: 0,
         invalid: 0,
+        total: 0,
       }
       shop.checkers.push(data)
       scanData = shop.checkers.find(c => c.id === message.author.id)
     }
     let row = new MessageActionRow().addComponents(
-      new MessageButton().setLabel("Stop Checking").setEmoji("🛑").setCustomId("breakChecker-").setStyle("SECONDARY")
+      new MessageButton().setEmoji("🛑").setLabel("Stop").setCustomId("breakChecker-").setStyle("SECONDARY"),
+      new MessageButton().setEmoji("⌛").setLabel("Status").setCustomId("checkerStatus-"+scanData.id).setStyle("SECONDARY")
     );
     await message.channel.send({content: 'Fetching nitro codes ('+codes.length+') '+emojis.loading, components: [row]}).then(botMsg => msg = botMsg)
-      //msg.edit('Fetching nitro codes (Pending - Adding to stocks first) '+emojis.loading)
-    //
-    if (message.content.toLowerCase().includes("stocks") && !message.content.toLowerCase().includes('sort')) {
-      msg.edit("Fetching nitro codes (stocking - "+codes.length+") " + emojis.loading);
-      for (let i in codes) {
-        if (shop.breakChecker) {
-          shop.breakChecker = false
-          break
-        };
-        let stocks = await getChannel(shop.channels.stocks)
-        sleep(1000);
-        await stocks.send("https://discord.gift/"+codes[i].code);
-      }
-      msg.edit({content: emojis.check+" Stocked **"+codes.length+"** nitro boost(s)", components: []})
-      return;
-    }
     
     for (let i in codes) {
-      if (shop.breakChecker) {
-        shop.breakChecker = false
-        break
-      };
+      if (shop.breakChecker) break;
       let fetched = false
       let waitingTime = 0
       while (!fetched) {
-        waitingTime > 0 ? sleep(waitingTime) : null
+        waitingTime > 0 ? await sleep(waitingTime) : null
         waitingTime = 0
         let eCode = expCodes.find(e => e.code === codes[i].code)
-        let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code)
+        let auth = {
+          method: 'GET',
+          headers: { 'Authorization': 'Bot '+token }
+        }
+        let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code,auth)
         res = eCode ? eCode : await res.json()
         if (res.message && res.retry_after) {
           console.log('retry for '+codes[i].code)
@@ -631,25 +715,35 @@ client.on("messageCreate", async (message) => {
           waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
         if (res.retry_after >= 600000) {
           fetched = true
-          text = '⚠️ The resource is currently being rate limited. Please try again in '+res.retry_after+' seconds'
+          shop.breakChecker = true
+          await message.channel.send('⚠️ The resource is currently being rate limited. Please try again in '+res.retry_after+' seconds')
           break;
         }
           }
         if (!res.retry_after) {
           fetched = true
-          msg.edit('Fetching nitro codes ('+(i)+'/'+codes.length+') '+emojis.loading)
-          let e = res.expires_at ? moment(res.expires_at).unix() : null
-          codes[i].expire = !isNaN(e) ? Number(e) : 'Expired'
-          let expire = res.expires_at ? 'Expires in <t:'+e+':f>' : '`Expired`'
-          codes[i].emoji = res.uses === 0 ? emojis.check : emojis.x
+          scanData.total++
+          let e = res.expires_at ? moment(res.expires_at).diff(moment(new Date())) : null
+          let diffDuration = e ? moment.duration(e) : null;
+          let e2 = res.expires_at ? moment(res.expires_at).unix() : null;
+          codes[i].expireUnix = e2 ? "\n<t:"+e2+":f>" : '';
+          codes[i].rawExpire = e2
+          codes[i].expire = diffDuration ? diffDuration.asHours().toFixed(1) : null
+          codes[i].emoji = res.uses === 0 ? emojis.check : res.expires_at ? emojis.x : emojis.warning
           codes[i].state = res.expires_at && res.uses === 0 ? 'Claimable' : res.expires_at ? 'Claimed' : 'Invalid'
           codes[i].user = res.user ? '`'+res.user.username+'#'+res.user.discriminator+'`' : "`Unknown User`"
           codes[i].state === 'Claimable' ? scanData.valid++ : codes[i].state === 'Claimed' ? scanData.claimed++ : scanData.invalid++
+          let type = res.store_listing?.sku?.name
+          let foundCode = nitroCodes.find(c => c.code === res.code)
+          if (!foundCode) nitroCodes.push({code: res.code, type: type})
+          foundCode ? type = foundCode.type : null
+          codes[i].typeEmoji = type === 'Nitro' ? emojis.nboost : type === 'Nitro Basic' ? emojis.nbasic : type === 'Nitro Classic' ? emojis.nclassic : '❓' 
           if ((!res.expires_at || res.uses >= 1) && !eCode) {
             let data = {
               code: codes[i].code,
               expires_at: res.expires_at,
               uses: res.uses,
+              user: res.user,
             }
             expCodes.push(data)
           }
@@ -657,127 +751,473 @@ client.on("messageCreate", async (message) => {
         }
       }
     }
-    if (shop.breakChecker) return;
-    codes.sort((a, b) => (b.expire - a.expire));
+    if (shop.breakChecker) {
+      shop.breakChecker = false
+      shop.checkers = []
+      msg.edit({content: emojis.warning+" Interaction was interrupted\n**"+scanData.total+"** link(s) was scanned"})
+      return;
+    }
     let embeds = []
     let embed = new MessageEmbed()
     .setColor(colors.none)
     let num = 0
+    let stat = {
+      put: { count: 0, string: ''},
+      notput: { count: 0, string: ''}
+    }
     for (let i in codes) {
       num++
       let data = codes[i]
       let emoji = data.emoji ? data.emoji : emojis.warning
+      let type = data.type
       let state = data.state ? data.state : 'Unchecked'
       let user = data.user ? data.user : 'Unknown User'
       let expire = data.expire
+      let expireUnix = data.expireUnix
       if (embed.fields.length <= 24) {
       embed = new MessageEmbed(embed)
-        .setFooter({ text: 'Sloopies Checker | '+message.author.tag})
-        .setTimestamp()
-        
-        if (codes.length == num) embeds.push(embed);
+        .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
+        //
       }
       else {
         embeds.push(embed)
         embed = new MessageEmbed()
           .setColor(colors.none)
-          .setFooter({ text: 'Sloopies Checker | '+message.author.tag})
-          .setTimestamp()
+          .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
       }
-      embed.addField(num+". "+codes[i].code,emoji+' **'+state+'**\n'+user+'\n '+(!expire ? '`Expired`' : 'Expires in <t:'+expire+':f>')+'\n\u200b')
-      if (message.content.toLowerCase().includes('sort')) {
-        let stocks = await getChannel(shop.channels.stocks)
-        await stocks.send("https://discord.gift/"+codes[i].code)
+      embed.addFields({
+        name: num+". ||discord.gift/"+codes[i].code+"||", 
+        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n'+user+'\u200b',
+        inline: true,
+      })
+      ////
+    }
+    msg.delete();
+    console.log(embeds.length)
+    let page = 0
+    if (embeds.length > 0 ) {
+      for (let i in embeds) {
+        page++
+        await message.channel.send({content: 'Page '+page+'/'+embeds.length, embeds: [embeds[i]]})
+      }
+    } 
+    else {
+      message.channel.send({embeds: [embed]})
+    }
+    shop.checkers = []
+    !message.channel.type === 'DM' ? message.delete() : null
+  }
+});//END MESSAGE CREATE
+
+client.on("messageCreate", async (message) => {
+  //
+  if (message.author.bot) return;
+  if (message.channel.type === "DM") return;
+}); //END MESSAGE CREATE
+client.on("messageCreate", async (message) => {
+  //Ping
+  if (message.channel.parent?.name.toLowerCase().includes('orders')) {
+    //
+    let embed = new MessageEmbed()
+      .addFields({name: 'terms and conditions',value: '<:S_letter:1138714993425125556> before proceeding, you must read and accept our terms and conditions.\n\n<:hb_rule_book:1138712613769990254> by clicking the button, you indicate that you have read, understood and accepted the terms stated in <#1109020435754000421> and the rules implied in <#1109020435754000422> for the product you want to avail *!*\n\n<:hb_rule_book:1138712613769990254> You will be held liable for any violation of our rules, for you have accepted the terms and agreed to comply *!*', inline: true})
+      .setColor(colors.yellow)
+      
+    let row = new MessageActionRow()
+    .addComponents(
+      new MessageButton().setLabel('accept terms').setCustomId('terms').setStyle('SECONDARY').setEmoji('<:hb_rule_book:1138712613769990254>'),
+    )
+      //
+    if (message.author.id === client.user.id && message.content?.toLowerCase().includes('ticket opened')) {
+      
+    let member = message.mentions.members.first()
+    if (member) {
+    let shopStatus = await getChannel(shop.channels.status);
+      if (shopStatus.name === 'shop : CLOSED') {
+        message.channel.send("<@"+member.id+"> the shop is currently **closed**, please come back at <t:1677542400:t> to proceed with your order *!*")
+      }
+    if (!await hasRole(member,['1109020434520887321'],message.channel.guild)) {
+      
+      message.channel.send({content: "<@"+member.id+">", embeds: [embed], components: [row]})
+    } else if (await hasRole(member,['1109020434520887321'],message.guild)) {
+      let row = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('order form').setEmoji('<:S_letter:1138714993425125556>'),
+      );
+      message.channel.send({components: [row]})
+      //message.channel.setName(message.channel.name.replace('ticket',member.user.username.replace(/ /g,'')))
+    }
+    }
+    }
+  }
+  else if (message.channel.parent?.name.toLowerCase() === 'reports') {
+   if (message.author.id === client.user.id && message.content?.toLowerCase().includes('ticket opened')) {
+     let vc = await getChannel(shop.channels.reportsVc)
+     let member = message.mentions.members.first()
+     let state = await hasRole(member,["Accepted TOS"]) ? "You have accepted our terms.\n— Therefore, we shall not be liable for any mistakes or excuses made once you've violated our rules." : "We shall not be liable for any mistakes or excuses made once you've violated our rules."
+     if (vc.name === 'reports : CLOSED') {
+     message.channel.send(emojis.warning+" **Void Warranty**\nReport was submitted outside reporting hours.\n\n⚠️ Remarks\n— Void warranty means no replacement nor refund.\n— "+state)
+     await addRole(member,['void'],message.guild)
+     } else if (await hasRole(member,['void'],message.guild)) {
+       message.channel.send(emojis.warning+' **Void Warranty**\nA recent remark was detected that you violated our terms.\n\n— '+state)
+       await removeRole(member,['void'])
+     }
+   } 
+  }
+  //
+  if (message.author.bot) return;
+  let checkerVersion = 'Checker version 2.9'
+  if (message.channel.name?.includes('nitro-checker') || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
+    let args = getArgs(message.content)
+    if (args.length === 0) return;
+    let addStocks = args[0].toLowerCase() === 'stocks' && message.channel.type !== 'DM'  ? true : false
+    let sortLinks = args[1]?.toLowerCase() === 'sort' && addStocks && message.channel.type !== 'DM'  ? true : args[0]?.toLowerCase() === 'sort' ? true : false
+
+    let codes = []
+    let text = ''
+    let msg = null
+    for (let i in args) {
+      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+      let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g,'').replace(/ /g,'').replace(/[^\w\s]/gi,'').replace(/\\n|\|'|"/g,'')
+      let found = codes.find(c => c.code === code)
+      !found ? codes.push({code: code, expire: null, emoji: null, user: null, state: null}) : null
+    }
+    }
+    if (codes.length === 0) return;
+    
+    let scanData = shop.checkers.find(c => c.id === message.author.id)
+    if (!scanData) {
+      let data = {
+        id: message.author.id,
+        valid: 0,
+        claimed: 0,
+        invalid: 0,
+        total: 0,
+      }
+      shop.checkers.push(data)
+      scanData = shop.checkers.find(c => c.id === message.author.id)
+    }
+    let row = new MessageActionRow().addComponents(
+      new MessageButton().setEmoji("🛑").setLabel("Stop").setCustomId("breakChecker-").setStyle("SECONDARY"),
+      new MessageButton().setEmoji("⌛").setLabel("Status").setCustomId("checkerStatus-"+scanData.id).setStyle("SECONDARY")
+    );
+    await message.channel.send({content: 'Fetching nitro codes ('+codes.length+') '+emojis.loading, components: [row]}).then(botMsg => msg = botMsg)
+    
+    for (let i in codes) {
+      if (shop.breakChecker) break;
+      let fetched = false
+      let waitingTime = 0
+      while (!fetched) {
+        waitingTime > 0 ? await sleep(waitingTime) : null
+        waitingTime = 0
+        let eCode = expCodes.find(e => e.code === codes[i].code)
+        let auth = {
+          method: 'GET',
+          headers: { 'Authorization': 'Bot '+token }
+        }
+        let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code,auth)
+        res = eCode ? eCode : await res.json()
+        if (res.message && res.retry_after) {
+          console.log('retry for '+codes[i].code)
+          let ret = Math.ceil(res.retry_after)
+          ret = ret.toString()+"000"
+          waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
+        if (res.retry_after >= 600000) {
+          fetched = true
+          shop.breakChecker = true
+          await message.channel.send('⚠️ The resource is currently being rate limited. Please try again in '+res.retry_after+' seconds')
+          break;
+        }
+          }
+        if (!res.retry_after) {
+          fetched = true
+          scanData.total++
+          let e = res.expires_at ? moment(res.expires_at).diff(moment(new Date())) : null
+          let diffDuration = e ? moment.duration(e) : null;
+          let e2 = res.expires_at ? moment(res.expires_at).unix() : null;
+          codes[i].expireUnix = e2 ? "\n<t:"+e2+":f>" : '';
+          codes[i].rawExpire = e2
+          codes[i].expire = diffDuration ? diffDuration.asHours().toFixed(1) : null
+          codes[i].emoji = res.uses === 0 ? emojis.check : res.expires_at ? emojis.x : emojis.warning
+          codes[i].state = res.expires_at && res.uses === 0 ? 'Claimable' : res.expires_at ? 'Claimed' : 'Invalid'
+          codes[i].user = res.user ? '`'+res.user.username+'#'+res.user.discriminator+'`' : "`Unknown User`"
+          codes[i].state === 'Claimable' ? scanData.valid++ : codes[i].state === 'Claimed' ? scanData.claimed++ : scanData.invalid++
+          let type = res.store_listing?.sku?.name
+          let foundCode = nitroCodes.find(c => c.code === res.code)
+          if (!foundCode) nitroCodes.push({code: res.code, type: type})
+          foundCode ? type = foundCode.type : null
+          codes[i].typeEmoji = type === 'Nitro' ? emojis.nboost : type === 'Nitro Basic' ? emojis.nbasic : type === 'Nitro Classic' ? emojis.nclassic : '❓' 
+          codes[i].type = type
+          if ((!res.expires_at || res.uses >= 1) && !eCode) {
+            let data = {
+              code: codes[i].code,
+              expires_at: res.expires_at,
+              uses: res.uses,
+              user: res.user,
+            }
+            expCodes.push(data)
+          }
+          break;
+        }
+      }
+    }
+    if (shop.breakChecker) {
+      shop.breakChecker = false
+      shop.checkers = []
+      msg.edit({content: emojis.warning+" Interaction was interrupted\n**"+scanData.total+"** link(s) was scanned"})
+      return;
+    }
+    sortLinks ? codes.sort((a, b) => (b.rawExpire - a.rawExpire)) : null
+    let embeds = []
+    let embed = new MessageEmbed()
+    .setColor(colors.yellow)
+    
+    let num = 0
+    let stat = {
+      put: { boost: 0, basic: 0, boostString: '', basicString: '' },
+      notput: { count: 0, string: '' }
+    }
+    for (let i in codes) {
+      num++
+      let data = codes[i]
+      let emoji = data.emoji ? data.emoji : emojis.warning
+      let type = data.type
+      let state = data.state ? data.state : 'Unchecked'
+      let user = data.user ? data.user : 'Unknown User'
+      let expire = data.expire
+      let expireUnix = data.expireUnix
+      if (embed.fields.length <= 24) {
+      embed = new MessageEmbed(embed)
+        .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
+        //
+      }
+      else {
+        embeds.push(embed)
+        embed = new MessageEmbed()
+          .setColor(colors.yellow)
+          .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
+      }
+      embed.addFields({
+        name: num+". ||discord.gift/"+codes[i].code+"||", 
+        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n'+user+'\u200b',
+        inline: true,
+      })
+      ////
+      if (addStocks && codes[i].state === 'Claimable') {
+        let stocks = null
+        if (type === 'Nitro') {
+          stat.put.boost++
+          stat.put.boostString += "\ndiscord.gift/"+codes[i].code
+          stocks = await getChannel(shop.channels.boostStocks)
+        } 
+        else {
+          stat.put.basic++
+          stat.put.basicString += "\ndiscord.gift/"+codes[i].code
+          stocks = await getChannel(shop.channels.basicStocks)
+        }
+        await stocks.send('discord.gift/'+codes[i].code)
+      } else {
+        stat.notput.count++
+        stat.notput.string += "\ndiscord.gift/"+codes[i].code
       }
     }
     msg.delete();
     console.log(embeds.length)
-    message.channel.send({embeds: embeds.length > 0 ? embeds : [embed]})
+    let page = 0
+    if (embeds.length > 0 ) {
+      for (let i in embeds) {
+        page++
+        await message.channel.send({content: 'Page '+page+'/'+embeds.length, embeds: [embeds[i]]})
+      }
+    } 
+    else {
+      message.channel.send({embeds: [embed]})
+    }
+    if (addStocks) {
+      let newEmbed = new MessageEmbed();
+      newEmbed.addFields(
+        { name: 'Stocked NBoost', value: stat.put.boost > 20 ? stat.put.boost.toString() : stat.put.boost >= 1 ? '|| '+stat.put.boostString.replace('\n','')+' ||' : 'None' },
+        { name: 'Stocked NBasic', value: stat.put.basic > 20 ? stat.put.basic.toString() : stat.put.basic >= 1 ? '|| '+stat.put.basicString.replace('\n','')+' ||' : 'None' },
+        { name: 'Not Stocked', value: stat.notput.count > 20 ? stat.notput.count.toString() : stat.notput.count >= 1 ? '|| '+stat.notput.string.replace('\n','')+' ||' : 'None' },
+      )
+      newEmbed.setColor(colors.yellow)
+      message.channel.send({embeds: [newEmbed]})
+    }
+    shop.checkers = []
+    !message.channel.type === 'DM' ? message.delete() : null
+  }
+  //
+  if (message.channel.type === 'DM') return;
+  //////
+  //
+  if (isCommand("help",message)) {
+    let args = await getArgs(message.content)
+    let clearFilter = (args[1] && args[1].toLowerCase() === 'clear')
+    if (!args[1] || clearFilter) {
+      let botMsg = null
+      let row = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('desc').setStyle('PRIMARY').setLabel('Description'),
+        new MessageButton().setCustomId('template').setStyle('SECONDARY').setLabel('Template'),
+      );
+      let current = 'desc'
+      async function displayHelp(type) {
+        let known = []
+        let embed = null
+      
+        embed = new MessageEmbed()
+          .setAuthor({name: "Sloopies", iconURL: client.user.avatarURL()})
+          .setDescription("```js\n[] - Required Argument | () - Optional Argument```\n> Use `:help [Command]` to know more about a command.")
+          .setColor(theme)
+          .setTimestamp()
+        
+        for (let i in commands) {
+          if (await getPerms(message.member, commands[i].level) || commands[i].level === 0) {
+      
+            let foundCmd = await known.find(a => a === commands[i].Category)
+            if (!foundCmd) {
+              known.push(commands[i].Category)
+              embed = new MessageEmbed(embed)
+                .addField(commands[i].Category,'[_]')
+            }
+          }
+        }
+        
+        for (let i in commands) {
+          if (await getPerms(message.member, commands[i].level) || commands[i].level === 0) {
+            let field = embed.fields.find(field => field.name === commands[i].Category)
+    
+            if (field) {
+              let template = commands[i].Template.length > 0 ? ' '+commands[i].Template : ''
+              let desc = commands[i].Desc.length > 0 ? ' — *'+commands[i].Desc+'*' : ''
+              let fieldValue = field.value.replace('[_]','')
+              if (commands[i].slash) {
+                embed.fields[embed.fields.indexOf(field)] = {name: commands[i].Category, value: fieldValue+(type === 'desc' ? '</'+commands[i].Command+':'+commands[i].id+'>'+desc : '</'+commands[i].Command+':'+commands[i].id+'>'+template)+'\n'}
+              } else {
+                embed.fields[embed.fields.indexOf(field)] = {name: commands[i].Category, value: fieldValue+(type === 'desc' ? '`'+prefix+commands[i].Command+'`'+desc : '`'+prefix+commands[i].Command+'`'+template)+'\n'}
+              }
+            } else {
+              console.log("Invalid Category: "+commands[i].Category)
+            }
+          }
+        }
+        if (botMsg) return embed;
+        !botMsg ? await message.channel.send({ embeds: [embed], components: [row]}).then(msg => botMsg = msg) : null
+      }
+      await displayHelp('desc')
+      let filter = i => i.user.id === message.author.id && i.message.id === botMsg.id;
+      let collector = botMsg.channel.createMessageComponentCollector({ filter, time: 300000 });
+    
+      collector.on('collect', async i => {
+        if (current !== i.customId) {
+          let lb = await displayHelp(i.customId)
+          for (let inter in row.components) {
+            let comp = row.components[inter]
+            comp.customId && comp.customId === i.customId ? comp.setStyle('PRIMARY') : comp.setStyle('SECONDARY')
+          }
+          i.update({embeds: [lb], components: [row]});
+          current = i.customId
+        } else {
+          i.deferUpdate();
+        }
+      });
+      collector.on('end', collected => {
+        for (let i in row.components) {
+          row.components[i].setDisabled(true);
+        }
+        botMsg.edit({ components: [row] });
+      })
+  }
+    else {
+      let template = await getTemplate(prefix+args[1],await getPerms(message.member,0))
+      
+      let embed = new MessageEmbed()
+      .addFields({name: "Commands", value: template})
+      .setColor(theme)
+      await message.channel.send({embeds: [embed]})
+    }
+  }
+  //
+  else if (isCommand('sticky',message)) {
+    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+      let args = await requireArgs(message,1)
+      let sticky = await stickyModel.findOne({channelId: message.channel.id})
+      if (sticky) return message.reply(emojis.warning+" You can only set 1 sticky per channel.")
+      let doc = new stickyModel(stickySchema)
+      doc.channelId = message.channel.id
+      doc.message = message.content.replace(args[0]+" ",'')
+      await doc.save();
+      await message.react(emojis.check)
+  }
+  else if (isCommand('unsticky',message)) {
+    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    let sticky = await stickyModel.findOne({channelId: message.channel.id})
+    if (sticky) {
+      await stickyModel.deleteOne({channelId: message.channel.id})
+      message.reply(emojis.check+" I removed the sticky on this channel.")
+    } else {
+      message.reply(emojis.x+" This channel has no sticky :c")
+    }
+  }
+  else if (isCommand('nickname',message)) {
+    //if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    let args = await requireArgs(message,1)
+    if (!args) return;
+    try {
+      await message.member.setNickname(message.content.replace(args[0],''))
+      await message.react('<a:00upblobrainbow:1231559066854101064>')
+    } catch (err) {
+      await message.reply("I'm unable to change your nickname.\n```diff\n- "+err+"```")
+    }
+  }
+  else if (isCommand('send',message)) {
+    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    let channelToSend = await getChannel('1109020435754000423')
+    let temp = await getChannel(shop.channels.templates)
+    let msg = await temp.messages.fetch('1258068217339969648')
+    
+    let row = new MessageActionRow()
+    .addComponents(
+      new MessageButton().setLabel('create order').setCustomId('createTicket-order').setStyle('SECONDARY').setEmoji('<a:y_b2buntrain1:1138705768808464514>'),
+      new MessageButton().setLabel('ask support').setCustomId('createTicket-support').setStyle('SECONDARY').setEmoji('<:S_letter:1138714993425125556>'),
+      new MessageButton().setLabel('submit report').setCustomId('createTicket-report').setStyle('SECONDARY').setEmoji('<:hb_rule_book:1138712613769990254>')
+    )
+    await message.channel.send({content: msg.content, components: [row]})
+  }
+  //Sticky
+  let sticky = stickyModel ? await stickyModel.findOne({channelId: message.channel.id}) : null
+  if (sticky) {
+    let messages = await message.channel.messages.fetch({ limit: 10 }).then(messages => {
+      messages.forEach(async (gotMsg) => {
+        console.log(gotMsg.content,sticky.message)
+        if (gotMsg.author.id === client.user.id && gotMsg.content === sticky.message) {
+          await gotMsg.delete();
+          //
+        }
+      })
+    });
+    await message.channel.send({content: sticky.message})
+  }
+  if ((message.content.toLowerCase().startsWith('calcu') && !message.content.toLowerCase().includes('process')) || message.author.id === '497918770187075595') {
+    let expression = message.content.toLowerCase().replace('calcu','')
+    if (/[a-zA-Z]/.test(expression)) {
+      //
+    } else {
+      try {
+        let total = eval(expression)
+        message.reply(total.toString())
+        if (await getPerms(message.member,4)) shop.expected.push({channel: message.channel.id, amount: total})
+      } catch (err) { }
+    }
   }
   //Sticky
   let filter = filteredWords.find(w => message.content?.toLowerCase().includes(w))
   if (filter) message.delete();
-  //Commands
-  if (isCommand('finance',message)) {
-    let emoji = emojis.loading
-    let finance = {
-      incoming: {array: '', total: 0, text: emoji+' Incoming Amounts'},
-      outgoing: {array: '', total: 0, text: emoji+' Outgoing Amounts'},
-      pending: {array: '', total: 0, text: emoji+' Pending Amounts'},
-      expenses: {array: '', total: 0, text: emoji+' Expenses'},
-      lendings: {array: '', total: 0, text: emoji+' Lendings'},
-      gcash: {array: '', total: 0, text: emoji+' GCash Balances'},
-      paypal: {array: '', total: 0, text: emoji+' Paypal Balances'},
-      otherBal: {array: '', total: 0, text: emoji+' Other Balances'},
-      notes: {array: '', total: 0, text: emoji+' Note'},
-    }
-    
-    const filter = m => m.author.id === message.author.id;
-    //let msg
-    let args
-    let cancel = false
-    //Fetch incoming
-    async function getResponse(content,data) {
-      message.channel.send(content)
-    let msg = await message.channel.awaitMessages({ filter, max: 1,time: 900000 ,errors: ['time'] })
-    msg = msg?.first()
-    if (!msg || msg.content?.toLowerCase().includes('cancel')) return message.channel.send('*Financial record was cancelled.*'), cancel = true;
-    args = msg.content.trim().split(/,|\n/)
-    for (let i in args) {
-      let newArgs = await getArgs(args[i])
-      data.total += Number(newArgs[0])
-      isNaN(data.total) ? data.array = msg.content : data.array += args[i].replace(/\n/g,'')+'\n'
-    }
-    msg = null
-    }
-    for (let i in finance) {
-      if (cancel) return;
-      let data = finance[i]
-      await getResponse(data.text,data)
-    }
-
-    let profit = finance.incoming.total-finance.outgoing.total
-    let totalBal = finance.paypal.total+finance.gcash.total+finance.otherBal.total+profit+finance.lendings.total
-    
-    finance.incoming.array.startsWith(finance.incoming.total.toString()) ? finance.incoming.array = '' : ''
-    finance.outgoing.array.startsWith(finance.outgoing.total.toString()) ? finance.outgoing.array = '' : ''
-    finance.pending.array.startsWith(finance.pending.total.toString()) ? finance.pending.array = '' : ''
-    finance.expenses.array.startsWith(finance.expenses.total.toString()) ? finance.expenses.array = '' : ''
-    finance.lendings.array.startsWith(finance.lendings.total.toString()) ? finance.lendings.array = '' : ''
-    finance.gcash.array.startsWith(finance.gcash.total.toString()) ? finance.gcash.array = '' : ''
-    finance.paypal.array.startsWith(finance.paypal.total.toString()) ? finance.paypal.array = '' : ''
-    //finance.notes.array.startsWith(finance.notes.total.toString()) ? finance.notes.array = '' : ''
-    
-    let embed = new MessageEmbed()
-    .setTitle('Financial Record')
-    .addField('⬇️ Incoming','```yaml\n'+finance.incoming.total+'```'+finance.incoming.array,true)
-    .addField('⬆️ Outgoing','```yaml\n'+finance.outgoing.total+'```'+finance.outgoing.array,true)
-    .addField('Expenses','```yaml\n'+finance.expenses.total+'```'+finance.expenses.array,true)
-    .addField('Lendings','```yaml\n'+finance.lendings.total+'```'+finance.lendings.array,true)
-    .addField('GCash Balance','```yaml\n'+finance.gcash.total+'```'+finance.gcash.array,true)
-    .addField('Paypal Balance','```yaml\n'+finance.paypal.total+'```'+finance.paypal.array,true)
-    .addField('Financial Statement',finance.notes.array)
-    .addField('📥 Profit','```yaml\n'+profit+'```',true)
-    .addField('📤 Loss','```yaml\n'+finance.expenses.total+'```',true)
-    .addField('Pending Balance','```yaml\n'+finance.pending.total+'```'+finance.pending.array,true)
-    .addField('Current Balance','```yaml\n'+(finance.paypal.total+finance.gcash.total)+'```',true)
-    .addField('Other Balances','```yaml\n'+finance.otherBal.total+'```',true)
-    .addField('Expected Balance','```yaml\n'+totalBal+'```',true)
-    .setColor(colors.none)
-    .setFooter({text: 'Author '+message.author.tag})
-    .setTimestamp()
-    
-    let row = new MessageActionRow().addComponents(
-      new MessageButton().setCustomId("saveRecord").setStyle('SECONDARY').setEmoji('♻️').setLabel("Save Record"),
-    );
-    
-    message.channel.send({embeds: [embed], components: [row]})
-    } 
-  else if (isCommand('find',message)) {
+  else if (isCommand('findkey',message)) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permissions'});
     let args = await requireArgs(message,1)
     if (!args) return;
-    console.log(args[1])
     
     let drops = await getChannel(shop.channels.drops)
     await fetchKey(drops,args[1],message)
@@ -799,7 +1239,7 @@ client.on("messageCreate", async (message) => {
         
         if (channel) {
         let foundBulked = bulked.find(b => b.channel === channel.id)
-        !foundBulked ? await channel.bulkDelete(10) : null
+        !foundBulked ? await channel.messages.fetch({ limit: 50}).then(messages => { messages.forEach(async (gotMsg) => { gotMsg.delete() })}) : null
         if (!foundBulked) {
           bulked.push({channel: channel.id, messages: []})
           foundBulked = bulked.find(b => b.channel === channel.id)
@@ -810,29 +1250,25 @@ client.on("messageCreate", async (message) => {
           for (let c in type.children) {
             let child = type.children[c]
             let pr = method === 'rs' ? child.rs ? child.rs : child.price : child.price
-            let emoji = method === 'rs' ? '<:Pastelred:1094798538220765274>' : '<:S_seperator:1093733778633019492>'
-            children += '> '+emoji+' '+child.name+(pr > 0 ? ' — ₱'+pr : '')+'\n'
+            let emoji = method === 'rs' ? '<:red_dot:1141281924208414781>' : '<a:yl_flowerspin:1138705226082304020>'
+            children += ''+emoji+' '+child.name+(pr > 0 ? ' <a:S_whiteheart02:1138715896077090856> ₱'+pr : '')+'\n'
           }
           let state = b == data.types.length-1 ? '\n<:g1:1056579657828417596><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g3:1056579662572179586>' : ''
           embed = new MessageEmbed(embed)
-          .addField(type.parent,children)
+          .addFields({name: type.parent,value: children})
           .setImage(data.image ? data.image : '')
         }
         let productStatus = [
             'None',
-            emojis.check+' Available ', //1
-            emojis.check+' Available (Made to Order)', //2
-            emojis.loading+' Restocking ', //3
-            emojis.x+' Not Available ' //4
+            '<:hb_announce:1138706465046134805> available *!*', //1
+            '<:hb_announce:1138706465046134805> available (mode to order)', //2
+            '<:hb_announce:1138706465046134805> restocking *!!*', //3
+            '<:hb_announce:1138706465046134805> not available *!!!*' //4
           ]
         embed = new MessageEmbed(embed)
-        .addField('Product Status',productStatus[data.status])
+          .addFields({name: 'status',value: productStatus[data.status]+''})
           
-          //await channel.messages.fetch(data.id).then(foundMsg => {
-          //  foundMsg.edit({embeds: [embed]})//.then(msg => foundBulked.messages.push({name: data.name, url: msg.url, emoji: data.status === 4 ? '<:Pastelred:1094798538220765274>' : data.status === 3 ? emojis.loading : method === 'rs' ? '<a:S_bearheart:1094190497179910225>' : '<a:S_pastelheart:1093737606451298354>'}))
-          //}).catch(async err => {
-            await channel.send({embeds: [embed]}).then(msg => foundBulked.messages.push({name: data.name, url: msg.url, emoji: data.status === 4 ? '<:Pastelred:1094798538220765274>' : data.status === 3 ? emojis.loading : method === 'rs' ? '<a:S_bearheart:1094190497179910225>' : '<a:S_pastelheart:1093737606451298354>'}))
-          //})
+          await channel.send({embeds: [embed]}).then(msg => foundBulked.messages.push({name: data.name, url: msg.url, emoji: data.status === 4 ? '<:red_dot:1141281924208414781>' : data.status === 3 ? emojis.loading : method === 'rs' ? '<a:y_starroll:1138704563529076786>' : '<a:y_starroll:1138704563529076786>'}))
         }
       }
     }
@@ -841,7 +1277,7 @@ client.on("messageCreate", async (message) => {
       let stockHolder = [[],[],[],[],[],[],[],[],[],[]];
       let holderCount = 0
       let channel = await getChannel(bulked[i].channel)
-      stockHolder[0].push(new MessageButton().setLabel('Order Here').setURL('https://discord.com/channels/1047454193159503904/1054711675045036033/1095603406632144936').setStyle('LINK').setEmoji('<:09:1069200736631656518>'))
+      stockHolder[0].push(new MessageButton().setLabel('order here').setURL('https://discord.com/channels/1109020434449575936/1109020435754000423').setStyle('LINK').setEmoji('<:hb_rule_book:1138712613769990254>'))
       for (let b in bulked[i].messages) {
       let msg = bulked[i].messages[b];
         let name = msg.name
@@ -850,7 +1286,7 @@ client.on("messageCreate", async (message) => {
         stockHolder[holderCount].push(
           new MessageButton()
           .setStyle("LINK")
-          .setLabel(name)
+          .setLabel(name.toLowerCase())
           .setURL(url)
           .setEmoji(msg.emoji)
         );
@@ -871,8 +1307,8 @@ client.on("messageCreate", async (message) => {
   else if (isCommand('forceall',message)) {
     if (!await getPerms(message.member,4)) return;
     let cc = 0
-    let f = '〔,〕'.replace(/ /,'').split(/,/)
-    let f2 = '・❥,・'.replace(/ /,'').split(/,/)
+    let f= '◤,◥—'.replace(/ /,'').split(/,/)
+    let f2 = '《,》'.replace(/ /,'').split(/,/)
     console.log(f,f2)
     message.guild.channels.cache.forEach( ch => {
       if (ch.type !== 'GUILD_CATEGORY' && ch.type !== 'GUILD_VOICE') {
@@ -884,33 +1320,31 @@ client.on("messageCreate", async (message) => {
     })
     message.reply('Renamed '+cc+' channels with the border '+f2)
       }
-  else if (isCommand('stocks',message)) {
-    message.reply('We recently converted this command to a slash command. Please use </stocks:1102433613116616734> instead!')
-  }
-  else if (isCommand('use',message)) {
-    console.log(message.channel.parent.name)
-    if (!message.channel.parent.name.toLowerCase().includes('orders')) return message.reply('This command can only be used in a ticket! You must purchase a product, If you wish to use your voucher.\n\n<#1054711675045036033>')
-    await setVouchers()
-    let args = await requireArgs(message,1)
-    if (!args) return;
-    let code = args[1]
-    let voucher = getVoucher(code)
-    if (!voucher) return message.reply(emojis.x+' The voucher `'+code+'` was already claimed or expired!')
-    sendChannel(emojis.check+' <@'+message.author.id+'> used a **'+voucher.perks+'**!\nCode: `'+code+'`',message.channel.id,colors.none)
-    let use = await useVoucher(voucher.code)
-  }
-  else if (isCommand('drop',message)) {
-    if (!await getPerms(message.member,4)) return;
-    let args = await requireArgs(message,2)
-    if (!args) return;
-    let perks = args.slice(2).join(" ").replace('- ','');
-    let voucher = {
-      code: makeCode(10),
-      perks: perks
-    }
-    let vr = await getChannel(shop.channels.vouchers)
-    vr.send(voucher.code+' - '+voucher.perks)
-    await dropVoucher(voucher.code,args[1],voucher.perks+' drop')
+  else if (isCommand('forcereset',message)) {
+    let members = await message.guild.members.fetch().then(async mems => {
+      let cEmojis = ["🎄", "🎅", "⛄️", "❄️", "🎁", "🔔", "🦌", "🕯️", "🎶", "🍪", "🦃", "🤶", "🎉", "🌟", "🎊", "🌲", "🎀", "📦", "🕰️", "🎅🏻", "🍷", "🎶", "⛪️", "🎵", "🎶", "📚", "❤️", "🍭", "☃️", "🪅", "🕳️", "🧦"];
+      let members = []
+      mems.forEach(mem => members.push(mem))
+      
+      message.reply(emojis.loading+' Changing '+members.length+' nicknames')
+      let success = 0
+      for (let i in members) {
+        let mem = members[i]
+          try {
+        let randomEmoji = cEmojis[getRandom(0,cEmojis.length)]
+        if (mem.nickname?.startsWith('🌄 ')) {
+          await mem.setNickname('') //'🌄  '+mem.user.username
+          console.log(mem.nickname)
+          
+          success++
+        }
+          //
+      } catch (err) {
+        console.log(err)
+      }
+      }
+      message.reply(emojis.check+' Successfully changed '+success+' nicknames')
+    })
   }
   else if (isCommand('delete',message)) {
     if (!await getPerms(message.member,4)) return;
@@ -945,24 +1379,51 @@ client.on("messageCreate", async (message) => {
       else console.log('Channel deletion was cancelled.') 
       },countdown)
   }
+  else if (isCommand('clear',message)) {
+    let toRemove = []
+    for (let i in shop.expected) {
+      let c = shop.expected[i]
+      if (c.channel === message.channel.id) {
+        toRemove.push(i)
+      }
+    }
+    toRemove.sort((a,b) => b-a)
+    for (let i in toRemove) {
+      shop.expected.splice(toRemove[i],1)
+    }
+    message.react(emojis.check)
+  }
   //
   if (message.channel.id === shop.channels.vouch) {
     if (message.attachments.size === 0) return message.reply('⚠️ Invalid form of vouch! Please attach an image file that shows the product you ordered!')
     else {
-      await message.react('<a:S_bearheart:1094190497179910225>')
-      await removeRole(message.member,['pending'])
+      await message.react('<a:checkmark_yellow:1151123927691694110>')
+      await removeRole(message.member,['1109020434533458016'])
+      //
+      let attachments = Array.from(message.attachments.values())
+      let webhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1173981960423604314/5Gb4nx9lgc6IgZLbit7z-DXjmGPZFvZK3aTiemNCE17ZQorI4-JJAeduLEh2NHcOx3J8'})
+      let files = []
+
+      for (let i in attachments) { files.push(attachments[i].url) }
+
+      webhook.send({
+        content: message.content+'\n\n'+message.author.toString(),
+        username: message.author.tag,
+        avatarURL: message.author.avatarURL(),
+        files: files,
+      })
     }
   }
   //
-    let content = message.content.toLowerCase()
-    let responder = shop.ar.responders.find(res => content === shop.ar.prefix+res.command)
-    if (responder) {
-      if (responder.autoDelete) message.delete();
-      message.channel.send({content: responder.response ? responder.response : null, files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
-    }
+  let content = message.content.toLowerCase()
+  let responder = shop.ar.responders.find(res => content === shop.ar.prefix+res.command)
+  if (responder) {
+    if (responder.autoDelete) message.delete();
+    await message.channel.send({content: responder.response ? responder.response : null, embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+  }
   //
   let args = await getArgs(message.content)
-  if (message.content.toLowerCase().includes('how much') || args[0].toLowerCase() === 'hm') {
+  if ((message.content.toLowerCase().includes('how much')) || (args[0].toLowerCase() === 'hm')) {
       let pricelists = shop.pricelists
       let custom = false
       for (let a in pricelists) {
@@ -983,23 +1444,22 @@ client.on("messageCreate", async (message) => {
           for (let c in type.children) {
             let child = type.children[c]
             let pr = child.price
-            let emoji = '<:S_seperator:1093733778633019492>'
-            children += '> '+emoji+' '+child.name+(pr > 0 ? ' — ₱'+pr : '')+'\n'
+            let emoji = '<a:yl_flowerspin:1138705226082304020>'
+            children += ''+emoji+' '+child.name+(pr > 0 ? ' <a:S_whiteheart02:1138715896077090856> ₱'+pr : '')+'\n'
           }
-          let state = b == data.types.length-1 ? '\n<:g1:1056579657828417596><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g2:1056579660353372160><:g3:1056579662572179586>' : ''
           embed = new MessageEmbed(embed)
-          .addField(type.parent,children)
+          .addFields({name: type.parent,value: children})
           .setImage(data.image ? data.image : '')
         }
         let productStatus = [
             'None',
-            emojis.check+' Available ', //1
-            emojis.check+' Available (Made to Order)', //2
-            emojis.loading+' Restocking ', //3
-            emojis.x+' Not available ' //4
+            '<:hb_announce:1138706465046134805> available *!*', //1
+            '<:hb_announce:1138706465046134805> available (mode to order)', //2
+            '<:hb_announce:1138706465046134805> restocking *!!*', //3
+            '<:hb_announce:1138706465046134805> not available *!!!*' //4
           ]
         embed = new MessageEmbed(embed)
-        .addField('Product Status',productStatus[data.status])
+        .addFields({name: 'Product Status',value: productStatus[data.status]})
         await message.reply({content: "Here's our current pricelist for "+data.name,embeds: [embed]})
       }
       }
@@ -1008,86 +1468,38 @@ client.on("messageCreate", async (message) => {
       if (custom) return;
       //
     if (!await hasRole(message.member,['pr access'],message.guild)) {
-      message.reply("Please head to <#1094079711753281596> and click the **Access** button to be able to view our pricelist channels!")
+      message.reply("<:S_letter:1138714993425125556> please head to <#1109020436278300810> and click the **access** button to be able to view our pricelist channels *!*")
     } 
     else {
       let channels = ''
       message.guild.channels.cache.forEach( ch => {
         if (ch.parent?.name === 'PRICELIST' && ch.type !== 'GUILD_TEXT') {
-          channels += '\n<:circley:1072388650337308742> <#'+ch.id+'>'
+          channels += '\n- <#'+ch.id+'>'
         }
       })
-      message.reply("Hello, there! You can check our products' pricelists through these channels:\n"+channels) 
+      message.reply("<:S_letter:1138714993425125556> hello, there *!* You can check our products' pricelists through these channels :\n"+channels) 
     }
     }
   //
   let userPerms = await getPerms(message.member, 3)
-  //if mod
-  if (userPerms) {
-    if (isMessage(".rename",message)) {
-      let args = await requireArgs(message,1)
-      if (!args) return;
-      let name = args.slice(1).join(" ")
-      await message.channel.setName(name)
-      message.react(emojis.check)
-    }
-    else if (isMessage(".badge",message)) {
-      message.delete()
-      let embed = new MessageEmbed()
-      .setDescription('**Steps of claiming dev badge**\n— Activate Discord 2FA (Required)\n— Check your gmail for an invite, click **Accept Invite**\n— Join https://discord.gg/ZFc27ktaeg\n— Head to https://discord.com/developers/active-developer to claim the badge\n— Make sure to take a **SCREENSHOT** for proof/vouching!')
-      .setColor(colors.none)
-      
-      message.channel.send({embeds: [embed]})
-      }
-    else if (isMessage(".noted",message)) {
-      message.delete()
-      let row = new MessageActionRow()
-        .addComponents(
-          new MessageButton().setLabel('Follow Up').setStyle('SECONDARY').setEmoji('<a:S_arrowright:1095503803761033276>').setCustomId('followup'),
-          new MessageButton().setLabel('Mark as Done').setStyle('SECONDARY').setEmoji('<a:S_lapot:1088655136785711184>').setCustomId('done'),
-        )
-      message.channel.send({content: 'You can request for a follow up to receive updates regarding your order.', components: [row]})
-      }
-  }
-  //if not
-  else if (!userPerms) {
+  if (!userPerms) {
     moderate(message.member);
     let args = await getArgs(message.content)
     let moderated = moderate(message.member);
     if (message.content.toLowerCase() === 'hi') message.channel.send("hello! \:)")
-    if (message.content.toLowerCase().includes('onhand')) message.reply("Hello, there! Please check our most recent <#1102417073642164274> to know about the availability of our products!")
+    if (message.content.toLowerCase().includes('onhand')) message.reply("Hello, there! Please check our most recent <#1109020434978054230> to know about the availability of our products!")
     }
-  let chance = false
-  if (message.channel.id === '1047454193595732055') {
-    let chances = [false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false]
-    let random = chances[getRandom(0,chances.length)]
-    //chance = random
-    //console.log(chance)
-  }
-  if ((message.mentions.has('1057167023492300881') || message.content?.toLowerCase().includes('gude')) && message.channel.parent?.id !== '1054731483656499290' && message.channel.parent?.id !== '1068070430457470976'  && message.channel.parent?.id !== '1047454193197252645') chance = true
-  //AI ChatBot
-  if (message.channel.name.includes('gudetama') || chance || message.channel.id === '1094841303050756098') {
-    await message.channel.sendTyping();
-    let data = await chatAI(message.content,message.channel.id === '1094841303050756098' ? 'image' : 'chat')
-    if (data.response.error) return message.reply('⚠️ An unexpected error occurred.'), console.log(data.response.error.message)
-    if (data.chosenAPI === AI.imageAPI) {
-      let url = data.response.data[0].url
-      await message.reply(url)
-    }
-    else if (data.chosenAPI === AI.chatAPI) {
-      let msg = data.response.choices[0].message.content
-      let filtered = AI.filter(msg)
-      //console.log(filtered)
-      if (filtered.length > 1999) return message.reply("⚠️ The message generated was longer than 2000 characters. Unable to send due to discord's limitations.")
-      await message.reply(filtered)
-    }
-  }
+  
 });//END MESSAGE CREATE
 
 let ondutyChannel = '977736253908848711'
 let vrDebounce = false
 let claimer = null
 let animation = false
+
+let yay = true
+let cStocks = 0
+let tStocks = 0
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
@@ -1095,6 +1507,8 @@ client.on('interactionCreate', async inter => {
     if (cname === 'drop') {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
+      if (!yay) return inter.reply({content: emojis.warning+" The bot is currently busy deleting stocks ("+cStocks+"/"+tStocks+")", ephemeral: true})
+      await inter.deferReply();
       //
       let user = options.find(a => a.name === 'user')
       let quan = options.find(a => a.name === 'quantity')
@@ -1102,120 +1516,185 @@ client.on('interactionCreate', async inter => {
       let item = options.find(a => a.name === 'item')
       let mop = options.find(a => a.name === 'mop')
       let note = options.find(a => a.name === 'note')
+      let stop_queue = true//options.find(a => a.name === 'stop_queue')
       //Send prompt
       try {
         //Get stocks
-        let stocks = await getChannel(shop.channels.stocks)
+        let stocks = item.value === 'nitro boost' ? await getChannel(shop.channels.boostStocks) : item.value === 'nitro basic' ? await getChannel(shop.channels.basicStocks) : await getChannel(shop.channels.itemStocks)
         let links = ""
         let index = ""
         let msgs = []
         let messages = await stocks.messages.fetch({limit: quan.value}).then(async messages => {
-          messages.forEach(async (gotMsg) => {
+          await messages.forEach(async (gotMsg) => {
             index++
             links += "\n"+index+". "+gotMsg.content
             msgs.push(gotMsg)
           })
         })
         //Returns
-        if (links === "") return inter.reply({content: emojis.x+" No stocks left.", ephemeral: true})
-        if (quan.value > index) return inter.reply({content: emojis.warning+" Insufficient stocks. **"+index+"** "+(item ? item.value : 'nitro boost(s)')+" remaining.", ephemeral: true})
-        await addRole(await getMember(user.user.id,inter.guild),["Buyer","Pending"],inter.guild)
-        stocks.bulkDelete(quan.value)
+        if (links === "") return inter.editReply({content: emojis.x+" No stocks left.", ephemeral: true})
+        if (quan.value > index) return inter.editReply({content: emojis.warning+" Insufficient stocks. **"+index+"** "+item.value+'(s)'+" remaining.", ephemeral: true})
+        yay = false
+        tStocks = quan.value
+        //delete messages
+        for (let i in msgs) {
+          await msgs[i].delete().then(msg => {
+            ++cStocks
+            console.log(cStocks)
+            if (cStocks == tStocks) {
+              cStocks = 0
+              yay = true
+            }
+          });
+        }
+        await addRole(await getMember(user.user.id,inter.guild),["1109020434520887324","Pending"],inter.guild)
         //Send prompt
         let drops = await getChannel(shop.channels.drops)
         let dropMsg
         await drops.send({content: (note ? note.value : '')+links}).then(msg => dropMsg = msg)
         //
         let row = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId("drop-"+dropMsg.id).setStyle('SECONDARY').setEmoji('📤').setLabel("Release to "+user.user.tag),
-          new MessageButton().setCustomId("showDrop-"+dropMsg.id).setStyle('SECONDARY').setEmoji('❔').setLabel('Show Drop'),
-          new MessageButton().setCustomId("returnLinks-"+dropMsg.id).setStyle('SECONDARY').setEmoji('♻️').setLabel('Return Links')
+          new MessageButton().setCustomId("drop-"+dropMsg.id).setStyle('SECONDARY').setEmoji('<a:y_b2buntrain1:1138705768808464514>').setLabel("drop"),
+          new MessageButton().setCustomId("showDrop-"+dropMsg.id).setStyle('SECONDARY').setEmoji('📋'),
         );
-        inter.reply({content: "<:S_exclamation:1093734009005158450> <@"+user.user.id+"> Sending **"+quan.value+"** "+(item ? item.value : 'nitro boost(s)')+".\n<:S_dot:1093733278541951078> Make sure to open your DMs.\n<:S_dot:1093733278541951078> The message may appear as **direct or request** message.", components: [row]})
+        inter.editReply({content: "<:yl_exclamation:1138705048562581575> <@"+user.user.id+"> sending **"+quan.value+"** "+item.value+"(s)\n<:S_dot:1138714811908235444> make sure to open your DMs *!*\n<:S_dot:1138714811908235444> the message may appear as **direct or request** message *!*", components: [row]})
         //Send auto queue
-        let orders = await getChannel(shop.channels.orders)
-        let template = await getChannel(shop.channels.templates)
-        let msg = await template.messages.fetch("1093800287002693702")
-        let content = msg.content
-        content = content
-          .replace('{user}','<@'+user.user.id+'>')
-          .replace('{price}',price.value.toString())
-          .replace('{quan}',quan.value.toString()).replace('{product}',(item ? item.value : 'nitro boost'))
-          .replace('{mop}',mop ? mop.value : 'gcash')
-          .replace('{ticket}',inter.channel.name)
-          .replace('{status}','**COMPLETED**')
-          .replace('{stamp}','<t:'+getTime(new Date().getTime())+':R>')
+        let chName = quan.value+'。'+(item ? item.value : 'nitro boost')
+        inter.channel.name !== chName ? inter.channel.setName(chName) : null
+        if (!stop_queue) {
+          let orders = await getChannel(shop.channels.orders)
+          let template = await getChannel(shop.channels.templates)
+          let msg = await template.messages.fetch("1138661169171812393")
+          let content = msg.content
+          content = content
+            .replace('{user}','<@'+user.user.id+'>')
+            .replace('{price}',price.value.toString())
+            .replace('{quan}',quan.value.toString()).replace('{product}',(item ? item.value : 'nitro boost'))
+            .replace('{mop}',mop ? mop.value : 'gcash')
+            .replace('{ticket}',inter.channel.toString()+' ('+inter.channel.name+')')
+            .replace('{status}','**COMPLETED**')
+            .replace('{stamp}','<t:'+getTime(new Date().getTime())+':R>')
         
-        let row2 = JSON.parse(JSON.stringify(shop.orderStatus));
-        row2.components[0].disabled = true
-        orders.send({content: content, components: [row2]})
+          let row2 = JSON.parse(JSON.stringify(shop.orderStatus));
+          row2.components[0].disabled = true
+          await orders.send({content: content, components: [row2]})
+        }
         //
       } catch (err) {
-        inter.reply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
+        console.log(err)
+        inter.editReply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
       }
+    }
+    //
+    else if (cname === 'resend') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+      let options = inter.options._hoistedOptions
+      let msgIds = options.find(a => a.name === 'msg_ids')
+      await inter.reply({content: emojis.loading+' Resending messages...', ephemeral: true})
+      let args = await getArgs(msgIds.value)
+      let data = {
+        success: 0,
+        failed: 0,
+      }
+      for (let i in args) {
+        let id = args[i]
+        try {
+          let msg = await inter.channel.messages.fetch(id)
+          if (msg) {
+            let attachments = Array.from(msg.attachments.values())
+            let files = []
+
+            for (let i in attachments) { files.push(attachments[i].url) }
+            await inter.channel.send({content: msg.content, files: files})
+            await msg.delete();
+            data.success++
+          }
+        } catch (err) {
+          console.log(err)
+          data.failed++
+        }
+      }
+      await inter.followUp({content: emojis.check+' Success: '+data.success+'\n'+emojis.x+' Failed: '+data.failed, ephemeral: true})
     }
     //Stocks
     else if (cname === 'stocks') {
-      //if (inter.channel.id !== '1047454193595732058' && !await getPerms(inter.member,4)) return inter.reply({content: 'This command only works in <#1047454193595732058>\nPlease head there to use the command.', ephemeral: true})
-      
-      let stocks = await getChannel(shop.channels.stocks)
-      let stocks2 = await getChannel(shop.channels.otherStocks);
-      let quan = 0;
-      
+      let stockTemplates = await getChannel(shop.channels.otherStocks);
+      let strong = ''
       let stockHolder = [[],[],[],[],[],[],[],[],[],[]];
       let holderCount = 0
       let arrays = []
-      let messages = await stocks.messages.fetch({limit: 100}).then(async messages => {
-        messages.forEach(async (gotMsg) => {
-          quan++
-        })
-      })
       
-      if (quan > 0) {
-        let foundCat = shop.pricelists.find(c => c.name.toLowerCase().includes('nitro'))
-        if (!foundCat) return inter.reply({content: emojis.warning+' Cannot find category'})
-        foundCat.status = 1
+      let msgSize = 0
+      let totalMsg = 0
+      
+      let data = {
+        nitroBoost: 0,
+        nitroBasic: 0,
+        completed: 0,
+        f: {
+          last_id: null,
+          msgSize: 0,
+          totalMsg: 0,
+        }
       }
       
-      let messages2 = await stocks2.messages.fetch({ limit: 100 })
-      .then(async (messages) => {
-        messages.forEach(async (gotMsg) => {
-          arrays.push(gotMsg.content);
+      await inter.deferReply()
+      
+      while (true) {
+        const options = { limit: 100 };
+        if (data.f.last_id) options.before = data.f.last_id;
+        
+        //
+        let stocks = null
+        if (data.completed === 0) stocks = await getChannel(shop.channels.boostStocks)
+        else stocks = await getChannel(shop.channels.basicStocks)
+        //Put to storage
+        await stocks.messages.fetch(options).then(async messages => {
+          data.f.last_id = messages.last()?.id;
+          totalMsg += messages.size
+          msgSize = messages.size
+          await messages.forEach(async (gotMsg) => {
+            console.log(gotMsg.content+' - '+data.completed)
+            data.completed === 0 ? data.nitroBoost++ : data.nitroBasic++
+            strong += gotMsg.content+'\n'
+          })
         });
-      });
-      let foundCat = shop.pricelists.find(c => c.name.toLowerCase().includes('nitro'))
-      if (!foundCat) return inter.reply(emojis.x+' Invalid Category: `nitro`')
-      let style = 'SECONDARY'
-      let quanStyle = 'SECONDARY'
-      foundCat.status = quan > 0 ? 1 : 3
-      stockHolder[0].push(
-        new MessageButton().setCustomId('none-'+getRandom(1,10000)).setStyle(style).setLabel('Nitro Boost').setEmoji('<a:nitroboost:1057999297787985960>'),
-        new MessageButton().setCustomId('none-'+getRandom(1,10000)).setStyle(quan == '0' ? 'DANGER' : quanStyle).setLabel(quan.toString())
-      )
-  
-      for (let i in arrays) {
-        let msg = arrays[i];
-        if (arrays.length > 0) {
-          let args = await getArgs(msg);
-          let text = args.slice(2).join(" ")
-          let count = args[1]
-          let emoji = args[0]
-          //if (stockHolder[holderCount].length === 5) holderCount++
-          holderCount++
-          stockHolder[holderCount].push(new MessageButton().setCustomId("none"+getRandom(1,10000)).setStyle(style).setLabel(text+'    ').setEmoji(emoji));
-          stockHolder[holderCount].push(new MessageButton().setCustomId("none"+getRandom(1,10000)).setStyle(count == '0' ? 'DANGER' : quanStyle).setLabel(count));
+        
+        if (msgSize != 100) {
+          if (data.completed === 0) data.completed++
+          else {
+            await stockTemplates.messages.fetch({ limit: 100 })
+              .then(async (messages) => {
+              messages.forEach(async (gotMsg) => { arrays.push(gotMsg.content) }); 
+            });
+            stockHolder[0].push(new MessageButton().setCustomId('none').setStyle('SECONDARY').setLabel('nitro boost ( '+data.nitroBoost+' )').setEmoji(emojis.nboost))
+            stockHolder[0].push(new MessageButton().setCustomId('none2').setStyle('SECONDARY').setLabel('nitro basic ( '+data.nitroBasic+' )').setEmoji(emojis.nbasic))
+            //Loop
+            for (let i in arrays) {
+              let msg = arrays[i];
+              if (arrays.length > 0) {
+                let args = await getArgs(msg);
+                let text = args[0].includes(':') ? args.slice(1).join(" ") : msg
+                let emoji = args[0].includes(':') ? args[0] : null
+                if (stockHolder[holderCount].length === 5) holderCount++
+                stockHolder[holderCount].push(new MessageButton().setCustomId("none"+getRandom(1,10000)).setStyle("SECONDARY").setLabel(text).setEmoji(args[0].includes(':') ? args[0] : null));
+              }
+            }
+            //Handle display
+            let comps = []
+            for (let i in stockHolder) {
+              if (stockHolder[i].length !== 0) {
+                let row = new MessageActionRow();
+                row.components = stockHolder[i];
+                comps.push(row)
+              }
+            }
+            console.log(strong)
+            await inter.editReply({components: comps})
+            break;
+          }
         }
       }
-    
-      let comps = []
-      for (let i in stockHolder) {
-        if (stockHolder[i].length !== 0) {
-          let row = new MessageActionRow();
-          row.components = stockHolder[i];
-          comps.push(row)
-        }
-      }
-      inter.reply({components: comps})
     }
     //Queue
     else if (cname === 'order') {
@@ -1228,11 +1707,12 @@ client.on('interactionCreate', async inter => {
       let mop = options.find(a => a.name === 'mop')
       let price = options.find(a => a.name === 'price')
       //
+      inter.deferReply();
       try {
         let orders = await getChannel(shop.channels.orders)
         let template = await getChannel(shop.channels.templates)
-        let msg = await template.messages.fetch("1093800287002693702")
-        let status = 'NOTED'
+        let msg = await template.messages.fetch("1252193604915433483")
+        let status = 'PENDING'
         let content = msg.content
         content = content
           .replace('{user}','<@'+user.user.id+'>')
@@ -1240,23 +1720,24 @@ client.on('interactionCreate', async inter => {
           .replace('{quan}',quan.value.toString())
           .replace('{product}',product.value)
           .replace('{mop}',mop ? mop.value : 'gcash')
-          .replace('{ticket}',inter.channel.name)
+          .replace('{ticket}',inter.channel.toString()+' ('+inter.channel.name+')')
           .replace('{status}',status)
           .replace('{stamp}','<t:'+getTime(new Date().getTime())+':R>')
         
         let row = JSON.parse(JSON.stringify(shop.orderStatus));
         let msgUrl
         let member = await getMember(user.user.id,inter.guild)
-        await addRole(member,['pending','buyer'],inter.guild)
+        await addRole(member,['1109020434520887324'],inter.guild)
         await orders.send({content: content, components: [row]}).then(msg => msgUrl = msg.url)
-        
+        inter.channel.setName(quan.value+'。'+product.value)
         let linkRow = new MessageActionRow().addComponents(
-          new MessageButton().setURL(msgUrl).setStyle('LINK').setEmoji('<a:S_tick:1095508349161840660>').setLabel("Go to queue"),
+          new MessageButton().setURL(msgUrl).setStyle('LINK').setEmoji('<:S_letter:1138714993425125556>').setLabel("view order"),
         );
         
-        inter.reply({content: 'Queue was added to '+orders.toString(), components: [linkRow]})
+        await inter.editReply({content: '<a:yt_chickclap:1138707159287345263> you order was placed ( '+orders.toString()+' )', components: [linkRow]})
       } catch (err) {
-        inter.reply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
+        console.log(err)
+        inter.editReply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
       }
     }
     //Calculate
@@ -1294,13 +1775,14 @@ client.on('interactionCreate', async inter => {
       }
       
         let embed = new MessageEmbed()
-        .addField(title,'**₱'+total+'**',true)
-        //.addField('Base Amount','₱'+amount.value,true)
-        .addField('Fee','x'+percentage,true)
+        .addFields(
+          {name: title,value: '**'+total+'**',inline: true},
+          {name: 'Fee',value: 'x'+percentage,inline: true}
+        )
         .setColor(colors.none)
         .setFooter({text: footer})
         
-        await inter.reply({embeds: [embed]})
+        await inter.reply({content: '.',embeds: [embed]})
     }
     //Refund
     else if (cname === 'refund') {
@@ -1308,39 +1790,64 @@ client.on('interactionCreate', async inter => {
       let price = options.find(a => a.name === 'price')
       let subscription = options.find(a => a.name === 'subscription')
       let remaining = options.find(a => a.name === 'remaining')
-      let service = 0.7
-      let calcu = price.value/subscription.value*remaining.value*service
+      let service = 0.9
+      let calcu = price.value/subscription.value*remaining.value
       
       let embed = new MessageEmbed()
-      .addField('Refund Amount','♻️ **'+Math.round(calcu).toString()+'**',true)
-      .addField('Price paid',price.value.toString(),true)
-      .addField('Remaining Days',remaining.value.toString(),true)
-      .addField('Subscription Days',subscription.value.toString(),true)
-      .addField('Service Fee',service.toString(),true)
-      .setFooter({text: "Formula: price paid/subscription days*remaining days*service fee"})
+      .addFields(
+        {name: 'Total Refund',value: '**'+Math.round(calcu).toString()+'**', inline: true},
+        {name: 'Price paid',value: price.value.toString(),inline: true},
+        {name: 'Remaining Days',value: remaining.value.toString(), inline: true},
+        {name: 'Subscription Days',value: subscription.value.toString(), inline: true},
+        //{name: 'Service Fee',value: service.toString(), inline: true},
+      )
+      //.setFooter({text: "Formula: price paid/subscription days*remaining days"})
       //.addField("Calculation",price.value+'/'+subscription.value+'\\*'+remaining.value+'\\*'+service)
-      .setColor(colors.none)
+      .setColor(colors.green)
       
       inter.reply({embeds: [embed]});
     }
+    //Order status
+    else if (cname === 'orderstatus') {
+      let options = inter.options._hoistedOptions
+      let preset = options.find(a => a.name === 'preset_status')
+      let status = options.find(a => a.name === 'custom_status')
+      let got = false
+      let time = getTime(new Date().getTime())
+      let content = null
+      inter.reply({content: emojis.loading+' Updating order status', ephemeral: true})
+      let messages = await inter.channel.messages.fetch({limit: 100}).then(async messages => {
+        messages.forEach(async (gotMsg) => {
+          if (gotMsg.content.toLowerCase().startsWith('# [') && gotMsg.author.id === client.user.id) {
+            content = gotMsg.content+'\n> \n> \n> \n'+(preset ? preset.value : '')+' '+(status ? status.value : '')+'\n<:indent:1174738613330788512> <t:'+time+':R>'
+            got = true
+            gotMsg.delete();
+          }
+        })
+      })
+      if (!got) {
+        inter.channel.send('# [ ORDER STATUS ]\n'+(preset ? preset.value : '')+' '+(status ? status.value : '')+'\n<:indent:1174738613330788512> <t:'+time+':R>')
+      } else {
+        inter.channel.send(content)
+      }
+    }
   }
-  
   //BUTTONS
   else if (inter.isButton() || inter.isSelectMenu()) {
     let id = inter.customId
     console.log(id)
     if (id === 'terms') {
       let member = inter.member;
-      await addRole(member,['1077462108381388873','1094909481806205009'],inter.message.guild)
+      await addRole(member,['1109020434520887321'],inter.message.guild)
       let row = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId('claimed').setStyle('SECONDARY').setLabel('Terms Accepted').setDisabled(true).setEmoji(emojis.check),
+          new MessageButton().setCustomId('claimed').setStyle('SECONDARY').setDisabled(true).setEmoji(emojis.check),
         );
-      inter.update({content: 'Terms Accepted : <@'+inter.user.id+'>', components: [row]})
+      inter.update({content: '<a:tick:1138709329604784128> terms accepted : <@'+inter.user.id+'>', components: [row]})
       let row2 = new MessageActionRow().addComponents(
-        new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Click me').setEmoji('<a:S_arrowright:1095503803761033276>'),
+        new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('order form').setEmoji('<a:y_starroll:1138704563529076786>'),
       );
       inter.channel.send({components: [row2]})
-      //inter.channel.setName(inter.channel.name.replace('ticket',inter.user.username.replace(/ /g,'')))
+      inter.channel.setName(inter.channel.name.replace('ticket',inter.user.username.replace(/ /g,'')))
     }
     //tickets
     else if (id.startsWith('createTicket-')) {
@@ -1359,12 +1866,11 @@ client.on('interactionCreate', async inter => {
         newDoc.tickets = []
         await newDoc.save()
         doc = await tixModel.findOne({id: inter.user.id})
-        
       } 
-      else if (doc && doc.tickets.length >= 5) {
+      /*else if (doc && doc.tickets.length >= 5) {
         await inter.reply({content: `You have exceeded the maximum amount of tickets! (${doc.tickets.length})`, ephemeral: true})
         return;
-      }
+      }*/
       let shard = foundData.count >= 1000 ? foundData.count : foundData.count >= 100 ? '0'+foundData.count : foundData.count >= 10 ? '00'+foundData.count : foundData.count >= 0 ? '000'+foundData.count : null
       if (type === 'order') {
         data = {
@@ -1373,10 +1879,10 @@ client.on('interactionCreate', async inter => {
           user: inter.user,
           count: foundData.count,
           name: 'Order Ticket',
-          category: '1054731483656499290',
-          support: '1047454193184682040',
-          context: 'Type `.form` to get the order format or use the **click me** button!',
-          ticketName: inter.user.username.replace(/ /g,'')+'-'+shard
+          category: '1109020435523326025',
+          support: '1109020434554433548',
+          context: '<:indent:1174738613330788512> type `.form` to get the order format *!*',
+          ticketName: 'ticket-'+shard
         }
       }
       else if (type === 'support') {
@@ -1386,10 +1892,10 @@ client.on('interactionCreate', async inter => {
           user: inter.user,
           count: foundData.count,
           name: 'Support Ticket',
-          category: '1068070403446149120',
-          support: '1047454193184682040',
-          context: 'Please tell us your concerns or inquiries in advance.',
-          ticketName: inter.user.username.replace(/ /g,'')+'-'+shard
+          category: '1109020434978054234',
+          support: '1109020434554433548',
+          context: '<:indent:1174738613330788512> please tell us your concern in advance.',
+          ticketName: 'ticket-'+shard //inter.user.username.replace(/ /g,'')+
         }
       }
       else if (type === 'report') {
@@ -1399,17 +1905,16 @@ client.on('interactionCreate', async inter => {
           user: inter.user,
           count: foundData.count,
           name: 'Report Ticket',
-          category: '1068070430457470976',
-          support: '1047454193184682040',
-          context: 'Use the respective autoresponders to view the report format of the item you wish to report.\n`.rboost`\n`.rnitro`\n`.rbadge`\n`.rpremium`',
-          ticketName: inter.user.username.replace(/ /g,'')+'-'+shard
+          category: '1109020435200356488',
+          support: '1109020434554433548',
+          context: '<:indent:1174738613330788512> use the correct autoresponders to view the report format of the item you wish to report.\n`.rboost`\n`.rnitro`\n`.rbadge`\n`.rpremium`',
+          ticketName: 'ticket-'+shard
         }
       }
-      
+      await inter.reply({content: "creating your ticket <a:9h_Squirtle1:1138711304085971044>", ephemeral: true})
       let channel = await makeTicket(data)
-      await inter.reply({content: "<a:S_arrowright:1095503803761033276> Ticket created "+channel.toString(), ephemeral: true})
+      await inter.followUp({content: "<a:yl_exclamationan:1138705076395978802> ticket created *!*\nhead to : "+channel.toString(), ephemeral: true})
     }
-    //
     else if (id.includes('Ticket-')) {
       let method = id.startsWith('openTicket-') ? 'open' : id.startsWith('closedTicket-') ? 'closed' : id.startsWith('deleteTicket-') ? 'delete' : null
       if (!await getPerms(inter.member,4) && method !== 'closed') return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
@@ -1419,14 +1924,14 @@ client.on('interactionCreate', async inter => {
       let doc = await tixModel.findOne({id: user.id})
       if (doc) {
         let comp
-        let text = '<:S_dot:1093733278541951078>Status: `'+method.toUpperCase()+'`\n<:S_dot:1093733278541951078>Author: '+inter.user.toString()
+        let text = 'Status: `'+method.toUpperCase()+'`\nAuthor: '+inter.user.toString()
         if (method === 'delete') {
           text = 'This channel will be deleted in a few seconds.'
           comp = null
         }
         else if (method === 'closed') {
           let row = new MessageActionRow().addComponents(
-            new MessageButton().setCustomId('transcript-'+user.id).setStyle('SECONDARY').setLabel('Transcript').setEmoji('<:S_letter:1092606891240198154>'),
+            new MessageButton().setCustomId('transcript-'+user.id).setStyle('SECONDARY').setLabel('Transcript').setEmoji('💾'),
             new MessageButton().setCustomId('openTicket-'+user.id).setStyle('SECONDARY').setLabel('Open').setEmoji('🔓'),
             new MessageButton().setCustomId('deleteTicket-'+user.id).setStyle('SECONDARY').setLabel('Delete').setEmoji('⛔'),
           );
@@ -1438,14 +1943,17 @@ client.on('interactionCreate', async inter => {
           );
           comp = [row]
         }
-        inter.message.edit({components: []})
+        //inter.message.edit({components: []})
         if (method === 'delete') {
           inter.reply({content: text})
-          setTimeout(async function(){
+          setTimeout(async function() {
+            doc = await tixModel.findOne({id: user.id})
             for (let i in doc.tickets) {
               let ticket = doc.tickets[i]
-              doc.tickets.splice(i,1)
-              await doc.save();
+              if (ticket.id === inter.channel.id) {
+                doc.tickets.splice(i,1)
+                await doc.save();
+              }
             }
             await inter.channel.delete();
           },8000)
@@ -1495,7 +2003,6 @@ client.on('interactionCreate', async inter => {
         inter.reply({content: emojis.warning+' No data was found.'})
       }
     }
-    //
     else if (id.startsWith('transcript-')) {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
       let userId = id.replace('transcript-','').replace(/_/g,' ')
@@ -1507,7 +2014,10 @@ client.on('interactionCreate', async inter => {
         
         let user = await getUser(userId)
         let ticket = await doc.tickets.find(tix => tix.id === inter.channel.id)
-        if (!ticket) return inter.message.reply({content: emojis.warning+' Invalid ticket data.'})
+        if (!ticket) {
+          ticket = {}
+          inter.message.reply({content: emojis.warning+' Invalid ticket data.'})
+        }
         let attachment = await discordTranscripts.createTranscript(inter.channel);
         
         await log.send({ content: 'Loading', files: [attachment] }).then(async msg => {
@@ -1516,29 +2026,31 @@ client.on('interactionCreate', async inter => {
           if (msg.attachments.size > 0) {
             let index = 0
             for (let i in attachments) {
-              ticket.transcript = 'https://codebeautify.org/htmlviewer?url='+attachments[i].url
+              ticket.transcript = 'https://codebeautify.org/htmlviewer?url='+attachments[i].url.slice(0, -1)
               await doc.save();
             }
           }
           
           let embed = new MessageEmbed()
           .setAuthor({ name: user.tag, iconURL: user.avatarURL(), url: 'https://discord.gg/sloopies' })
-          .addField('Ticket Owner',user.toString(),true)
-          .addField('Ticket Name','Current: `'+inter.channel.name+'`\nOriginal: `'+ticket.name+'`',true)
-          .addField('Panel Name',ticket.panel,true)
-          .addField('Transcript','[Online Transcript]('+ticket.transcript+')',true)
-          .addField('Count',ticket.count.toString(),true)
-          .addField('Moderator',inter.user.toString(),true)
+          .addFields(
+            {name: 'Ticket Owner', value: user.toString(), inline: true},
+            {name: 'Ticket Name', value: 'Current: `'+inter.channel.name+'`\nOriginal: `'+ticket.name+'`', inline: true},
+            {name: 'Panel Name', value: ticket.panel ? ticket.panel : 'Unknown', inline: true},
+            {name: 'Transcript', value: '[Online Transcript]('+ticket.transcript+')', inline: true},
+            {name: 'Count', value: ticket.count ? ticket.count.toString() : 'Unknown', inline: true},
+            {name: 'Moderator', value: inter.user.toString(), inline: true}
+          )
           .setThumbnail(inter.guild.iconURL())
           .setColor(colors.yellow)
           .setFooter({text: "Sloopies Ticketing System"})
           
           let row = new MessageActionRow().addComponents(
-            new MessageButton().setURL(ticket.transcript).setStyle('LINK').setLabel('View Transcript').setEmoji('<:S_separator:1093733778633019492>'),
+            new MessageButton().setURL(ticket.transcript).setStyle('LINK').setLabel('View Transcript').setEmoji('<:y_seperator:1138707390657740870>'),
           );
           await msg.edit({content: null, embeds: [embed], components: [row]})
           await inter.channel.send({content: emojis.check+' Transcript saved *!*'})
-          user.send({content: 'Your ticket transcript was generated.', embeds: [embed], components: [row]}).catch(err => console.log(err))
+          user.send({content: 'Your ticket was closed.', embeds: [embed], components: [row]}).catch(err => console.log(err))
         });
       }
     }
@@ -1547,120 +2059,90 @@ client.on('interactionCreate', async inter => {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
       
       let stat = ['noted','processing','completed','cancelled']
+      let otherStat = [
+        '<:hb_notify:1138706399656943707> Order noted',
+        '<:hb_notify:1138706399656943707> Your order was submitted for processing',
+        "<a:yl_exclamationan:1138705076395978802> Your order is done!\nPlease make sure to vouch in <#1109020436026634260> within 12 hours\n\n# PLEASE CLOSE YOUR TICKET",
+        emojis.warning+' Your order was cancelled']
       let found = stat.find(s => s === inter.values[0])
+      let foundStat = otherStat[stat.indexOf(found)]
       if (!found) return inter.reply({content: emojis.warning+' Invalid order status: `'+inter.values[0]+'`', ephemeral: true})
       //if (inter)
       let args = await getArgs(inter.message.content)
-      let a = args[args.length-5]
+      let a = args[args.length-3]
       let b = args[args.length-1]
       let content = inter.message.content.replace(a,'**'+found.toUpperCase()+'**').replace(b,'<t:'+getTime(new Date().getTime())+':R>')
       
       let row = JSON.parse(JSON.stringify(shop.orderStatus));
       found === 'completed' || found === 'cancelled' ? row.components[0].disabled = true : null
+      let member = await inter.message.mentions.members.first()
       
-      inter.update({content: content, components: [row]})
+      let closeButton = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('closedTicket-'+member.id).setStyle('SECONDARY').setLabel('Close').setEmoji('🔒'),
+      );
+      let comp = found === 'completed' ? [closeButton] : []
+      
+      await inter.update({content: content, components: [row]})
+      //
+      let ticket = await inter.message.mentions.channels.first()
+      let got = false
+      let time = getTime(new Date().getTime())
+      let gotContent = null
+      
+      if (found === 'completed') !ticket.name.includes('done。') ?  ticket.setName('done。'+ticket.name.replace('n。','').replace('p。','')) : null
+      else if (found === 'processing') ticket.setName('p。'+ticket.name.replace('n。','').replace('done。',''))
+      else if (found === 'noted') ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
+      let messages = await ticket.messages.fetch({limit: 100}).then(async messages => {
+        messages.forEach(async (gotMsg) => {
+          if (gotMsg.content.toLowerCase().startsWith('# [') && gotMsg.author.id === client.user.id) {
+            gotContent = gotMsg.content+'\n> \n> \n> \n'+foundStat+'\n<:indent:1174738613330788512> <t:'+time+':R>'
+            got = true
+            gotMsg.delete();
+          }
+        })
+      })
+      if (found === 'completed') {
+        let res = await addRole(member,['1109020434533458016'],inter.guild)
+        ticket.setParent(shop.tixSettings.completed)
+      } else if (found === 'processing') {
+        ticket.setParent(shop.tixSettings.processing)
+      }
+      await ticket.permissionOverwrites.set([
+        {
+          id: inter.guild.roles.everyone,
+          deny: ['VIEW_CHANNEL'],
+        },
+        {
+          id: member.id,
+          deny: null,
+          allow: ['VIEW_CHANNEL', 'SEND_MESSAGES', 'READ_MESSAGE_HISTORY'],
+        },
+        {
+          id: inter.guild.roles.cache.find(r => r.id === shop.tixSettings.support), 
+          allow: ['VIEW_CHANNEL','SEND_MESSAGES','READ_MESSAGE_HISTORY'],
+        },
+      ]);
+      //
+      if (!got) {
+        await ticket.send({content: '<a:y_b2buntrain1:1138705768808464514> **order status**\n\n'+foundStat.toLowerCase()+'\n<:indent:1174738613330788512> <t:'+time+':R>', components: comp})
+      } else {
+        await ticket.send({content: gotContent, components: comp})
+      }
     }
     else if (id === 'cancel') {
       inter.reply({content: 'Interaction cancelled.', ephemeral: true})
       inter.message.edit({components: []})
     }
-    else if (id.startsWith('voucher-')) {
-      let code = id.replace('voucher-','').replace(/_/g,' ')
-      if (!vrDebounce && claimer === null) {
-        !claimer ? claimer = inter.user.id : null
-        vrDebounce = true
-        await setVouchers()
-        let voucher = shop.vouchers.find(v => v.code === code)
-      if (!voucher) return vrDebounce = false, inter.update({content: emojis.x+' The voucher (`'+code+'`) was revoked!', components: []})
-        let row = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId('design1').setStyle('SECONDARY').setEmoji('<a:party:1083355785188347984>'),//.setDisabled(true),
-          new MessageButton().setCustomId('design2').setStyle('SECONDARY').setEmoji('<a:TC_Party_Cat:1083357530786373703>'),
-          new MessageButton().setCustomId('design3').setStyle('SECONDARY').setEmoji('<a:Party_Dino:1083357739687882802>'),
-          new MessageButton().setCustomId('design4').setStyle('SECONDARY').setEmoji('<a:SREV_purple_party:1083357680174895187>'),
-          new MessageButton().setCustomId('design5').setStyle('SECONDARY').setEmoji('<a:TC_Wumpus_Party:1083357617478447124>'),
-        );
-        let quote = "Oop, I can't think of a quote right now."
-        let context = ['cats','life','dogs','love','stupidity','anything']
-        let chosenContext = context[getRandom(0,context.length)]
-        let data = await chatAI("write a random inspirational quote about "+chosenContext)
-        if (data.response.error) console.log('⚠️ An unexpected error occurred `'+data.response.error.message+'`')
-        else if (data.chosenAPI === AI.chatAPI) {
-          let msg = data.response.choices[0].message.content
-          let filtered = AI.filter(msg)
-          if (filtered.length > 500) {
-            console.log("⚠️ The message generated was longer than 500 characters. Unable to send due to discord's limitations.")
-          } else {
-            quote = filtered
-          }
-        }
-  
-        let newEmbed = new MessageEmbed()
-        .setTitle(voucher.perks)
-        .setThumbnail(inter.user.avatarURL())
-        .setDescription('Hmm, it seems someone already claimed this voucher.')
-        .addField("Random Quote",quote)
-        .addField('Claimed by','<@'+inter.user.id+'>')
-        .setFooter({text: 'Click the buttons below for some entertainment'})
-        .setColor(colors.red)
-        
-        sendChannel(emojis.check+' <@'+inter.user.id+'> claimed a **'+voucher.perks+'**!\nCode: `'+code+'`','1047454193755107337',colors.lime)
-        let embed = new MessageEmbed()
-        .addField('You received a '+voucher.perks+'!','Code: `'+code+'`')
-        .addField('Read me','\n<:circley:1072388650337308742>This voucher will expire in 5 days\n<:circley:1072388650337308742>Must order an item to use the voucher\n<:circley:1072388650337308742>You can share the code to anyone!\n<:circley:1072388650337308742>One-time use only\n<:circley:1072388650337308742>You can only use one voucher per order')
-        .setColor(colors.none)
-        .setFooter({text: 'Type ;use '+code+' in the ticket channel to use your voucher!'})
-        
-        let row2 = await makeRow('https://discord.com/channels/1047454193159503904/1054711675045036033/1095603406632144936','Order Here','LINK','<:09:1069200736631656518>')
-    
-        let error = false
-        if (claimer === inter.user.id) {
-          await inter.user.send({embeds: [embed], components: [row2]}).catch((err) => {
-            inter.reply({content: 'Error! Cannot send voucher to your DMs. Please open your DMs!', ephemeral: true})
-            error = true
-          })
-          .then((msg) => {
-            if (error) return;
-            inter.reply({content: "Voucher code was sent in your DMs!", ephemeral: true})
-            inter.message.edit({embeds: [newEmbed], components: [row]});
-          })
-        } else {
-          inter.reply({content: "It seems like someone was milliseconds faster than you.", ephemeral: true})
-        }
-        claimer = null
-        vrDebounce = false
-        
-    } else {
-      inter.reply({content: emojis.x+' The voucher was already claimed!', ephemeral: true})
-    }
-    }
-    else if (id.startsWith('feedback')) {
-      let feedback = await getChannel(shop.channels.feedbacks)
-      let logs = await getChannel(shop.channels.logs)
-      let anon = false
-      if (id === 'feedbackAnon') anon = true
-      let type = anon ? 'Anonymous' : 'Public'
-      
-      let embed = new MessageEmbed()
-      .setAuthor({ name: anon ? 'Sent Anonymously' : inter.user.tag, iconURL: anon ? 'https://www.freepnglogos.com/uploads/discord-logo-png/discord-logo-logodownload-download-logotipos-1.png' : inter.user.avatarURL(), url: 'https://discord.gg/sloopies' })
-      .setDescription(inter.message.embeds[0].description)
-      .setFooter({text: type+' Feedback'})
-      .setColor(colors.none)
-      .setThumbnail(anon ? 'https://www.freepnglogos.com/uploads/discord-logo-png/discord-logo-logodownload-download-logotipos-1.png' : inter.user.avatarURL())
-
-      inter.update({content: 'Feedback sent `('+type+')`', components: []})
-      feedback.send({embeds: [embed]})
-      logs.send({content: '<@'+inter.user.id+'>', embeds: [embed]})
-    }
     else if (id.startsWith('roles-')) {
-    let role = id.replace('roles-','').replace(/_/g,' ')
-    if (hasRole(inter.member, [role], inter.guild)) {
-      removeRole(inter.member, [role], inter.guild)
-      await inter.reply({content: emojis.off+' Removed **'+role+'** role.', ephemeral: true})
-    } else {
-    addRole(inter.member, [role], inter.guild)
-    await inter.reply({ content: emojis.on+' Added **'+role+'** role.', ephemeral: true });
+      let role = id.replace('roles-','').replace(/_/g,' ')
+      if (hasRole(inter.member, [role], inter.guild)) {
+        removeRole(inter.member, [role], inter.guild)
+        await inter.reply({content: emojis.off+' Removed **'+role+'** role.', ephemeral: true})
+      } else {
+        addRole(inter.member, [role], inter.guild)
+        await inter.reply({ content: emojis.on+' Added **'+role+'** role.', ephemeral: true });
+      }
     }
-  }
     else if (id.startsWith('drop-')) {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
       let msgId = id.replace('drop-','')
@@ -1670,12 +2152,12 @@ client.on('interactionCreate', async inter => {
       if (!member) return inter.reply(emojis.x+" Invalid User")
       let template = await getChannel(shop.channels.dmTemplate)
       
-      let msg = await template.messages.fetch("1075782458970214480")
+      let msg = await template.messages.fetch("1138690365151531168")
       let error = false;
       let code = makeCode(10)
       let copy = new MessageActionRow().addComponents(
           new MessageButton().setCustomId('copyLinks').setStyle('SECONDARY').setLabel('Copy Links'),
-        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1047454193159503904/1054724474659946606').setStyle('LINK').setEmoji('<:S_letter:1092606891240198154>')
+        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1109020434449575936/1109020436026634260').setStyle('LINK').setEmoji('<:S_letter:1138714993425125556>')
         );
       await member.send({content: msg.content+"\n\nRef code: `"+code+"`\n||"+dropMsg.content+" ||", components: [copy]}).catch((err) => {
         error = true
@@ -1688,34 +2170,8 @@ client.on('interactionCreate', async inter => {
         );
         inter.update({components: [row]})
         dropMsg.edit({content: code+"\n"+dropMsg.content, components: [row]})
+        !inter.channel.name.includes('done。') ? await inter.channel.setName('done。'+inter.channel.name) : null
       })
-    }
-    else if (id.startsWith('returnLinks-')) {
-      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
-      let msgId = id.replace('returnLinks-','')
-      let drops = await getChannel(shop.channels.drops)
-      let dropMsg = await drops.messages.fetch(msgId)
-      
-      let content = dropMsg.content
-      let stocks = await getChannel(shop.channels.stocks)
-      let args = await getArgs(content)
-      let returned = 0
-      let msgReturn = false
-      
-      dropMsg.edit({content: 'Returned\n'+content, components: []})
-      
-      for (let i = args.length - 1; i >= 0; i--) {
-        if (args[i].includes('https://discord.gift/')) {
-          await stocks.send(args[i])
-          returned++
-        }
-      }
-      if (returned === 0) {
-        msgReturn = true
-        await stocks.send(content)
-      }
-      inter.update({components: []})
-      msgReturn ? inter.message.reply({content: emojis.check+' Returned the whole message to stocks.'}) : inter.message.reply({content: emojis.check+' Returned '+returned+' links to stocks.'})
     }
     else if (id.startsWith('showDrop-')) {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission', ephemeral: true});
@@ -1733,7 +2189,7 @@ client.on('interactionCreate', async inter => {
       let count = 0
       let string = ''
       for (let i in args) {
-        if (args[i].includes('https://discord.gift/')) {
+        if (args[i].includes('discord.gift/')) {
           count++;
           string += count+'. '+args[i]+'\n'
         }
@@ -1747,74 +2203,62 @@ client.on('interactionCreate', async inter => {
     else if (id.startsWith('breakChecker-')) {
       let user = id.replace('breakChecker-','')
       shop.breakChecker = true
-      inter.reply({content: emojis.check+" Forced Stop", ephemeral: true})
+      inter.reply({content: emojis.loading+" Stopping... Please wait", ephemeral: true})
+      inter.message.edit({components: []})
+    }
+    else if (id.startsWith('checkerStatus-')) {
+      let userId = id.replace('checkerStatus-','')
+      let data = shop.checkers.find(c => c.id == userId)
+      if (data) {
+        let embed = new MessageEmbed()
+        .setColor(colors.none)
+        .addFields({
+          name: 'Checker Status',
+          value: 'Total Checked: **'+data.total+'**\nClaimable: **'+data.valid+'**\nClaimed: **'+data.claimed+'**\nInvalid: **'+data.invalid+'**'
+        })
+        inter.reply({embeds: [embed], ephemeral: true})
+      } else {
+        inter.reply({content: 'No data was found'})
+      }
     }
     else if (id.startsWith('reply-')) {
       let reply = id.replace('reply-','')
+      
       inter.reply({content: reply, ephemeral: true})
     }
-    else if (id.startsWith('approve-')) {
-      let userId = id.replace('approve-','')
-      let user = await getUser(userId);
-      if (user) {
-        let comp = inter.message.components[0]
-        comp.components[0].style = "SUCCESS"
-        comp.components[1].style = "SECONDARY"
-        for (let i in comp.components) {
-            let row = comp.components[i]
-            row.disabled = true
-          }
-        sendUser(emojis.check+" Your application was approved! Your application was approved! You can now access our reseller's pricelist. Please acknowledge that all the pricelists may change constantly.",user.id,colors.lime)
-        let member = await getMember(user.id,inter.guild)
-        member ? await addRole(member,['resellers'],inter.guild) : null
-        inter.reply({content: "Application Accepted", ephemeral: true})
-        inter.message.edit({components: [comp]})
-      } else {
-        inter.reply({content: "User not found.", ephemeral: true})
-      }
-    }
-    else if (id.startsWith('decline-')) {
-      let userId = id.replace('decline-','')
-      let user = await getUser(userId);
-      if (user) {
-        let comp = inter.message.components[0]
-        comp.components[0].style = "SECONDARY"
-        comp.components[1].style = "DANGER"
-        for (let i in comp.components) {
-            let row = comp.components[i]
-            row.disabled = true
-          }
-        sendUser(emojis.x+" Due to unfortunate circumstances, your application was declined. This could be because the information you provided was not sufficient or you did not pass our standard requirements.",user.id,colors.red)
-        inter.reply({content: "Application Declined", ephemeral: true})
-        inter.message.edit({components: [comp]})
-      } else {
-        inter.reply({content: "User not found.", ephemeral: true})
-      }
-    }
-    else if (id.startsWith('followup')) {
-      let user = inter.user
-      let messageId = ''
-      let found = shop.followUps.find(f => f === inter.user.id)
-      if (found) return inter.reply({content: "Please wait for at least 2 hours before requesting another follow up!", ephemeral: true})
-      shop.followUps.push(inter.user.id)
-      let channelName = inter.channel.name
-      let template = await getChannel(shop.channels.templates)
-      if (channelName.includes('ticket')) messageId = '1086505068351721472'
-      else if (channelName.includes('done')) messageId = '1086503830105104444'
-      else messageId = '1086504594860937256'
+    else if (id.startsWith('replyCopy-')) {
+      let reply = id.replace('replyCopy-','')
       
-      let foundMsg = await template.messages.fetch(messageId)
-      inter.message.reply({content: "<@&1047454193184682040> **Order Status**\n\n<:03:1056580107189370922> "+foundMsg.content})
-      inter.deferUpdate();
-      setTimeout(function() {
-        shop.followUps.splice(shop.followUps.indexOf(inter.user.id),1)
-      },43200000)
+      let embed = new MessageEmbed()
+      .setDescription(reply)
+      .setColor(colors.none)
+      .setFooter({text: 'Hold to copy'})
+      
+      let row = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('togglePhone-'+reply).setStyle('DANGER').setLabel('Switch to IOS').setEmoji('<:apple:1016400281631740014>'),
+      );
+      inter.reply({embeds: [embed], components: [row], ephemeral: true})
     }
-    else if (id.startsWith('done')) {
-      if (!await getPerms(inter.member,4)) return inter.deferUpdate();
-      inter.reply({content: emojis.check+" Order marked as done! `"+inter.channel.name+"`"})
-      inter.channel.setName('done-'+inter.channel.name)
-    }
+    else if (id.startsWith('togglePhone-')) {
+      let content = id.replace('togglePhone-','')
+      if (inter.message.content.length > 0) {
+        let row = new MessageActionRow().addComponents(
+          new MessageButton().setCustomId('togglePhone-'+content).setStyle('DANGER').setLabel('Switch to IOS').setEmoji('<:apple:1016400281631740014>'),
+        );
+        
+        let embed = new MessageEmbed()
+        .setDescription(content)
+        .setColor(colors.none)
+        .setFooter({text: 'Hold to copy'})
+        
+        inter.update({content: null, embeds: [embed] ,components: [row]})
+      } else {
+        let row = new MessageActionRow().addComponents(
+          new MessageButton().setCustomId('togglePhone-'+content).setStyle('SUCCESS').setLabel('Switch to android').setEmoji('<:android:1016400278934786158>'),
+        );
+        inter.update({content: content, embeds: [], components: [row]})
+      }
+      }
     else if (id.startsWith('none')) {
       inter.deferUpdate();
     }
@@ -1830,7 +2274,7 @@ client.on('interactionCreate', async inter => {
     }
     else if (id.startsWith('prVerify')) {
       let member = inter.member
-      if (await hasRole(member,['1094084379137032252'],inter.guild)) {
+      if (await hasRole(member,['1109020434470555677'],inter.guild)) {
         inter.deferUpdate();
         return
       } else {
@@ -1855,19 +2299,20 @@ client.on('interactionCreate', async inter => {
           new MessageButton().setCustomId(random === 4 ? 'prCode-'+random : 'randomCode-4').setStyle('SECONDARY').setLabel(codes[4]),
         );
         let embed = new MessageEmbed()
-        .addField('Choose the correct matching code','```yaml\n'+chosen+'```')
+        .addFields({name: 'Choose the correct matching code',value:'```yaml\n'+chosen+'```'})
         .setColor(colors.none)
         let botMsg = null
         await inter.user.send({embeds: [embed], components: [row]}).then(msg => botMsg = msg).catch(err => inter.reply({content: emojis.warning+" Failed to send verification. Please open your DMs!", ephemeral: true}))
         let channels = ''
+        if (!botMsg) return;
         inter.guild.channels.cache.forEach( ch => {
           if (ch.parent?.name === 'PRICELIST' && ch.type !== 'GUILD_TEXT') {
-            channels += '\n<:circley:1072388650337308742> <#'+ch.id+'>'
+            channels += '\n<:bullet:1138710447835578388> <#'+ch.id+'>'
           }
         })
         let linker = new MessageActionRow()
         .addComponents(
-          new MessageButton().setURL(botMsg.url).setStyle('LINK').setLabel('Proceed'),
+          new MessageButton().setURL(botMsg.url).setStyle('LINK').setLabel('Check DMs'),
         );
         inter.reply({content: emojis.loading+' Verification prompt was sent in your DMs!', components: [linker], ephemeral: true})
         let notice = await getChannel(shop.channels.alerts)
@@ -1876,7 +2321,7 @@ client.on('interactionCreate', async inter => {
     }
     else if (id.startsWith('prCode-')) {
       let index = id.replace('prCode-','')
-      let guild = await getGuild('1047454193159503904')
+      let guild = await getGuild('1109020434449575936')
       if (!guild) return;
       let member = await getMember(inter.user.id,guild)
       if (member) {
@@ -1887,14 +2332,14 @@ client.on('interactionCreate', async inter => {
           if (i == index) row.style = 'SUCCESS'
         }
         inter.message.edit({components: [comp]})
-        await addRole(member,['1094084379137032252'],guild)
+        await addRole(member,['1109020434470555677'],guild)
         let channels = ''
         guild.channels.cache.forEach( ch => {
           if (ch.parent?.name === 'PRICELIST' && ch.type !== 'GUILD_TEXT') {
-            channels += '\n<:circley:1072388650337308742> <#'+ch.id+'>'
+            channels += '\n<:bullet:1138710447835578388> <#'+ch.id+'>'
           }
         })
-        inter.reply({content: emojis.check+' <:S_seperator:1093733778633019492> You now have access to our pricelists! You can view them through these channels: \n'+channels, ephemeral: true})
+        inter.reply({content: emojis.check+' You now have access to our pricelists! You can view them through these channels: \n'+channels, ephemeral: true})
         let notice = await getChannel(shop.channels.alerts)
         notice.send('<@'+inter.user.id+'> '+emojis.check)
       } else {
@@ -1915,7 +2360,13 @@ client.on('interactionCreate', async inter => {
       notice.send('<@'+inter.user.id+'> '+emojis.x)
     }
     else if (id.startsWith('orderFormat')) {
-      //let found = comp.components.find(c => c.customId === 'orderFormat')
+      let found = shop.orderForm.find(c => c === inter.user.id)
+      if (found) {
+        inter.reply({content: emojis.warning+' You already have an existing order form *!*', ephemeral: true})
+        return;
+      }
+      if (!await hasRole(inter.member,['1109020434520887321'])) return inter.reply({content: emojis.warning+' please accept the terms before requesting the order form *!*', ephemeral: true});
+      shop.orderForm.push(inter.user.id)
       let comp = inter.message.components[0]
         for (let i in comp.components) {
           let row = comp.components[i]
@@ -1925,15 +2376,15 @@ client.on('interactionCreate', async inter => {
       let count = 0
       let thread = [
         {
-          question: '> <:S_letter:1092606891240198154> Which product do you want to avail?',
+          question: '> <a:y_starroll:1138704563529076786> which product do you want to avail?',
           answer: '',
         },
         {
-          question: '> <:S_letter:1092606891240198154> How many of this item do you wish buy?',
+          question: '> <a:y_starroll:1138704563529076786> how many of this item do you wish to buy?',
           answer: '',
         },
         {
-          question: "> <:S_letter:1092606891240198154> What's your selected mode of payment?",
+          question: "> <a:y_starroll:1138704563529076786> what's your mode of payment?",
           answer: '',
         },
       ]
@@ -1941,6 +2392,7 @@ client.on('interactionCreate', async inter => {
       async function getResponse(data) {
         await inter.channel.send(data.question)
         let msg = await inter.channel.awaitMessages({ filter, max: 1,time: 900000 ,errors: ['time'] })
+        if (!msg) shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
         msg = msg?.first()
         data.answer = msg.content
       }
@@ -1951,96 +2403,43 @@ client.on('interactionCreate', async inter => {
       }
       let row = new MessageActionRow().addComponents(
         new MessageButton().setCustomId('confirmOrder').setStyle('SUCCESS').setLabel('Yes'),
-        new MessageButton().setCustomId('orderFormat').setStyle('DANGER').setLabel('Retry'),
+        new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Retry'),
       );
       let embed = new MessageEmbed()
-      .setDescription('Item: **'+thread[0].answer+'**\nQuantity: **'+thread[1].answer+'**\nMode of Payment: **'+thread[2].answer+'**')
-      .setColor(colors.yellow)
-      .setFooter({text: 'Order Confirmation'})
+      .setDescription('item : **'+thread[0].answer+'**\namount : **'+thread[1].answer+'**\npayment : **'+thread[2].answer+'**')
+      .setColor(colors.none)
+      .setFooter({text: 'order confirmation'})
       
-      inter.channel.send({content: "<:S_separator:1093733778633019492> Is this your order?", embeds: [embed], components: [row]})
-      
+      inter.channel.send({content: "<a:yl_flowerspin:1138705226082304020> is this your order *?*", embeds: [embed], components: [row]})
+      shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
     }
     else if (id.startsWith('confirmOrder')) {
-      inter.message.edit({components: []})
-      inter.reply({content: "Thank you for confirming your order! <:S_bearlove:1072353337699225640>\nOur staff will be with you shortly."})
+      inter.update({components: []})
+      let booster = await hasRole(inter.member,['1138634227169112165'],inter.guild) ? emojis.check : emojis.x
+      
+      let temp = await getChannel(shop.channels.templates)
+      let msg = await temp.messages.fetch('1258055219355586600')
+      inter.channel.send({content: msg.content.replace('{status}',booster)})
     }
     else if (id.startsWith('gsaRaw')) {
       inter.reply({content: '```json\n'+JSON.stringify(shop.gcashStatus, null, 2).replace(/ *\<[^>]*\> */g, "")+'```', ephemeral: true})
     }
-    else if (id.startsWith('design')) {
-      if (animation) return inter.reply({content: 'An animation is currently in progress. Please try again later.', ephemeral: true})
-      animation = true
-      let comp = inter.message.components[0]
-      let types = [
-        'DANGER',
-        'PRIMARY',
-        'SUCCESS',
-        'DANGER',
-        'PRIMARY',
-        'SUCCESS',
-      ]
-      let usern = inter.user.username.replace(/ /g,'')
-      let randomizer = [
-        usern+' is a cute catto',
-        usern+' likes eating a siopao',
-        usern+' is jumpy cute froggo',
-        usern+' eat eggs a lot',
-        usern+' is a fat catto',
-        usern+' is a hungry monster',
-        usern+' is a fast eater',
-        usern+' likes cattos very much',
-        usern+' has pet dinosor ror',
-        usern+" is gudetama's favorite person",
-        usern+" secretely likes someone's pet",
-        usern+' sleeps longer than u',
-        usern+' sucks at playing valorant',
-        usern+' likes an eggless omelete',
-        usern+' almost fell on cliff',
-      ]
-      let args = getArgs(randomizer[getRandom(0,randomizer.length)])
-      
-      async function changeRow(state,type,disabled) {
-        if (state === 'start') {
-          for (let i in comp.components) {
-            let row = comp.components[i]
-            row.style = type
-            row.disabled = disabled
-          }
-        }
-        else if (state === 'mix') {
-          for (let i in comp.components) {
-            let row = comp.components[i]
-            row.style = types[i] ? types[i] : types[0]
-            row.label = args[i] ? args[i] : args[0]
-            await inter.message.edit({components: [comp]})
-            sleep(delay)
-          }
-        }
-    }
-      let delay = 1500
-      await changeRow('start','DANGER',true)
-      inter.deferUpdate()
-      await inter.message.edit({components: [comp]})
-      sleep(delay)
-      await changeRow('start','PRIMARY',true)
-      await inter.message.edit({components: [comp]})
-      sleep(delay)
-      await changeRow('start','SUCCESS',true)
-      await inter.message.edit({components: [comp]})
-      sleep(delay)
-      await changeRow('start','SECONDARY',true)
-      inter.message.edit({components: [comp]})
-      sleep(delay)
-      await changeRow('mix','DANGER',true)
-      inter.message.edit({components: [comp]})
-      await changeRow('start','SECONDARY',true)
-      inter.message.edit({components: [comp]})
-      animation = false
+    else if (id.startsWith('stop-')) {
+      let user = id.replace('stop-','')
+      let data = shop.scanner.find(s => s.id === user)
+      if (data) {
+        await inter.reply({content: "Stopping...", ephemeral: true})
+        data.breakLoop = true;
+        sleep(2000)
+        await inter.channel.send({content: emojis.check+" Stopped Scanning\nAuthor: `"+inter.user.tag+"`", ephemeral: true})
+      } else {
+        inter.reply({content: "The queue no longer exist.", ephemeral: true})
+      }
     }
     }
 });
 client.on('guildMemberUpdate', async (oldMember, newMember) => {
+  await moderate(newMember,await getPerms(newMember,3))
     if(newMember.nickname && oldMember.nickname !== newMember.nickname) {
       let found = shop.customRoles.find(r => r.user === newMember.id)
       if (found) {
@@ -2049,23 +2448,26 @@ client.on('guildMemberUpdate', async (oldMember, newMember) => {
       }
     }
  });
+
 client.on('presenceUpdate', async (pres) => {
   if (!pres) return;
-  let guild = await getGuild('1047454193159503904')
+  let guild = await getGuild('1109020434449575936')
   let mem = await getMember(pres.userId,guild)
   if (!mem) return;
   let perms = await getPerms(mem, 3)
-  let moderated = moderate(mem,perms);
+  //let moderated = await moderate(mem,perms);
 })
 process.on('unhandledRejection', async error => {
   ++errors
   console.log(error);
-  let caller_line = error.stack.split("\n");
+  let caller_line = error.stack?.split("\n");
   let index = await caller_line.find(b => b.includes('/app'))
   let embed = new MessageEmbed()
-  .addField('Caller Line','```'+(index ? index : 'Unknown')+'```',true)
-  .addField('Error Code','```css\n[ '+error.code+' ]```',true)
-  .addField('Error','```diff\n- '+(error.stack >= 1024 ? error.stack.slice(0, 1023) : error.stack)+'```')
+  .addFields(
+    {name: 'Caller Line', value: '```'+(index ? index : 'Unknown')+'```', inline: true},
+    {name: 'Error Code', value: '```css\n[ '+error.code+' ]```', inline: true},
+    {name: 'Error', value: '```diff\n- '+(error.stack >= 1024 ? error.stack.slice(0, 1023) : error.stack)+'```'},
+  )
   .setColor(colors.red)
   
   let channel = await getChannel(output)
@@ -2074,97 +2476,139 @@ process.on('unhandledRejection', async error => {
 
 //Loop
 let ready = true;
-let randomTime = null;
-
-let streamers = [
-    /*{
-      name: 'Kdrysss',
-      live: false,
-    },*/
-    {
-      name: '105695088538055',
-      live: false,
-    },
-  ]
 
 const interval = setInterval(async function() {
-      //Get time//
+  //Get time//
   let date = new Date().toLocaleString("en-US", { timeZone: 'Asia/Shanghai' });
   let today = new Date(date);
   let hours = (today.getHours() % 12) || 12;
-  let time = hours +":" +today.getMinutes();
-  
-  if (!randomTime) {
-    randomTime = getRandom(1,13)+":"+getRandom(today.getMinutes(),60)
-    sendChannel("Random: "+randomTime,"1047454193755107337",colors.red)
+  let state = today.getHours() >= 12 ? 'PM' : 'AM';
+  let day = today.getDay();
+  let time = hours +":"+today.getMinutes()+state;
+  //Get info
+  if (ready) {
+    ready = false
+    if (!ready) {
+      setTimeout(function() {
+        ready = true;
+      },60000)
+    }
+    let template = await getChannel(shop.channels.templates)
+    let annc = await getChannel(shop.channels.shopStatus)
+    
+    if (time === '11:0PM') { 
+      let msg = await template.messages.fetch("1258044577890439250")
+      let vc = await getChannel(shop.channels.status)
+      if (vc.name === 'shop : CLOSED') return;
+      vc.setName('shop : CLOSED')
+      await annc.bulkDelete(3)
+      await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001181/iPhone/sticker@2x.png?v=1']})
+    } 
+    else if (time === '8:0AM') {
+      let msg = await template.messages.fetch("1258044570088771716")
+      let vc = await getChannel(shop.channels.status)
+      if (vc.name === 'shop : OPEN') return;
+      vc.setName('shop : OPEN')
+      await annc.bulkDelete(3)
+      await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001169/iPhone/sticker@2x.png?v=1']})
+    }
+    else if (time === '11:0AM') {
+      let msg = await template.messages.fetch("1258044593765875764")
+      let vc = await getChannel(shop.channels.reportsVc)
+      if (vc.name === 'reports : OPEN') return;
+      vc.setName('reports : OPEN')
+      await annc.bulkDelete(3)
+      await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001172/iPhone/sticker@2x.png?v=1']})
+    }
+    else if (time === '8:0PM') {
+      let msg = await template.messages.fetch("1258044602091438122")
+      let vc = await getChannel(shop.channels.reportsVc)
+      if (vc.name === 'reports : CLOSED') return;
+      vc.setName('reports : CLOSED')
+      await annc.bulkDelete(3)
+      await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001173/iPhone/sticker@2x.png?v=1']})
+    }
   }
-      //Get info
-      if (ready) {
-        
-        let amount = shop.randomVouchers.amount
-        let type = shop.randomVouchers.type
-        let generatedVoucher = "₱"+amount[getRandom(0,amount.length)]+" "+type[getRandom(0,type.length)]+" voucher"
-        let template = await getChannel(shop.channels.templates)
-        let annc = await getChannel(shop.channels.shopStatus)
-      if (time === '11:11') {
-        ready = false
-        let voucher = {
-          code: makeCode(10),
-          perks: generatedVoucher
-        }
-        let vr = await getChannel(shop.channels.vouchers)
-        vr.send(voucher.code+' - '+voucher.perks)
-        await dropVoucher(voucher.code,'1047454193595732055',voucher.perks+' drop')
-      }
-        else if (time === randomTime) {
-          ready = false
-          let voucher = {
-          code: makeCode(10),
-          perks: generatedVoucher
-          }
-          randomTime = null
-          
-          let vr = await getChannel(shop.channels.vouchers)
-        vr.send(voucher.code+' - '+voucher.perks)
-        await dropVoucher(voucher.code,'1047454193595732055',voucher.perks+' drop')
-        }
-        else if (today.getHours() === 0 && today.getMinutes() === 0) {
-          ready = false
-          let msg = await template.messages.fetch("1079716277528039468")
-        let vc = await getChannel(shop.channels.status)
-        if (vc.name === 'shop : CLOSED') return;
-        vc.setName('shop : CLOSED')
-        annc.send({content: msg.content, files: ['https://i.pinimg.com/originals/72/7b/24/727b247bc2d09404b67a7ed275b8d85d.gif']})
-        } 
-        else if (today.getHours() === 8 && today.getMinutes() === 0) {
-          ready = false
-          let msg = await template.messages.fetch("1079715999097552956")
-        let vc = await getChannel(shop.channels.status)
-        if (vc.name === 'shop : OPEN') return;
-        vc.setName('shop : OPEN')
-        annc.send({content: msg.content, files: ['https://i.pinimg.com/originals/1e/ed/c4/1eedc43a10e28ce98b9bd0ad2384c905.gif']})
-      }  
-        else if (today.getHours() === 11 && today.getMinutes() === 0) {
-          ready = false
-          let msg = await template.messages.fetch("1079712404084117524")
-          let vc = await getChannel(shop.channels.reportsVc)
-          if (vc.name === 'reports : OPEN') return;
-          vc.setName('reports : OPEN')
-          annc.send({content: msg.content, files: ['https://media.tenor.com/H6H2hhidRhIAAAAC/chick-pio.gif']})
-        }
-        else if (today.getHours() === 20 && today.getMinutes() === 0) {
-          ready = false
-          let msg = await template.messages.fetch("1079715633123557496")
-          let vc = await getChannel(shop.channels.reportsVc)
-          if (vc.name === 'reports : CLOSED') return;
-          vc.setName('reports : CLOSED')
-          annc.send({content: msg.content, files: ['https://media.tenor.com/7mmiOB9yyRUAAAAC/chick-pio.gif']})
-        }
-        if (!ready) {
-        setTimeout(function() {
-          ready = true;
-        },60000)
-        }
-      }
   
-  },10000)
+  },5000)
+
+app.get('/gcash', async function (req, res) {
+  let text = req.query.text.length > 0 ? req.query.text : req.query.bigtext
+  console.log(req.query)
+  if (!text) return res.status(404).send({error: 'Invalid Message'})
+  let args = await getArgs(text)
+  let firstIndex = args.indexOf('from')
+  let lastIndex = args.length
+  
+  let data = {
+    body: text,
+    sender: args.slice(firstIndex+1,lastIndex).join(' '),
+    senderNumber: args[lastIndex-1].replace('.',''),
+    amount: Number(args[4]),
+  }
+  let channel = await getChannel(shop.channels.smsReader)
+  if (!data.body.startsWith('You have received')) {
+    res.status(200).send({success: 'Not a transaction'})
+    let embed = new MessageEmbed()
+    .addFields( { name: 'Message Received', value: text } )
+    .setColor(colors.none)
+    
+    await channel.send({content: '@everyone', embeds: [embed]})
+    return;
+  } else if (data.body.startsWith('You have received')) {
+    res.status(200).send({success: 'Transaction Received'})
+    console.log('data',data)
+    //Send log
+    let embed = new MessageEmbed()
+    .addFields(
+      {
+        name: 'Money Received',
+        value: req.query.title
+      },
+      {
+        name: 'Amount Sent',
+        value: '```diff\n+ ₱ '+data.amount+'```',
+        inline: true,
+      },
+      {
+        name: 'Sender',
+        value: '||```ini\n[ '+data.sender+' ]```||',
+        inline: true,
+      },
+    )
+    .setFooter({text: req.query.pkg})
+    .setColor(colors.none)
+    
+    for (let i in shop.expected) {
+      let transac = shop.expected[i]
+      let cd = await getChannel(transac.channel)
+      if (!cd) shop.expected.splice(i,1)
+    }
+    for (let i in shop.expected) {
+      let transac = shop.expected[i]
+      if (transac.amount == data.amount) {
+        console.log(transac)
+        let cd = await getChannel(transac.channel)
+        if (!cd) return shop.expected.splice(i,1)
+        await cd.send({content: emojis.check+" Payment Received", embeds: [embed]})
+        shop.expected.splice(i,1)
+        return;
+      }
+    }
+    await channel.send({content: '@everyone '+emojis.check+' New Transaction ('+data.senderNumber+')', embeds: [embed]})
+  }
+  
+});
+app.get('/sms', async function (req, res) {
+  let msg = req.query.msg
+  if (!msg) return res.status(404).send({error: 'Invalid Message'})
+  let channel = await getChannel(shop.channels.smsReader)
+  let embed = new MessageEmbed()
+  .setTitle("New Message")
+  .setDescription(msg)
+  .setColor(colors.none)
+  
+  await channel.send({embeds: [embed]})
+});
+app.use(cors())
+app.use(express.json());
