@@ -152,7 +152,12 @@ client.on("ready", async () => {
       }
   }
   console.log('Successfully logged in to discord bot.')
-  client.user.setPresence({ status: 'offline', activities: [{ name: '.gg/sloopies', type: "WATCHING" }] });
+  let statusInterval = 0
+  setInterval(function() {
+    client.user.setPresence(shop.bot.status[statusInterval]);
+    statusInterval++
+    statusInterval === shop.bot.status.length ? statusInterval = 0 : null
+  },10000)
 })
 client2.on("ready", async () => {
   console.log('Successfully logged in to discord bot 2.')
