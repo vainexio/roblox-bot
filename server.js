@@ -258,6 +258,7 @@ const {makeTicket} = tickets
 //ON CLIENT MESSAGE
 let errors = 0
 let expCodes = []
+let nitroCodes = []
 client2.on("messageCreate", async (message) => {
   let checkerVersion = 'Checker version 2.9'
   if (message.author.id === client.user.id) {
