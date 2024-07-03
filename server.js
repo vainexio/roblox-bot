@@ -61,11 +61,11 @@ let ticketId = 10
 client.on("ready", async () => {
   let guildsID = [];
   let channel = await getChannel('1109020434810294345')
-  /*const connection = joinVoiceChannel({
+  const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: channel.guild.id,
       adapterCreator: channel.guild.voiceAdapterCreator // Should be referring to the correct client
-  });*/
+  });
     client.guilds.cache.forEach(guild => {
      guildsID.push(guild.id)
     });

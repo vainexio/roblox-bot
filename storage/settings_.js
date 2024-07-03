@@ -42,26 +42,6 @@ module.exports = {
         backup: 'https://discord.com/api/webhooks/1212761577283911721/zBoUMoaCNOu_-tY4Ef6RuneJq_kc7OqfCcnAQ7-rQuE2r2153CCqDz4K0GpDqtfkr3tn',
       }
     ],
-    bot: {
-      bot: {
-      status: [
-        {
-          status: "idle", //online, idle, dnd
-          activities: [
-            { name: ".gg/sloopies", type: "Watching".toUpperCase(), //playing, watching, listening only
-              url: ''
-            }, ], 
-        },
-        {
-          status: "idle", //online, idle, dnd
-          activities: [
-            { name: "#tickets to order", type: "Watching".toUpperCase(), //playing, watching, listening only
-              url: ''
-            }, ], 
-        },
-      ]
-    },
-    },
     AI: {
       maxTokens: 4000,//,
       maintenance: {
@@ -95,6 +75,24 @@ module.exports = {
   },
   },
   shop: {
+    bot: {
+      status: [
+        {
+          status: "idle", //online, idle, dnd
+          activities: [
+            { name: ".gg/sloopies", type: "Watching".toUpperCase(), //playing, watching, listening only
+              url: ''
+            }, ], 
+        },
+        {
+          status: "idle", //online, idle, dnd
+          activities: [
+            { name: "#tickets to order", type: "Watching".toUpperCase(), //playing, watching, listening only
+              url: ''
+            }, ], 
+        },
+      ]
+    },
     scannerWhitelist: [
       "1139165021398642788", //baratie
       "1154694567166222336", //ethan shop
