@@ -68,6 +68,15 @@ const makeRow = async function (id, label, style, emoji) {
   return row;
 }
 module.exports = {
+  makeCode: function (length) {
+    var result           = '';
+    var characters       = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for ( var i = 0; i < length; i++ ) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  },
   stringJSON: function (jsobj) {
     var msg = '\```json\n{'
     for (var key in jsobj) {

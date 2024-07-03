@@ -252,8 +252,8 @@ const {makeTicket} = tickets
 ░╚════╝░╚══════╝╚═╝╚══════╝╚═╝░░╚══╝░░░╚═╝░░░  ╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═════╝░╚═╝░░╚═╝░╚═════╝░╚══════╝*/
 //ON CLIENT MESSAGE
 let errors = 0
+let expCodes = []
 client2.on("messageCreate", async (message) => {
-  return;
   let checkerVersion = 'Checker version 2.9'
   if (message.author.id === client.user.id) {
     console.log(message.components[0]?.components[0])
