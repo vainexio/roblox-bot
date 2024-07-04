@@ -235,7 +235,7 @@ module.exports = {
         name: 'Developer Badge',
         keywords: ['dev','badge','db'],
         channel: '1109020436764827698',
-        rs: '1078708594188496987',
+        rs: '1258243493973856326',
         status: 1,
         id: '1109020436764827698',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237004865556/Logopit_1680918616490.png?width=1440&height=360',
@@ -245,10 +245,10 @@ module.exports = {
             parent: 'Monthly',
             children: [
               //
-              { name: '1 month', price: 10, rs: 15 },
-              { name: '2 months', price: 15, rs: 20 },
-              { name: '3 months', price: 25, rs: 25  },
-              { name: '4 months', price: 35, rs: 35 },
+              { name: '1 month', price: 10, rs: 5 },
+              { name: '2 months', price: 15, rs: 10 },
+              { name: '3 months', price: 25, rs: 15  },
+              { name: '4 months', price: 35, rs: 25 },
               //
             ],
           },
@@ -256,7 +256,7 @@ module.exports = {
             parent: 'Permanent',
             children: [
               //
-              { name: 'Permanent', price: 40, rs: 70 },
+              { name: 'Permanent', price: 40, rs: 30 },
               { name: 'Lifetime warranty until patched', price: 0 },
               //
             ],
@@ -323,6 +323,7 @@ module.exports = {
         channel: '1138621480440188940',
         status: 2,
         id: '1096319574284193842',
+        rs: '1258243478744334469',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
         types: [
           //Types
@@ -330,8 +331,8 @@ module.exports = {
             parent: '1m nitro checker',
             children: [
               //
-              { name: 'through bot dms', price: 60 },
-              { name: 'through server channel', price: 200 },
+              { name: 'through bot dms', price: 60, rs: 40 },
+              { name: 'through server channel', price: 200, rs: 150 },
               { name: 'Features:\n+ Provided Bot (gudetama)\n+ Can scan 50 links per second\n+ Shows difference between valid, calimed and invalid links\n+ Shows accurate expiration (date & time) of links\n+ Fool proof (avoids scanning duplicated links)\n\u200b'}
               //
             ],
@@ -344,6 +345,7 @@ module.exports = {
         keywords: ['backup','server backup'],
         channel: '1138621480440188940',
         status: 2,
+        rs: '1258243478744334469',
         id: '1096319574284193842',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
         types: [
@@ -352,7 +354,7 @@ module.exports = {
             parent: 'Server Backup Bot',
             children: [
               //
-              { name: 'Slot', price: 170 },
+              { name: 'Slot', price: 170, rs: 140 },
               { name: 'Features:\n+ Provided Bot\n+ Via Discord OAuth2\n+ Can join all verified users in an instant\n+ Can use in all sorts of servers\n\u200b'}
               //
             ],
@@ -746,7 +748,7 @@ module.exports = {
         name: 'Robux',
         keywords: ['roblox','robux','rbx','bobux'],
         channel: '1109020436764827700',
-        rs: '1078710810806853704',
+        rs: '1258243460209578096',
         status: 2,
         id: '1096319583121584208',
         image: "https://media.discordapp.net/attachments/1093391705753002064/1094077237839532123/Logopit_1680918693719.png?width=1440&height=360",
@@ -766,7 +768,7 @@ module.exports = {
               { name: '800 robux', price: 200, rs: 0 },
               { name: '900 robux', price: 225, rs: 0 },
               { name: '1000 robux', price: 250, rs: 0 },
-              { name: 'Must be in the group for 14 days! Make sure to remember your join date.\n> Group: [click me](https://www.roblox.com/groups/33092141/ValerieVin#!/about)', price: 0, rs: 0 },
+              { name: 'Must be in the group for 14 days!\n> Group: [click me](https://www.roblox.com/groups/33092141/ValerieVin#!/about)', price: 0, rs: 0 },
               //
             ],
           },
@@ -774,17 +776,17 @@ module.exports = {
             parent: 'Via Gamepass (Covered Tax)',
             children: [
               //
-              { name: '100 robux', price: 39, rs: 0 },
-              { name: '200 robux', price: 62, rs: 0 },
-              { name: '300 robux', price: 93, rs: 0 },
-              { name: '400 robux', price: 124, rs: 0 },
-              { name: '500 robux', price: 155, rs: 0 },
-              { name: '600 robux', price: 174, rs: 0 },
-              { name: '700 robux', price: 205, rs: 0 },
-              { name: '800 robux', price: 239, rs: 0 },
-              { name: '900 robux', price: 250, rs: 0 },
-              { name: '1000 robux', price: 280, rs: 0 },
-              { name: '*covered tax (hrs-2d processing time)*', price: 0, rs: 0 },
+              { name: '100 robux', price: 39, rs: 29 },
+              { name: '200 robux', price: 62, rs: 59 },
+              { name: '300 robux', price: 93, rs: 89 },
+              { name: '400 robux', price: 124, rs: 118 },
+              { name: '500 robux', price: 155, rs: 145 },
+              { name: '600 robux', price: 174, rs: 167 },
+              { name: '700 robux', price: 205, rs: 195 },
+              { name: '800 robux', price: 239, rs: 230 },
+              { name: '900 robux', price: 250, rs: 245 },
+              { name: '1000 robux', price: 280, rs: 270 },
+              { name: '*covered tax (hrs-3d processing time)*', price: 0, rs: 0 },
               //
             ],
           },
