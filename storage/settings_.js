@@ -495,8 +495,8 @@ module.exports = {
         name: 'Discord Nitro',
         lowest: 100,
         keywords: ['nitro','nitor','nb','basic','classic'],
-        channel: '1109020436278300812',
-        rs: '1078708432091226112',
+        channel: '1258245247499239535',
+        rs: '1258245208907448392',
         status: 4,
         id: '1096319579787116544',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077186127970414/Logopit_1680918484757.png?width=1440&height=360',
@@ -506,9 +506,9 @@ module.exports = {
             parent: 'Monthly Subscription',
             children: [
               //
-              { name: 'Nitro Basic (MTO)', price: 90, rs: 0 },
-              { name: 'Nitro Boost', price: 230, rs: 140 }, //<@&1109020434520887323>
-              //{ name: 'Nitro Boost <@&1138634227169112165> (server booster)', price: 165, rs: 125 },
+              { name: 'Nitro Basic (Not avail)', price: 0, rs: 0 },
+              { name: 'Nitro Boost', price: 160, rs: 150 },
+              { name: 'no warranty', price: 0, rs: 0 },
               //
             ],
           },
@@ -517,7 +517,7 @@ module.exports = {
             children: [
               //
               { name: 'Nitro Basic (Not avail)', price: 0 },
-              { name: 'Nitro Boost (Not avail)', price: 1000},
+              { name: 'Nitro Boost (Not avail)', price: 0},
               //
             ],
           },

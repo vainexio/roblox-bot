@@ -1258,7 +1258,7 @@ client.on("messageCreate", async (message) => {
           for (let c in type.children) {
             let child = type.children[c]
             let pr = method === 'rs' ? child.rs ? child.rs : child.price : child.price
-            let emoji = method === 'rs' ? '<:red_dot:1141281924208414781>' : '<a:y_starroll:1138704563529076786>'
+            let emoji = method === 'rs' ? '<a:y_starroll:1138704563529076786>' : '<a:S_whiteheart02:1138715896077090856>'
             children += '﹒  '+child.name+(pr > 0 ? ' '+emoji+' ₱'+pr : '')+'\n'
           }
           embed = new MessageEmbed(embed)
