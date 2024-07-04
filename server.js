@@ -2097,8 +2097,8 @@ client.on('interactionCreate', async inter => {
       let gotContent = null
       
       if (found === 'completed') !ticket.name.includes('done。') ?  ticket.setName('done。'+ticket.name.replace('n。','').replace('p。','')) : null
-      else if (found === 'processing') ticket.setName('p。'+ticket.name.replace('n。','').replace('done。',''))
-      else if (found === 'noted') ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
+      else if (found === 'processing' && !ticket.name.includes('p。')) ticket.setName('p。'+ticket.name.replace('n。','').replace('done。',''))
+      else if (found === 'noted' && !ticket.name.includes('n。')) ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
       let messages = await ticket.messages.fetch({limit: 100}).then(async messages => {
         messages.forEach(async (gotMsg) => {
           if (gotMsg.content.toLowerCase().startsWith('# [') && gotMsg.author.id === client.user.id) {
@@ -2112,9 +2112,10 @@ client.on('interactionCreate', async inter => {
         let res = await addRole(member,['1109020434533458016'],inter.guild)
         ticket.setParent(shop.tixSettings.completed)
       } else if (found === 'processing') {
-        ticket.setParent(shop.tixSettings.processing)
-      }
-      await ticket.permissionOverwrites.set([
+        if (ticket.parent.id !== shop.tixSettings.processing) {
+          ticket.setParent(shop.tixSettings.processing)
+        
+        await ticket.permissionOverwrites.set([
         {
           id: inter.guild.roles.everyone,
           deny: ['VIEW_CHANNEL'],
@@ -2129,6 +2130,8 @@ client.on('interactionCreate', async inter => {
           allow: ['VIEW_CHANNEL','SEND_MESSAGES','READ_MESSAGE_HISTORY'],
         },
       ]);
+        }
+      }
       //
       if (!got) {
         await ticket.send({content: '<a:y_b2buntrain1:1138705768808464514> **order status**\n\n'+foundStat.toLowerCase()+'\n<:indent:1174738613330788512> <t:'+time+':R>', components: comp})
