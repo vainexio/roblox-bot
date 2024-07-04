@@ -1401,6 +1401,27 @@ client.on("messageCreate", async (message) => {
     message.react(emojis.check)
   }
   //
+  //vouch
+  if (message.channel.id === shop.channels.vouch) {
+    let backup = await getChannel("1109020434533458016")
+      
+    let files = []
+    let attachments = Array.from(message.attachments.values())
+    if (attachments.length === 0) return;
+    await message.react('<a:checkmark_yellow:1151123927691694110>')
+    for (let i in attachments) { files.push(attachments[i].url) }
+      
+    let embed = new MessageEmbed()
+      .setAuthor({name: message.author.username, iconURL: message.author.avatarURL()})
+      .setDescription(message.content)
+      .setImage(files[0])
+      .setColor(colors.none)
+      .setFooter({text: message.author.id})
+    
+    files.splice(0,1)
+    await backup.send({embeds: [embed], files: files})
+  }
+  /*
   if (message.channel.id === shop.channels.vouch) {
     if (message.attachments.size === 0) return message.reply('⚠️ Invalid form of vouch! Please attach an image file that shows the product you ordered!')
     else {
@@ -1420,7 +1441,7 @@ client.on("messageCreate", async (message) => {
         files: files,
       })
     }
-  }
+  }*/
   //
   let content = message.content.toLowerCase()
   let responder = shop.ar.responders.find(res => content === shop.ar.prefix+res.command)
