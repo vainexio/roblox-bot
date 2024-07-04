@@ -2101,8 +2101,8 @@ client.on('interactionCreate', async inter => {
       else if (found === 'noted' && !ticket.name.includes('n。')) ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
       let messages = await ticket.messages.fetch({limit: 100}).then(async messages => {
         messages.forEach(async (gotMsg) => {
-          if (gotMsg.content.toLowerCase().startsWith('# [') && gotMsg.author.id === client.user.id) {
-            gotContent = gotMsg.content+'\n> \n> \n> \n'+foundStat+'\n<:indent:1174738613330788512> <t:'+time+':R>'
+          if (gotMsg.content.toLowerCase().includes('**order status**') && gotMsg.author.id === client.user.id) {
+            gotContent = gotMsg.content+'\n> \n> \n> \n'+foundStat.toLowerCase()+'\n<:indent:1174738613330788512> <t:'+time+':R>'
             got = true
             gotMsg.delete();
           }
