@@ -81,14 +81,18 @@ module.exports = {
           status: "idle", //online, idle, dnd
           activities: [
             { name: ".gg/sloopies", type: "Watching".toUpperCase(), //playing, watching, listening only
-              url: ''
             }, ], 
         },
         {
           status: "idle", //online, idle, dnd
           activities: [
             { name: "#tickets to order", type: "Watching".toUpperCase(), //playing, watching, listening only
-              url: ''
+            }, ], 
+        },
+        {
+          status: "idle", //online, idle, dnd
+          activities: [
+            { name: "ping @slurpies for inqueries", type: "Watching".toUpperCase(), //playing, watching, listening only
             }, ], 
         },
       ]
@@ -497,7 +501,7 @@ module.exports = {
         keywords: ['nitro','nitor','nb','basic','classic'],
         channel: '1258245247499239535',
         rs: '1258245208907448392',
-        status: 4,
+        status: 1,
         id: '1096319579787116544',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077186127970414/Logopit_1680918484757.png?width=1440&height=360',
         types: [

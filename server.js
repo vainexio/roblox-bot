@@ -829,7 +829,7 @@ client.on("messageCreate", async (message) => {
   if (message.channel.parent?.name.toLowerCase().includes('orders')) {
     //
     let embed = new MessageEmbed()
-      .addFields({name: 'terms and conditions',value: '<:S_letter:1138714993425125556> before proceeding, you must read and accept our terms and conditions.\n\n<:hb_rule_book:1138712613769990254> by clicking the button, you indicate that you have read, understood and accepted the terms stated in <#1109020435754000421> and the rules implied in <#1109020435754000422> for the product you want to avail *!*\n\n<:hb_rule_book:1138712613769990254> You will be held liable for any violation of our rules, for you have accepted the terms and agreed to comply *!*', inline: true})
+      .addFields({name: 'terms and conditions',value: '<:S_letter:1138714993425125556> before proceeding, you must read and accept our terms and conditions.\n\n<:hb_rule_book:1138712613769990254> by clicking the button, you indicate that you have read, understood and accepted the terms stated in <#1109020435754000421> and the rules implied in <#1109020435754000422> for the product you want to avail *!*\n\n<:hb_rule_book:1138712613769990254> you will be held liable for any violation of our rules, for you have accepted the terms and agreed to comply *!*', inline: true})
       .setColor(colors.yellow)
       
     let row = new MessageActionRow()
@@ -1268,7 +1268,7 @@ client.on("messageCreate", async (message) => {
         let productStatus = [
             'None',
             '<:hb_announce:1138706465046134805> available *!*', //1
-            '<:hb_announce:1138706465046134805> available (mode to order)', //2
+            '<:hb_announce:1138706465046134805> available (made to order)', //2
             '<:hb_announce:1138706465046134805> restocking *!!*', //3
             '<:hb_announce:1138706465046134805> not available *!!!*' //4
           ]
