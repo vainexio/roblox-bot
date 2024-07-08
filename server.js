@@ -1009,7 +1009,7 @@ client.on("messageCreate", async (message) => {
       }
       embed.addFields({
         name: num+". ||discord.gift/"+codes[i].code+"||", 
-        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n'+user+'\u200b',
+        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n\u200b',
         inline: true,
       })
       ////
