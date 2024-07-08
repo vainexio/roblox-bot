@@ -758,7 +758,7 @@ module.exports = {
         image: "https://media.discordapp.net/attachments/1093391705753002064/1094077237839532123/Logopit_1680918693719.png?width=1440&height=360",
         types: [
           //Types
-          {
+          /*{
             parent: 'Via Group Payout',
             children: [
               //
@@ -775,9 +775,9 @@ module.exports = {
               { name: 'Must be in the group for 14 days!\n> Group: [click me](https://www.roblox.com/groups/33092141/ValerieVin#!/about)', price: 0, rs: 0 },
               //
             ],
-          },
+          },*/
           {
-            parent: 'Via Gamepass (Covered Tax)',
+            parent: 'Via Gamepass',
             children: [
               //
               { name: '100 robux', price: 39, rs: 29 },
