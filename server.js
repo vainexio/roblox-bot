@@ -2119,7 +2119,7 @@ client.on('interactionCreate', async inter => {
       
       if (found === 'completed') !ticket.name.includes('done。') ?  ticket.setName('done。'+ticket.name.replace('n。','').replace('p。','')) : null
       //else if (found === 'processing' && !ticket.name.includes('p。')) ticket.setName('p。'+ticket.name.replace('n。','').replace('done。',''))
-      //else if (found === 'noted' && !ticket.name.includes('n。')) ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
+      else if (found === 'noted' && !ticket.name.includes('n。')) ticket.setName('n。'+ticket.name.replace('p。','').replace('done。',''))
       let messages = await ticket.messages.fetch({limit: 100}).then(async messages => {
         messages.forEach(async (gotMsg) => {
           if (gotMsg.content.toLowerCase().includes('**order status**') && gotMsg.author.id === client.user.id) {
