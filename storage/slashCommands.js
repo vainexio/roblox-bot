@@ -190,3 +190,29 @@ module.exports = {
     },
   ],
 };
+
+/*
+{
+      name: "calculate",
+      type: 1,
+      description: "Calculate fee based on amount",
+      options: [
+        {
+          "name": 'type',
+          "description": 'Type of transaction',
+          "type": 3,
+          "choices": [
+            {
+              name: 'Robux Gamepass',
+              value: 'robux'
+            },
+          ],
+          "required": true,
+        },
+        { 
+          name: 'amount', type: 10, required: true,
+          description: 'Amount to calculate',
+        },
+      ]
+    },
+    */
