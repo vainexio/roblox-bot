@@ -1232,7 +1232,7 @@ module.exports = {
       Template: "<category> <stat>",
       Alias: [],
       Category: "Misc",
-      Desc: 'Changes the product status\n\n1 — Avail\n2 — Avail (MTO)\n3 — Restocking\n4 — Not avail',
+      Desc: 'Changes the product status',
       ex: ['stat nitro 1','stat spotify 2'],
       level: 0,
     },
