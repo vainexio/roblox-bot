@@ -1418,7 +1418,7 @@ client.on("messageCreate", async (message) => {
       ]),
     )
     
-    await message.reply({content: "<:hb_announce:1138706465046134805> **auto buy products**"})
+    await message.reply({content: "<:hb_announce:1138706465046134805> **auto buy products**", components: [row]})
   }
   //
   //vouch
