@@ -512,7 +512,6 @@ module.exports = {
               //
               { name: 'Nitro Basic (Not avail)', price: 0, rs: 0 },
               { name: 'Nitro Boost', price: 160, rs: 150 },
-              { name: 'no warranty', price: 0, rs: 0 },
               //
             ],
           },
