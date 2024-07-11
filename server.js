@@ -1179,6 +1179,13 @@ client.on("messageCreate", async (message) => {
       await message.reply("I'm unable to change your nickname.\n```diff\n- "+err+"```")
     }
   }
+  else if (isCommand('badge',message)) {
+    //if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    let templates = await getChannel(shop.channels.templates)
+    let msg = await templates.messages.fetch('1260849429364211792')
+    
+    await message.reply(msg.content)
+  }
   else if (isCommand('send',message)) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     let channelToSend = await getChannel('1109020435754000423')
