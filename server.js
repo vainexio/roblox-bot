@@ -1407,6 +1407,19 @@ client.on("messageCreate", async (message) => {
     }
     message.react(emojis.check)
   }
+  else if (isCommand('autobuy',message)) {
+    let msgUrl
+    let row = new MessageActionRow().addComponents(
+      new MessageSelectMenu().setCustomId('autobuy-nitroboost').setPlaceholder('Auto Buy Nitro').addOptions([
+        {label: 'Nitro Boost',description: 'full warranty',value: 'nb-fw', emoji: emojis.nboost},
+        {label: 'Nitro Boost',description: 'no warranty',value: 'nb-nw', emoji: emojis.nboost},
+        {label: 'Robux',description: 'via gamepass',value: 'rbx-gp', emoji: '<:s_robux:1174546499087122464>'},
+        {label: 'Robux',description: 'via gamepass',value: 'rbx-gift', emoji: '<:s_robux:1174546499087122464>'},
+      ]),
+    )
+    
+    await message.reply({content: "<:hb_announce:1138706465046134805> **auto buy products**"})
+  }
   //
   //vouch
   if (message.channel.id === shop.channels.vouch) {
