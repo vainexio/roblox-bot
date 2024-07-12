@@ -2224,7 +2224,7 @@ client.on('interactionCreate', async inter => {
       let code = makeCode(10)
       let copy = new MessageActionRow().addComponents(
         new MessageButton().setCustomId('copyLinks').setStyle('SECONDARY').setLabel('Copy Links'),
-        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1109020434449575936/1109020436026634260').setStyle('LINK').setEmoji('')
+        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1109020434449575936/1109020436026634260').setStyle('LINK').setEmoji('<:hb_announce:1138706465046134805>')
         );
       await member.send({content: msg.content+"\n\nRef code: `"+code+"`\n||"+dropMsg.content+" ||", components: [copy]}).catch((err) => {
         error = true
