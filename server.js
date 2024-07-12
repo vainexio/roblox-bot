@@ -14,7 +14,7 @@ const body_parser = require('body-parser');
 //
 //Discord
 const Discord = require('discord.js');
-const {WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
+const {ActivityType, WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
 //const moment = require('moment');
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES);
@@ -153,7 +153,13 @@ client.on("ready", async () => {
   }
   console.log('Successfully logged in to discord bot.')
   let statusInterval = 0
+  
   setInterval(function() {
+    client.user.setPresence({
+    activities: [{ name: 'okay po hehe', type: 'CUSTOM' }],
+    status: 'online' // You can set this to 'idle', 'dnd', 'invisible', or 'online'
+  });
+    
     client.user.setPresence(shop.bot.status[statusInterval]);
     statusInterval++
     statusInterval === shop.bot.status.length ? statusInterval = 0 : null
