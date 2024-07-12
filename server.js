@@ -153,7 +153,6 @@ client.on("ready", async () => {
   }
   console.log('Successfully logged in to discord bot.')
   let statusInterval = 0
-  
   setInterval(async function() {
     client.user.setPresence(shop.bot.status[statusInterval]);
     statusInterval++
