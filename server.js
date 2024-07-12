@@ -154,12 +154,7 @@ client.on("ready", async () => {
   console.log('Successfully logged in to discord bot.')
   let statusInterval = 0
   
-  setInterval(function() {
-    client.user.setPresence({
-    activities: [{ name: 'okay po hehe', type: 'CUSTOM' }],
-    status: 'online' // You can set this to 'idle', 'dnd', 'invisible', or 'online'
-  });
-    
+  setInterval(async function() {
     client.user.setPresence(shop.bot.status[statusInterval]);
     statusInterval++
     statusInterval === shop.bot.status.length ? statusInterval = 0 : null
