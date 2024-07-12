@@ -2223,8 +2223,8 @@ client.on('interactionCreate', async inter => {
       let error = false;
       let code = makeCode(10)
       let copy = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId('copyLinks').setStyle('SECONDARY').setLabel('Copy Links'),
-        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1109020434449575936/1109020436026634260').setStyle('LINK').setEmoji('<:S_letter:1138714993425125556>')
+        new MessageButton().setCustomId('copyLinks').setStyle('SECONDARY').setLabel('Copy Links'),
+        new MessageButton().setLabel('Vouch Here').setURL('https://discord.com/channels/1109020434449575936/1109020436026634260').setStyle('LINK').setEmoji('')
         );
       await member.send({content: msg.content+"\n\nRef code: `"+code+"`\n||"+dropMsg.content+" ||", components: [copy]}).catch((err) => {
         error = true
