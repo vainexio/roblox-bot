@@ -275,7 +275,7 @@ client2.on("messageCreate", async (message) => {
   if (backupVouch && message.channel.type !== 'DM') {
     if (message.attachments.size === 0) return;
     else {
-      //await removeRole(message.member,['1109020434533458016'])
+      await removeRole(message.member,['1109020434533458016'])
       //
       let attachments = Array.from(message.attachments.values())
       let webhook = new WebhookClient({ url: backupVouch.backup})
