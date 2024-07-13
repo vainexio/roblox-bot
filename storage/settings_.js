@@ -790,8 +790,8 @@ module.exports = {
               { name: '500 robux', price: 159, rs: 154 },
               { name: '600 robux', price: 187, rs: 182 },
               { name: '700 robux', price: 215, rs: 209 },
-              { name: '800 robux', price: 243, rs: 230 },
-              { name: '900 robux', price: 263, rs: 245 },
+              { name: '800 robux', price: 243, rs: 239 },
+              { name: '900 robux', price: 263, rs: 256 },
               { name: '1000 robux', price: 295, rs: 285, booster: 275 },
               { name: '*covered tax (hrs-3d processing time)*', price: 0, rs: 0 },
               //
