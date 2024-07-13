@@ -2576,7 +2576,7 @@ const interval = setInterval(async function() {
       let vc = await getChannel(shop.channels.status)
       if (vc.name === 'shop : OPEN') return;
       vc.setName('shop : OPEN')
-      await annc.bulkDelete(3)
+      await annc.bulkDelete(2)
       await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001169/iPhone/sticker@2x.png?v=1']})
     }
     else if (time === '11:0AM') {
@@ -2584,7 +2584,7 @@ const interval = setInterval(async function() {
       let vc = await getChannel(shop.channels.reportsVc)
       if (vc.name === 'reports : OPEN') return;
       vc.setName('reports : OPEN')
-      await annc.bulkDelete(3)
+      //await annc.bulkDelete(3)
       await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001172/iPhone/sticker@2x.png?v=1']})
     }
     else if (time === '8:0PM') {
@@ -2592,7 +2592,7 @@ const interval = setInterval(async function() {
       let vc = await getChannel(shop.channels.reportsVc)
       if (vc.name === 'reports : CLOSED') return;
       vc.setName('reports : CLOSED')
-      await annc.bulkDelete(3)
+      await annc.bulkDelete(1)
       await annc.send({content: msg.content, files: ['https://stickershop.line-scdn.net/stickershop/v1/sticker/422001173/iPhone/sticker@2x.png?v=1']})
     }
   }
