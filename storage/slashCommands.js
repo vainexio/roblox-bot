@@ -16,7 +16,7 @@ const settings = require('../storage/settings_.js')
 const {shop, emojis, colors, theme, status} = settings
 
 module.exports = {
-  register: false,
+  register: true,
   deleteSlashes: ['1174898700338864138'],
   slashes: [
     {
@@ -53,7 +53,7 @@ module.exports = {
       name: 'show_embeds',
       type: 1,
       description: 'Show all embed messages',
-    }
+    },
     {
       "name": "drop",
       "type": 1,

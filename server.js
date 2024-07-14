@@ -1551,8 +1551,230 @@ let tStocks = 0
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
+    if (cname === 'embed') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+      let options = inter.options._hoistedOptions
+      let embedId = options.find(a => a.name === 'id')
+      let title = options.find(a => a.name === 'title')
+      let description = options.find(a => a.name === 'description')
+      let color = options.find(a => a.name === 'color')
+      
+      let thumbnail = options.find(a => a.name === 'thumbnail')
+      let image = options.find(a => a.name === 'image')
+      let footer = options.find(a => a.name === 'footer')
+      
+      const embedData = await embedModel.findOne({id: embedId.value.toLowerCase()});
+      if (embedData) return inter.reply({content: emojis.warning+" This ID is already in use!", ephemeral: true})
+      let embed = new MessageEmbed()
+      .setDescription(description.value)
+      
+      if (color) embed.setColor(color.value);
+      else embed.setColor(colors.none);
+      
+      if (title) embed.setTitle(title.value);
+      if (thumbnail) embed.setThumbnail(thumbnail.value);
+      if (image) embed.setImage(image.value);
+      if (footer) embed.setFooter(footer.value);
+
+        const row = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId('edit_title')
+                    .setLabel('Edit Title')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('edit_description')
+                    .setLabel('Edit Description')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('edit_color')
+                    .setLabel('Edit Color')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('edit_thumbnail')
+                    .setLabel('Edit Thumbnail')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('edit_image')
+                    .setLabel('Edit Image')
+                    .setStyle('SECONDARY')
+            );
+
+        const row2 = new MessageActionRow()
+            .addComponents(
+                new MessageButton()
+                    .setCustomId('edit_footer')
+                    .setLabel('Edit Footer')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('add_field')
+                    .setLabel('Add Field')
+                    .setStyle('SECONDARY'),
+                new MessageButton()
+                    .setCustomId('save_embed')
+                    .setLabel('Save Embed')
+                    .setStyle('SUCCESS')
+            );
+      
+      await inter.reply({content: emojis.loading+" Generating embed", ephemeral: true})
+      let msg
+      await inter.channel.send({ embeds: [embed], components: [row, row2] }).then(message => { msg = message});
+      const filter = i => i.user.id === inter.user.id;
+      const collector = inter.channel.createMessageComponentCollector({ filter, time: 900000 });
+      
+      collector.on('collect', async i => {
+        if (i.customId === 'save_embed') {  
+          console.log(embed)
+          let newEmbed = new embedModel({
+                id: embedId.value.toLowerCase(),
+                title: embed.title ? embed.title : null,
+                description: embed.description,
+                color: embed.color ? embed.color.toString(16).padStart(6, '0') : null,
+                thumbnail: embed.thumbnail ? embed.thumbnail.url : null,
+                image: embed.image ? embed.image.url : null,
+                footer: embed.footer ? embed.footer.text : null,
+                fields: embed.fields
+              });
+          await newEmbed.save();
+          await i.message.edit({ content: emojis.check+" Embed saved.\nYou can display this embed by running `/display_embed id:"+embedId.value+"`", components: [] });
+          collector.stop();
+          return;
+        }
+        msg = i.message
+        const editEmbed = async (property, value) => {
+                switch (property) {
+                    case 'title':
+                        embed.setTitle(value);
+                        break;
+                    case 'description':
+                        embed.setDescription(value);
+                        break;
+                    case 'color':
+                        embed.setColor(value);
+                        break;
+                    case 'thumbnail':
+                        embed.setThumbnail(value);
+                        break;
+                    case 'image':
+                        embed.setImage(value);
+                        break;
+                    case 'footer':
+                        embed.setFooter(value);
+                        break;
+                }
+                await i.message.edit({ embeds: [embed] });
+              
+            };
+        
+        if (i.customId.startsWith('edit_')) {
+          const property = i.customId.split('_')[1];
+          await i.reply({ content: `Please provide a new ${property}:`, ephemeral: true });
+
+          const messageFilter = response => response.author.id === inter.user.id;
+          const collected = await inter.channel.awaitMessages({ filter: messageFilter, max: 1, time: 30000 });
+            
+          if (collected.size > 0) {
+            const newValue = collected.first().content;
+            await editEmbed(property, newValue);
+            await collected.first().delete()
+          } else {
+            await i.followUp({ content: 'You did not provide a new value in time.', ephemeral: true });
+          }
+        } else if (i.customId === 'add_field') {
+          await i.reply({ content: 'Please provide the field name and value separated by a comma (e.g., "Name, Value"):', ephemeral: true });
+
+          const messageFilter = response => response.author.id === inter.user.id;
+          const collected = await inter.channel.awaitMessages({ filter: messageFilter, max: 1, time: 30000 });
+              
+          if (collected.size > 0) {
+            const fieldValue = collected.first().content.split(',');
+            if (fieldValue.length === 2) {
+              embed.addField(fieldValue[0].trim(), fieldValue[1].trim());
+              await i.message.edit({ embeds: [embed] });
+              await collected.first().delete()
+            } else {
+              await i.followUp({ content: 'Invalid format. Please provide the field name and value separated by a comma.', ephemeral: true });
+            }
+          } else {
+            await i.followUp({ content: 'You did not provide a field in time.', ephemeral: true });
+          }
+        }
+      });
+
+        collector.on('end', async collected => {
+          let row = new MessageActionRow().addComponents(
+            new MessageButton().setCustomId("yay").setStyle('SECONDARY').setLabel("Interaction ended").setDisabled(true),
+          );
+          await msg.edit({ components: [row] })
+          console.log(`Collected ${collected.size} interactions.`);
+        });
+    }
+    else if (cname === 'display_embed') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+      let options = inter.options._hoistedOptions
+        const embedId = options.find(a => a.name === 'id')
+        const embedData = await embedModel.findOne({id: embedId.value.toLowerCase()});
+
+        if (embedData) {
+          let embed = new MessageEmbed()
+          .setDescription(embedData.description)
+          console.log(embedData.color)
+          if (embedData.color) embed.setColor(embedData.color);
+          else embed.setColor(colors.none);
+          
+          if (embedData.title) embed.setTitle(embedData.title);
+          if (embedData.thumbnail) embed.setThumbnail(embedData.thumbnail);
+          if (embedData.image) embed.setImage(embedData.image);
+          if (embedData.footer) embed.setFooter(embedData.footer);
+          if (embedData.fields && embedData.fields.length > 0) {
+            embedData.fields.forEach(field => embed.addField(field.name, field.value));
+          }
+          await inter.reply({ content: emojis.loading+" Sending embed...", ephemeral: true });
+          await inter.channel.send({ embeds: [embed] });
+        } else {
+          await inter.reply({ content: 'Embed not found.', ephemeral: true });
+        }
+    }
+    else if (cname === 'delete_embed') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+      let options = inter.options._hoistedOptions
+        const embedId = options.find(a => a.name === 'id')
+        const embedData = await embedModel.findOne({id: embedId.value.toLowerCase()});
+
+        if (embedData) {
+          await embedModel.deleteOne({id: embedId.value})
+          await inter.reply({content: emojis.check+" I deleted a saved embed with the ID: `"+embedId.value+"`"})
+        } else {
+          await inter.reply({ content: 'Embed not found.', ephemeral: true });
+        }
+    }
+    else if (cname === 'show_embeds') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+        const embedData = await embedModel.find()
+        
+        if (embedData) {
+          let list = ""
+          let count = 0
+          for (let i in embedData) {
+            let doc = embedData[i]
+            count++
+            list += count+'. '+doc.id+'\n'
+          }
+          
+          let embed = new MessageEmbed()
+          .addFields(
+            {name: "Saved Embed IDs", value: list},
+            {name: "Configuration", value: "> `/display_embed [ID]` to display an embed\n> `/delete_embed [ID]` to remove an embed"}
+          )
+          .setColor(theme)
+          
+          await inter.reply({embeds: [embed]})
+        } else {
+          await inter.reply({ content: 'No embed found.', ephemeral: true });
+        }
+    }
     //Nitro dropper
-    if (cname === 'drop') {
+    else if (cname === 'drop') {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
       if (!yay) return inter.reply({content: emojis.warning+" The bot is currently busy deleting stocks ("+cStocks+"/"+tStocks+")", ephemeral: true})
