@@ -20,6 +20,41 @@ module.exports = {
   deleteSlashes: ['1174898700338864138'],
   slashes: [
     {
+      name: 'embed',
+      type: 1,
+      description: 'Create an embed message',
+      options: [
+        { name: 'id', type: 3, description: 'ID of the embed', required: true },
+        { name: 'description', type: 3, description: 'Description of the embed', required: true },
+        { name: 'title', type: 3, description: 'Title of the embed', required: false },
+        { name: 'color', type: 3, description: 'Color of the embed in HEX', required: false },
+        { name: 'thumbnail', type: 3, description: 'Thumbnail URL', required: false },
+        { name: 'image', type: 3, description: 'Image URL', required: false },
+        { name: 'footer', type: 3, description: 'Footer text', required: false }
+      ]
+    },
+    {
+      name: 'display_embed',
+      type: 1,
+      description: 'Display an embed message',
+      options: [
+        { name: 'id', type: 3, description: 'ID of the embed', required: true },
+      ]
+    },
+    {
+      name: 'delete_embed',
+      type: 1,
+      description: 'Delete an embed message',
+      options: [
+        { name: 'id', type: 3, description: 'ID of the embed', required: true },
+      ]
+    },
+    {
+      name: 'show_embeds',
+      type: 1,
+      description: 'Show all embed messages',
+    }
+    {
       "name": "drop",
       "type": 1,
       "description": "Drops an item to a user",
