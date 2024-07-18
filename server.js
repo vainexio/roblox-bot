@@ -825,12 +825,6 @@ client2.on("messageCreate", async (message) => {
     !message.channel.type === 'DM' ? message.delete() : null
   }
 });//END MESSAGE CREATE
-
-client.on("messageCreate", async (message) => {
-  //
-  if (message.author.bot) return;
-  if (message.channel.type === "DM") return;
-}); //END MESSAGE CREATE
 client.on("messageCreate", async (message) => {
   //Ping
   if (message.channel.parent?.name.toLowerCase().includes('orders')) {
