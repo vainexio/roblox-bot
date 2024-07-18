@@ -16,7 +16,7 @@ const settings = require('../storage/settings_.js')
 const {shop, emojis, colors, theme, status} = settings
 
 module.exports = {
-  register: true,
+  register: false,
   deleteSlashes: ['1174898700338864138'],
   slashes: [
     {

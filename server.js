@@ -11,6 +11,7 @@ const { joinVoiceChannel } = require('@discordjs/voice');
 const cheerio = require('cheerio');
 const cors = require('cors');
 const body_parser = require('body-parser');
+const { exec } = require('node:child_process'); 
 //
 //Discord
 const Discord = require('discord.js');
@@ -58,6 +59,10 @@ let embedSchema
 let embedModel
 
 let ticketId = 10
+
+client.on("debug", function(info){
+  console.log(info)
+});
 //When bot is ready
 client.on("ready", async () => {
   let guildsID = [];
@@ -713,7 +718,7 @@ client2.on("messageCreate", async (message) => {
         let eCode = expCodes.find(e => e.code === codes[i].code)
         let auth = {
           method: 'GET',
-          headers: { 'Authorization': 'Bot '+token }
+          headers: { 'Authorization': 'Bot '+token2 }
         }
         let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code,auth)
         res = eCode ? eCode : await res.json()
@@ -759,6 +764,7 @@ client2.on("messageCreate", async (message) => {
           break;
         }
       }
+      await sleep(500);
     }
     if (shop.breakChecker) {
       shop.breakChecker = false
@@ -930,7 +936,7 @@ client.on("messageCreate", async (message) => {
           console.log('retry for '+codes[i].code)
           let ret = Math.ceil(res.retry_after)
           ret = ret.toString()+"000"
-          waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
+          waitingTime = Number(ret) < 300000 ? Number(ret) : 600000
         if (res.retry_after >= 600000) {
           fetched = true
           shop.breakChecker = true
@@ -969,6 +975,7 @@ client.on("messageCreate", async (message) => {
           break;
         }
       }
+      await sleep(500);
     }
     if (shop.breakChecker) {
       shop.breakChecker = false
