@@ -281,7 +281,6 @@ client2.on("messageCreate", async (message) => {
   if (backupVouch && message.channel.type !== 'DM') {
     if (message.attachments.size === 0) return;
     else {
-      await removeRole(message.member,['1109020434533458016'])
       //
       let attachments = Array.from(message.attachments.values())
       let webhook = new WebhookClient({ url: backupVouch.backup})
@@ -1425,13 +1424,14 @@ client.on("messageCreate", async (message) => {
   //
   //vouch
   if (message.channel.id === shop.channels.vouch) {
-    let backup = await getChannel("1109020434533458016")
+    let backup = await getChannel("1141338128494362646")
       
     let files = []
     let attachments = Array.from(message.attachments.values())
     if (attachments.length === 0) return;
     await message.react('<a:checkmark_yellow:1151123927691694110>')
     for (let i in attachments) { files.push(attachments[i].url) }
+    await removeRole(message.member,['1264114197122388010'])
       
     let embed = new MessageEmbed()
       .setAuthor({name: message.author.username, iconURL: message.author.avatarURL()})
@@ -2374,7 +2374,7 @@ client.on('interactionCreate', async inter => {
         })
       })
       if (found === 'completed') {
-        let res = await addRole(member,['1109020434533458016'],inter.guild)
+        let res = await addRole(member,['1264114197122388010'],inter.guild)
         ticket.setParent(shop.tixSettings.completed)
         
         await ticket.permissionOverwrites.set([
