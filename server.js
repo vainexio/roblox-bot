@@ -763,7 +763,6 @@ client2.on("messageCreate", async (message) => {
           break;
         }
       }
-      await sleep(500);
     }
     if (shop.breakChecker) {
       shop.breakChecker = false
