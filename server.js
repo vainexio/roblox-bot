@@ -1216,7 +1216,7 @@ client.on("messageCreate", async (message) => {
   }
   if ((message.content.toLowerCase().startsWith('calcu') && !message.content.toLowerCase().includes('process')) || message.author.id === '497918770187075595') {
     let expression = message.content.toLowerCase().replace('calcu','')
-    if (/[a-zA-Z]/.test(expression)) {
+    if (/[a-zA-Z]/.test(expression) && message.author.id != '497918770187075595') {
       //
     } else {
       try {
