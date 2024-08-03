@@ -2042,7 +2042,7 @@ client.on('interactionCreate', async inter => {
         footer = 'Robux Covered Tax'
         percentage = .1429
         let fee = value*percentage
-        total = Math.round(value+fee)
+        total = percentage//Math.round(value+fee)
       }
       
         let embed = new MessageEmbed()
