@@ -2040,7 +2040,7 @@ client.on('interactionCreate', async inter => {
       else if (type.value === 'robux') {
         title = 'Expected Gamepass Price'
         footer = 'Robux Covered Tax'
-        percentage = .429
+        percentage = .1429
         let fee = value*percentage
         total = Math.round(value+fee)
       }
