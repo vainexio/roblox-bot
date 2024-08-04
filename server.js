@@ -1442,27 +1442,6 @@ client.on("messageCreate", async (message) => {
     files.splice(0,1)
     await backup.send({embeds: [embed], files: files})
   }
-  /*
-  if (message.channel.id === shop.channels.vouch) {
-    if (message.attachments.size === 0) return message.reply('⚠️ Invalid form of vouch! Please attach an image file that shows the product you ordered!')
-    else {
-      await message.react('<a:checkmark_yellow:1151123927691694110>')
-      await removeRole(message.member,['1109020434533458016'])
-      //
-      let attachments = Array.from(message.attachments.values())
-      let webhook = new WebhookClient({ url: 'https://discord.com/api/webhooks/1173981960423604314/5Gb4nx9lgc6IgZLbit7z-DXjmGPZFvZK3aTiemNCE17ZQorI4-JJAeduLEh2NHcOx3J8'})
-      let files = []
-
-      for (let i in attachments) { files.push(attachments[i].url) }
-
-      webhook.send({
-        content: message.content+'\n\n'+message.author.toString(),
-        username: message.author.tag,
-        avatarURL: message.author.avatarURL(),
-        files: files,
-      })
-    }
-  }*/
   //
   let content = message.content.toLowerCase()
   let responder = shop.ar.responders.find(res => content === shop.ar.prefix+res.command)
