@@ -2195,7 +2195,51 @@ client.on('interactionCreate', async inter => {
         }
         //inter.message.edit({components: []})
         if (method === 'delete') {
-          inter.reply({content: text})
+          let log = await getChannel(shop.tixSettings.transcripts)
+          await inter.reply({content: 'Saving transcript to '+log.toString()})
+        
+          let user = await getUser(userId)
+          let ticket = await doc.tickets.find(tix => tix.id === inter.channel.id)
+          if (!ticket) {
+            ticket = {}
+            inter.message.reply({content: emojis.warning+' Invalid ticket data.'})
+          }
+          let attachment = await discordTranscripts.createTranscript(inter.channel);
+          
+          await log.send({ content: 'Loading', files: [attachment] }).then(async msg => {
+            let attachments = Array.from(msg.attachments.values())
+            let stringFiles = ""
+            if (msg.attachments.size > 0) {
+              let index = 0
+              for (let i in attachments) {
+                console.log(attachments[i])
+                ticket.transcript = 'https://codebeautify.org/htmlviewer?url='+attachments[i].url.slice(0, -1)
+                await doc.save();
+              }
+            }
+          
+            let embed = new MessageEmbed()
+            .setAuthor({ name: user.tag, iconURL: user.avatarURL(), url: 'https://discord.gg/sloopies' })
+            .addFields(
+              {name: 'Ticket Owner', value: user.toString(), inline: true},
+              {name: 'Ticket Name', value: 'Current: `'+inter.channel.name+'`\nOriginal: `'+ticket.name+'`', inline: true},
+              {name: 'Panel Name', value: ticket.panel ? ticket.panel : 'Unknown', inline: true},
+              {name: 'Transcript', value: '[Online Transcript]('+ticket.transcript+')', inline: true},
+              {name: 'Count', value: ticket.count ? ticket.count.toString() : 'Unknown', inline: true},
+              {name: 'Moderator', value: inter.user.toString(), inline: true}
+            )
+            .setThumbnail(inter.guild.iconURL())
+            .setColor(colors.yellow)
+            .setFooter({text: "If the link expired, try downloading the file instead."})
+          
+            let row = new MessageActionRow().addComponents(
+              new MessageButton().setURL(ticket.transcript).setStyle('LINK').setLabel('View Transcript').setEmoji('<:y_seperator:1138707390657740870>'),
+            );
+            await msg.edit({content: null, embeds: [embed], components: [row]})
+            await inter.channel.send({content: emojis.check+' Transcript saved *!*'})
+            user.send({content: 'Your ticket transcript was generated *!*', embeds: [embed], files: [attachment], components: [row]}).catch(err => console.log(err))
+          });
+          await inter.channel.send({content: text})
           setTimeout(async function() {
             doc = await tixModel.findOne({id: user.id})
             for (let i in doc.tickets) {
@@ -2294,14 +2338,14 @@ client.on('interactionCreate', async inter => {
           )
           .setThumbnail(inter.guild.iconURL())
           .setColor(colors.yellow)
-          .setFooter({text: "Sloopies Ticketing System"})
+          .setFooter({text: "If the link expired, try downloading the file instead."})
           
           let row = new MessageActionRow().addComponents(
             new MessageButton().setURL(ticket.transcript).setStyle('LINK').setLabel('View Transcript').setEmoji('<:y_seperator:1138707390657740870>'),
           );
           await msg.edit({content: null, embeds: [embed], components: [row]})
           await inter.channel.send({content: emojis.check+' Transcript saved *!*'})
-          user.send({content: 'Your ticket was closed.', embeds: [embed], files: [attachment], components: [row]}).catch(err => console.log(err))
+          user.send({content: 'Your ticket transcript was generated *!*', embeds: [embed], files: [attachment], components: [row]}).catch(err => console.log(err))
         });
       }
     }
