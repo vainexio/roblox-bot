@@ -2276,6 +2276,7 @@ client.on('interactionCreate', async inter => {
           if (msg.attachments.size > 0) {
             let index = 0
             for (let i in attachments) {
+              console.log(attachments[i])
               ticket.transcript = 'https://codebeautify.org/htmlviewer?url='+attachments[i].url.slice(0, -1)
               await doc.save();
             }
@@ -2300,7 +2301,7 @@ client.on('interactionCreate', async inter => {
           );
           await msg.edit({content: null, embeds: [embed], components: [row]})
           await inter.channel.send({content: emojis.check+' Transcript saved *!*'})
-          user.send({content: 'Your ticket was closed.', embeds: [embed], components: [row]}).catch(err => console.log(err))
+          user.send({content: 'Your ticket was closed.', embeds: [embed], files: [attachment], components: [row]}).catch(err => console.log(err))
         });
       }
     }
