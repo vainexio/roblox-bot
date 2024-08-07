@@ -2021,13 +2021,13 @@ client.on('interactionCreate', async inter => {
         footer = 'Robux Covered Tax'
         percentage = .1429
         let fee = value*percentage
-        total = percentage//Math.round(value+fee)
+        total = Math.round(fee)
       }
       
         let embed = new MessageEmbed()
         .addFields(
           {name: title,value: '**'+total+'**',inline: true},
-          {name: 'Fee',value: 'x'+percentage,inline: true}
+          {name: 'Fee',value: 'x'+total,inline: true}
         )
         .setColor(colors.none)
         .setFooter({text: footer})
