@@ -2019,7 +2019,7 @@ client.on('interactionCreate', async inter => {
       else if (type.value === 'robux') {
         title = 'Expected Gamepass Price'
         footer = 'Robux Covered Tax'
-        percentage = .1429
+        percentage = 1.429
         let fee = value*percentage
         total = Math.round(fee)
       }
@@ -2027,7 +2027,7 @@ client.on('interactionCreate', async inter => {
         let embed = new MessageEmbed()
         .addFields(
           {name: title,value: '**'+total+'**',inline: true},
-          {name: 'Fee',value: 'x'+total,inline: true}
+          {name: 'Fee',value: 'x'+percentage,inline: true}
         )
         .setColor(colors.none)
         .setFooter({text: footer})
