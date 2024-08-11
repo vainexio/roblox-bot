@@ -361,7 +361,7 @@ client2.on("messageCreate", async (message) => {
                 }
               }
               let raw = price !== "Can't scan catalog items" ? Number(price.replace(/,|Price: /g,'')) : price
-              let ct = !isNaN(raw) ? '\nYou will receive: **'+Math.round(raw*0.7)+'** '+emojis.robux : ''
+              let ct = !isNaN(raw) ? '\nYou will receive: **'+Math.floor(raw*0.7)+'** '+emojis.robux : ''
               content +=  count+'. '+args[i]+'\n'+price+' '+emojis.robux+ct+'\n\n'
             }
           }
