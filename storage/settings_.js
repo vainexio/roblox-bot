@@ -36,6 +36,7 @@ let emojis = {
 let keys = [ 'basic', 'netflix', 'nf', 'spoti', 'nitro', 'nb', 'swc', 'robux', 'pending', 'prem', 'comm', 'noted', 'sb', 'badge', 'db', 'vp', 'valorant', 'canva' ]
 module.exports = {
   config: {
+    pendingPayments: [],
     backupVouches: [
       {
         original: '1154845315673886801', //ethan

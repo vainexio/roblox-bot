@@ -2728,7 +2728,7 @@ client.on('interactionCreate', async inter => {
       shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
     }
     else if (id.startsWith('confirmOrder')) {
-      inter.update({components: []})
+      await inter.update({components: []})
       let booster = await hasRole(inter.member,['1138634227169112165'],inter.guild) ? emojis.check : emojis.x
       
       let temp = await getChannel(shop.channels.templates)
@@ -2743,7 +2743,56 @@ client.on('interactionCreate', async inter => {
     }
     else if (id.startsWith('autopay-')) {
       let userId = id.replace('autopay-','')
-      await inter.reply({content: "Please type in the number you're going to use"})
+      await inter.update({components: []})
+      function normalizeMobileNumber(input) {
+        // Remove all non-numeric characters
+        let cleaned = input.replace(/\D/g, '');
+
+        // If the number starts with 639, replace 63 with 0
+        if (cleaned.startsWith('639')) {
+          cleaned = '0' + cleaned.slice(2);
+        }
+
+        // Ensure that the number is 11 digits long and starts with 09
+        if (cleaned.length === 11 && cleaned.startsWith('09')) {
+          return cleaned;
+        } else {
+          // Handle invalid number
+          return false
+          throw new Error('Invalid mobile number format');
+        }
+      }
+      let thread = [
+        {
+          question: "Please type in the phone number you're going to use in sending payment. (e.g 9XXXXXXXXXX)",
+          answer: '',
+        },
+        {
+          question: "Type the amount you're going to send.",
+          answer: '',
+        },
+      ]
+      const filter = m => m.author.id === inter.user.id;
+      async function getResponse(data) {
+        await inter.channel.send(data.question)
+        let msg = await inter.channel.awaitMessages({ filter, max: 1,time: 900000 ,errors: ['time'] })
+        //if (!msg) shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
+        msg = msg?.first()
+        data.answer = msg.content
+      }
+      
+      let num = normalizeMobileNumber(thread[0].answer)
+      if (!num) return inter.channel.send("Invalid phone number: `"+thread[0].answer+"`\nMake sure the format is correct.")
+      let amount = Number(thread[1].answer)
+      if (isNaN(amount)) return inter.channel.send("Invalid amount: `"+thread[0].answer+"`\nMake sure the format is correct.")
+      
+      config.pendingPayments.push({ user: userId, num: num, payment: amount})
+      await inter.channel.send()
+      let responder = shop.ar.responders.find(res => '.gcash' === shop.ar.prefix+res.command)
+      if (responder) {
+        if (responder.autoDelete) message.delete();
+        await inter.channel.send({content: "Please send your payment here." : null, embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+      }
     }
     else if (id.startsWith('gsaRaw')) {
       inter.reply({content: '```json\n'+JSON.stringify(shop.gcashStatus, null, 2).replace(/ *\<[^>]*\> */g, "")+'```', ephemeral: true})
