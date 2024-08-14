@@ -1222,7 +1222,7 @@ client.on("messageCreate", async (message) => {
       try {
         let total = eval(expression)
         message.reply(total.toString())
-        if (await getPerms(message.member,4)) shop.expected.push({channel: message.channel.id, amount: total})
+        if (await getPerms(message.member,4)) shop.expected.push({channel: message.channel.id, amount: total, num: 'None'})
       } catch (err) { }
     }
   }
@@ -2739,7 +2739,7 @@ client.on('interactionCreate', async inter => {
           new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
         );
       
-      await inter.channel.send({content: "<:gcash:1273091410228150276> Would you like to auto pay with GCash?", components: []})
+      await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws, if the receipt the payment was not validated. Please send the receipt instead.\n** **", components: [row]})
     }
     else if (id.startsWith('autopay-')) {
       let userId = id.replace('autopay-','')
@@ -2764,7 +2764,7 @@ client.on('interactionCreate', async inter => {
       }
       let thread = [
         {
-          question: "Please type in the phone number you're going to use in sending payment. (e.g 9XXXXXXXXXX)",
+          question: "Please type the phone number you're going to use in sending payment. (e.g 09XXXXXXXXX)",
           answer: '',
         },
         {
@@ -2780,18 +2780,21 @@ client.on('interactionCreate', async inter => {
         msg = msg?.first()
         data.answer = msg.content
       }
-      
+      let count = 0
+      for (let i in thread) {
+        let data = thread[i]
+        count++
+        await getResponse(data,count)
+      }
       let num = normalizeMobileNumber(thread[0].answer)
       if (!num) return inter.channel.send("Invalid phone number: `"+thread[0].answer+"`\nMake sure the format is correct.")
       let amount = Number(thread[1].answer)
       if (isNaN(amount)) return inter.channel.send("Invalid amount: `"+thread[0].answer+"`\nMake sure the format is correct.")
       
-      config.pendingPayments.push({ user: userId, num: num, payment: amount})
-      await inter.channel.send()
+      shop.expected.push({channel: inter.channel.id, amount: amount, num: num})
       let responder = shop.ar.responders.find(res => '.gcash' === shop.ar.prefix+res.command)
       if (responder) {
-        if (responder.autoDelete) message.delete();
-        await inter.channel.send({content: "Please send your payment here." : null, embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+        await inter.channel.send({content: emojis.loading+" Please send your payment here.", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
       }
     }
     else if (id.startsWith('gsaRaw')) {
@@ -2959,7 +2962,7 @@ app.get('/gcash', async function (req, res) {
     }
     for (let i in shop.expected) {
       let transac = shop.expected[i]
-      if (transac.amount == data.amount) {
+      if (transac.amount == data.amount && (transac.num == data.senderNum || transac.num == "None")) {
         console.log(transac)
         let cd = await getChannel(transac.channel)
         if (!cd) return shop.expected.splice(i,1)
