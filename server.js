@@ -2748,7 +2748,7 @@ client.on('interactionCreate', async inter => {
         new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
       );
       
-      await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws. If the receipt the payment was not validated, please send the receipt instead.\n** **", components: [row]})
+      await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws. If the payment was not validated, please send the receipt instead.\n** **", components: [row]})
     }
     else if (id.startsWith('autopay-')) {
       let userId = id.replace('autopay-','')
