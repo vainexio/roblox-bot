@@ -2800,6 +2800,7 @@ client.on('interactionCreate', async inter => {
         
         msg = msg?.first()
         if (msg.content.toLowerCase().includes('ok')) {
+          thread[0].answer = [phone.number]
         } else {
           thread[0].answer = msg.content
         }
@@ -2820,11 +2821,14 @@ client.on('interactionCreate', async inter => {
         phone.userId = inter.user.id
         phone.number = num
         await phone.save()
+      } else if (phone) {
+        phone.number = num
+        await phone.save()
       }
       shop.expected.push({channel: inter.channel.id, amount: amount, num: num})
       let responder = shop.ar.responders.find(res => '.gcash' === shop.ar.prefix+res.command)
       if (responder) {
-        await inter.channel.send({content: emojis.loading+" send your payment here :\n\n\<a:yl_exclamationan:1138705076395978802> **gcash**\n\<:indent:1174738613330788512> 0945-986-8489 [ **R. I.** ]\n\n-# Number: `"+thread[0].answer+"`\n-# Expected Amount: `"+thread[1].answer+"`", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+        await inter.channel.send({content: emojis.loading+" send your payment here :\n\n\<a:yl_exclamationan:1138705076395978802> **gcash**\n\<:indent:1174738613330788512> 0945-986-8489 [ **R. I.** ]\n\n-# Number: `"+num+"`\n-# Expected Amount: `"+thread[1].answer+"`", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
       }
     }
     else if (id.startsWith('gsaRaw')) {
@@ -2988,8 +2992,8 @@ app.get('/gcash', async function (req, res) {
     }
     for (let i in shop.expected) {
       let transac = shop.expected[i]
-      if (transac.amount == data.amount && (transac.num == data.senderNum || transac.num == "None")) {
-        console.log(transac)
+      console.log(transac)
+      if (transac.amount == data.amount && (transac.num == data.senderNumber || transac.num == "None")) {
         let cd = await getChannel(transac.channel)
         if (!cd) return shop.expected.splice(i,1)
         await cd.send({content: emojis.check+" Your payment was received *!*", embeds: [embed]})
