@@ -58,6 +58,9 @@ let stickyModel
 let embedSchema
 let embedModel
 
+let phoneSchema
+let phoneModel
+
 let ticketId = 10
 
 client.on("debug", function(info){
@@ -81,6 +84,11 @@ client.on("ready", async () => {
   stickySchema = new mongoose.Schema({
     channelId: String,
     message: String,
+  })
+  
+  phoneSchema = new mongoose.Schema({
+    userId: String,
+    number: String,
   })
   
   embedSchema = new mongoose.Schema({
@@ -119,6 +127,7 @@ client.on("ready", async () => {
   })
   
   
+  phoneModel = mongoose.model("SloopiePhone", phoneSchema);
   tixModel = mongoose.model("SloopieTix", tixSchema);
   ticketModel = mongoose.model("SloopieTickets", ticketSchema);
   embedModel = mongoose.model('SloopiesEmbed', embedSchema);
@@ -2736,8 +2745,8 @@ client.on('interactionCreate', async inter => {
       await inter.channel.send({content: msg.content.replace('{status}',booster)})
       
       let row = new MessageActionRow().addComponents(
-          new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
-        );
+        new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
+      );
       
       await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws, if the receipt the payment was not validated. Please send the receipt instead.\n** **", components: [row]})
     }
@@ -2764,7 +2773,7 @@ client.on('interactionCreate', async inter => {
       }
       let thread = [
         {
-          question: "Please type the phone number you're going to use in sending payment. (e.g 09XXXXXXXXX)",
+          question: "Type the phone number you're going to use in sending payment. (e.g 09XXXXXXXXX)",
           answer: '',
         },
         {
@@ -2772,6 +2781,9 @@ client.on('interactionCreate', async inter => {
           answer: '',
         },
       ]
+      let row = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SECONDARY').setLabel('Retry'),
+      );
       const filter = m => m.author.id === inter.user.id;
       async function getResponse(data) {
         await inter.channel.send(data.question)
@@ -2781,20 +2793,32 @@ client.on('interactionCreate', async inter => {
         data.answer = msg.content
       }
       let count = 0
+      let phone = phoneModel.findOne({userId: inter.user.id})
+      if (phone) {
+        thread[0].answer = phone.number
+        await inter.channel.send(emojis.check+" I remembered your phone number. `"+phone.number+"`")
+        count += 1
+      }
       for (let i in thread) {
         let data = thread[i]
         count++
         await getResponse(data,count)
       }
       let num = normalizeMobileNumber(thread[0].answer)
-      if (!num) return inter.channel.send("Invalid phone number: `"+thread[0].answer+"`\nMake sure the format is correct.")
+      if (!num) return inter.channel.send({content: "Invalid phone number: `"+thread[0].answer+"`\nMake sure the format is correct.", components: [row]})
       let amount = Number(thread[1].answer)
-      if (isNaN(amount)) return inter.channel.send("Invalid amount: `"+thread[0].answer+"`\nMake sure the format is correct.")
+      if (isNaN(amount)) return inter.channel.send({content: "Invalid amount: `"+thread[0].answer+"`\nMake sure the format is correct.", components: [row]})
       
+      if (!phone) {
+        let phone = new phoneModel(phoneSchema)
+        phone.userId = inter.user.id
+        phone.number = num
+        await phone.save()
+      }
       shop.expected.push({channel: inter.channel.id, amount: amount, num: num})
       let responder = shop.ar.responders.find(res => '.gcash' === shop.ar.prefix+res.command)
       if (responder) {
-        await inter.channel.send({content: emojis.loading+" Please send your payment here.", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+        await inter.channel.send({content: emojis.loading+" send your payment here :\n\n"+responder.response+"\n\n-# Number: `"+thread[0].answer+"`\n-# Expected Amount: `"+thread[1].answer+"`", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
       }
     }
     else if (id.startsWith('gsaRaw')) {
