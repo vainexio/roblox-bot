@@ -2968,10 +2968,6 @@ app.get('/gcash', async function (req, res) {
     let embed = new MessageEmbed()
     .addFields(
       {
-        name: 'Money Received',
-        value: req.query.title
-      },
-      {
         name: 'Amount Sent',
         value: '```diff\n+ ₱ '+data.amount+'```',
         inline: true,
@@ -2982,7 +2978,7 @@ app.get('/gcash', async function (req, res) {
         inline: true,
       },
     )
-    .setFooter({text: req.query.pkg})
+    .setFooter({text: "Thank you for using auto pay"})
     .setColor(colors.none)
     
     for (let i in shop.expected) {
@@ -2996,7 +2992,7 @@ app.get('/gcash', async function (req, res) {
         console.log(transac)
         let cd = await getChannel(transac.channel)
         if (!cd) return shop.expected.splice(i,1)
-        await cd.send({content: emojis.check+" Payment Received", embeds: [embed]})
+        await cd.send({content: emojis.check+" Your payment was received *!*", embeds: [embed]})
         shop.expected.splice(i,1)
         return;
       }
