@@ -2733,7 +2733,17 @@ client.on('interactionCreate', async inter => {
       
       let temp = await getChannel(shop.channels.templates)
       let msg = await temp.messages.fetch('1258055219355586600')
-      inter.channel.send({content: msg.content.replace('{status}',booster)})
+      await inter.channel.send({content: msg.content.replace('{status}',booster)})
+      
+      let row = new MessageActionRow().addComponents(
+          new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
+        );
+      
+      await inter.channel.send({content: "<:gcash:1273091410228150276> Would you like to auto pay with GCash?", components: []})
+    }
+    else if (id.startsWith('autopay-')) {
+      let userId = id.replace('autopay-','')
+      await inter.reply({content: "Please type in the number you're going to use"})
     }
     else if (id.startsWith('gsaRaw')) {
       inter.reply({content: '```json\n'+JSON.stringify(shop.gcashStatus, null, 2).replace(/ *\<[^>]*\> */g, "")+'```', ephemeral: true})
