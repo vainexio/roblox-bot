@@ -2748,7 +2748,7 @@ client.on('interactionCreate', async inter => {
         new MessageButton().setCustomId('autopay-'+inter.user.id).setStyle('SUCCESS').setLabel('Yes'),
       );
       
-      await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws, if the receipt the payment was not validated. Please send the receipt instead.\n** **", components: [row]})
+      await inter.channel.send({content: "** **\n<:gcash:1273091410228150276> Would you like to auto pay with GCash?\n-# Auto pay may have flaws. If the receipt the payment was not validated, please send the receipt instead.\n** **", components: [row]})
     }
     else if (id.startsWith('autopay-')) {
       let userId = id.replace('autopay-','')
@@ -2792,17 +2792,23 @@ client.on('interactionCreate', async inter => {
         msg = msg?.first()
         data.answer = msg.content
       }
-      let count = 0
-      let phone = phoneModel.findOne({userId: inter.user.id})
+      let phone = await phoneModel.findOne({userId: inter.user.id})
       if (phone) {
         thread[0].answer = phone.number
-        await inter.channel.send(emojis.check+" I remembered your phone number. `"+phone.number+"`")
-        count += 1
+        await inter.channel.send({content: emojis.check+" I remembered your phone number. `"+phone.number+"`\n\nSay **OK** if you want to use this. If not, send your new phone number."})
+        let msg = await inter.channel.awaitMessages({ filter, max: 1,time: 900000 ,errors: ['time'] })
+        
+        msg = msg?.first()
+        if (msg.content.toLowerCase().includes('ok')) {
+        } else {
+          thread[0].answer = msg.content
+        }
       }
       for (let i in thread) {
         let data = thread[i]
-        count++
-        await getResponse(data,count)
+        if (data.answer == "") {
+          await getResponse(data)
+        }
       }
       let num = normalizeMobileNumber(thread[0].answer)
       if (!num) return inter.channel.send({content: "Invalid phone number: `"+thread[0].answer+"`\nMake sure the format is correct.", components: [row]})
@@ -2818,7 +2824,7 @@ client.on('interactionCreate', async inter => {
       shop.expected.push({channel: inter.channel.id, amount: amount, num: num})
       let responder = shop.ar.responders.find(res => '.gcash' === shop.ar.prefix+res.command)
       if (responder) {
-        await inter.channel.send({content: emojis.loading+" send your payment here :\n\n"+responder.response+"\n\n-# Number: `"+thread[0].answer+"`\n-# Expected Amount: `"+thread[1].answer+"`", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
+        await inter.channel.send({content: emojis.loading+" send your payment here :\n\n\<a:yl_exclamationan:1138705076395978802> **gcash**\n\<:indent:1174738613330788512> 0945-986-8489 [ **R. I.** ]\n\n-# Number: `"+thread[0].answer+"`\n-# Expected Amount: `"+thread[1].answer+"`", embeds: responder.embed ? [responder.embed] : [], files: responder.files ? responder.files : [], components: responder.components ? [responder.components] : []})
       }
     }
     else if (id.startsWith('gsaRaw')) {
