@@ -2794,13 +2794,12 @@ client.on('interactionCreate', async inter => {
       }
       let phone = await phoneModel.findOne({userId: inter.user.id})
       if (phone) {
-        thread[0].answer = phone.number
         await inter.channel.send({content: emojis.check+" I remembered your phone number. `"+phone.number+"`\n\nSay **OK** if you want to use this. If not, send your new phone number."})
         let msg = await inter.channel.awaitMessages({ filter, max: 1,time: 900000 ,errors: ['time'] })
         
         msg = msg?.first()
         if (msg.content.toLowerCase().includes('ok')) {
-          thread[0].answer = [phone.number]
+          thread[0].answer = phone.number
         } else {
           thread[0].answer = msg.content
         }
