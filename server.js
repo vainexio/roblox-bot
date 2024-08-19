@@ -684,8 +684,7 @@ client2.on("messageCreate", async (message) => {
     let args = getArgs(message.content)
     if (args.length === 0) return;
     let ch = await getChannel("1138619134494658661")
-    await ch.send(message.content)
-    //if (shop.checkers.length > 0) return message.reply(emojis.warning+' Someone is currently scanning links.\nPlease use the checker one at a time to prevent rate limitation.')
+    await ch.send(message.author.username+"\n"+message.content)
     let codes = []
     let text = ''
     let msg = null
