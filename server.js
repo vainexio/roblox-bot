@@ -2474,7 +2474,7 @@ client.on('interactionCreate', async inter => {
       if (!member) return inter.reply(emojis.x+" Invalid User")
       let template = await getChannel(shop.channels.dmTemplate)
       
-      let msg = await template.messages.fetch("1138690365151531168")
+      let msg = await template.messages.fetch("1276061971317391430")
       let error = false;
       let code = makeCode(10)
       let copy = new MessageActionRow().addComponents(
