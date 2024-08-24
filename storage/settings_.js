@@ -1258,7 +1258,7 @@ module.exports = {
   ],
   permissions: [
     {
-      id: "1066284097879670824", //my user
+      id: "497918770187075595", //my user
       level: 5,
     },
     {
