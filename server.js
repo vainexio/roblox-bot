@@ -64,7 +64,7 @@ let phoneModel
 let ticketId = 10
 
 client.on("debug", function(info){
-  console.log(info)
+  //console.log(info)
 });
 //When bot is ready
 client.on("ready", async () => {
