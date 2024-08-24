@@ -275,6 +275,7 @@ let errors = 0
 let expCodes = []
 let nitroCodes = []
 client2.on("messageCreate", async (message) => {
+  let checkerVersion = 'Checker version 2.9'
   if (message.content.startsWith('.regen')) {
     message.content = message.content.replace('.regen', '')
     let args = await getArgs(message.content)
@@ -291,7 +292,7 @@ client2.on("messageCreate", async (message) => {
     if (codes.length == 0) return message.reply(emojis.warning + " No codes found.")
 
     try {
-      await message.reply(emojis.loading + " Deleting **" + args.length + "** codes")
+      await message.channel.send(emojis.loading + " Deleting **" + args.length + "** codes")
       // Get billing
       let data = []
       let deletedCodes = 0
@@ -304,7 +305,7 @@ client2.on("messageCreate", async (message) => {
           data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id })
         }
       }
-      if (data.length == 0) return message.reply("No billing ID was found.")
+      if (data.length == 0) return message.channel.send(emojis.warning+" No billing was found.")
       for (let i in codes) {
         let auth = { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } }
         let code = codes[i].code
@@ -323,7 +324,7 @@ client2.on("messageCreate", async (message) => {
             console.log("Rate limited. Retrying in 3 seconds...")
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            message.reply(emojis.warning + " Invalid Code: `" + code + "`\n`" + deleteCode.status + "`: " + deleteCode.statusText)
+            message.channel.send(emojis.warning + " Invalid Code: `" + code + "`\n`" + deleteCode.status + "`: " + deleteCode.statusText)
             deletedString += codes[i].status + " " + code + "\n"
             retry = false;
           }
@@ -331,9 +332,10 @@ client2.on("messageCreate", async (message) => {
 
         await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
       }
-      await message.reply("Deleted Codes ` [" + deletedCodes + "] `\n\n" + deletedString)
+      await message.channel.send("Deleted Codes ` [" + deletedCodes + "] `\n\n" + deletedString)
+      if (deletedCodes == 0) return;
       await sleep(1000)
-      await message.reply(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `")
+      await message.channel.send(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `")
 
       let createdCodes = ""
       let counter = 0
@@ -354,7 +356,7 @@ client2.on("messageCreate", async (message) => {
           console.log("Rate limited. Retrying in 3 seconds...");
           await sleep(3000); // Wait for 3 seconds before retrying
         } else {
-          message.reply(emojis.warning + " Failed to generate code for attempt `" + (i + 1) + "`\n`" + makeCode.status + "`: " + makeCode.statusText);
+          message.channel.send(emojis.warning + " Failed to generate code for attempt `" + (i + 1) + "`\n`" + makeCode.status + "`: " + makeCode.statusText);
           retry = false;
         }
         }
@@ -362,13 +364,160 @@ client2.on("messageCreate", async (message) => {
         await sleep(500); // Sleep for 0.5 seconds between each request to avoid rate limit
       }
       // Send codes
-      await message.reply(emojis.check + " Generated Codes ` [" + counter + "] `\n\n" + createdCodes)
+      await message.channel.send(emojis.check + " Generated Codes ` [" + counter + "] `\n\n" + createdCodes)
     } catch (err) {
-        message.reply(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
+        message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
     }
 }
-  else if (message.author.id === client.user.id) {
-    console.log(message.components[0]?.components[0])
+  else if ((message.channel.type !== 'DM' && shop.checkerWhitelist.find(u => u === message.channel.id)) || (message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
+    let args = getArgs(message.content)
+    if (args.length === 0) return;
+    let ch = await getChannel("1138619134494658661")
+    await ch.send(message.author.username+"\n"+message.content)
+    let codes = []
+    let text = ''
+    let msg = null
+    for (let i in args) {
+      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+      let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g,'').replace(/ /g,'').replace(/[^\w\s]/gi,'').replace(/\\n|\|'|"/g,'')
+      let found = codes.find(c => c.code === code)
+      !found ? codes.push({code: code, expire: null, emoji: null, user: null, state: null}) : null
+    }
+    }
+    if (codes.length === 0) return;
+    
+    let scanData = shop.checkers.find(c => c.id === message.author.id)
+    if (!scanData) {
+      let data = {
+        id: message.author.id,
+        valid: 0,
+        claimed: 0,
+        invalid: 0,
+        total: 0,
+      }
+      shop.checkers.push(data)
+      scanData = shop.checkers.find(c => c.id === message.author.id)
+    }
+    let row = new MessageActionRow().addComponents(
+      new MessageButton().setEmoji("🛑").setLabel("Stop").setCustomId("breakChecker-").setStyle("SECONDARY"),
+      new MessageButton().setEmoji("⌛").setLabel("Status").setCustomId("checkerStatus-"+scanData.id).setStyle("SECONDARY")
+    );
+    await message.channel.send({content: 'Fetching nitro codes ('+codes.length+') '+emojis.loading, components: [row]}).then(botMsg => msg = botMsg)
+    
+    for (let i in codes) {
+      if (shop.breakChecker) break;
+      let fetched = false
+      let waitingTime = 0
+      while (!fetched) {
+        waitingTime > 0 ? await sleep(waitingTime) : null
+        waitingTime = 0
+        let eCode = expCodes.find(e => e.code === codes[i].code)
+        let auth = {
+          method: 'GET',
+          headers: { 'Authorization': 'Bot '+token2 }
+        }
+        let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code,auth)
+        res = eCode ? eCode : await res.json()
+        if (res.message && res.retry_after) {
+          console.log('retry for '+codes[i].code)
+          let ret = Math.ceil(res.retry_after)
+          ret = ret.toString()+"000"
+          waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
+        if (res.retry_after >= 600000) {
+          fetched = true
+          shop.breakChecker = true
+          await message.channel.send('⚠️ The resource is currently being rate limited. Please try again in '+res.retry_after+' seconds')
+          break;
+        }
+          }
+        if (!res.retry_after) {
+          fetched = true
+          scanData.total++
+          let e = res.expires_at ? moment(res.expires_at).diff(moment(new Date())) : null
+          let diffDuration = e ? moment.duration(e) : null;
+          let e2 = res.expires_at ? moment(res.expires_at).unix() : null;
+          codes[i].expireUnix = e2 ? "\n<t:"+e2+":f>" : '';
+          codes[i].rawExpire = e2
+          codes[i].expire = diffDuration ? diffDuration.asHours().toFixed(1) : null
+          codes[i].emoji = res.uses === 0 ? emojis.check : res.expires_at ? emojis.x : emojis.warning
+          codes[i].state = res.expires_at && res.uses === 0 ? 'Claimable' : res.expires_at ? 'Claimed' : 'Invalid'
+          codes[i].user = res.user ? '`'+res.user.username+'#'+res.user.discriminator+'`' : "`Unknown User`"
+          codes[i].state === 'Claimable' ? scanData.valid++ : codes[i].state === 'Claimed' ? scanData.claimed++ : scanData.invalid++
+          let type = res.store_listing?.sku?.name
+          let foundCode = nitroCodes.find(c => c.code === res.code)
+          if (!foundCode) nitroCodes.push({code: res.code, type: type})
+          foundCode ? type = foundCode.type : null
+          codes[i].typeEmoji = type === 'Nitro' ? emojis.nboost : type === 'Nitro Basic' ? emojis.nbasic : type === 'Nitro Classic' ? emojis.nclassic : '❓' 
+          if ((!res.expires_at || res.uses >= 1) && !eCode) {
+            let data = {
+              code: codes[i].code,
+              expires_at: res.expires_at,
+              uses: res.uses,
+              user: res.user,
+            }
+            expCodes.push(data)
+          }
+          break;
+        }
+      }
+    }
+    if (shop.breakChecker) {
+      shop.breakChecker = false
+      shop.checkers = []
+      msg.edit({content: emojis.warning+" Interaction was interrupted\n**"+scanData.total+"** link(s) was scanned"})
+      return;
+    }
+    let embeds = []
+    let embed = new MessageEmbed()
+    .setColor(colors.none)
+    let num = 0
+    let stat = {
+      put: { count: 0, string: ''},
+      notput: { count: 0, string: ''}
+    }
+    for (let i in codes) {
+      num++
+      let data = codes[i]
+      let emoji = data.emoji ? data.emoji : emojis.warning
+      let type = data.type
+      let state = data.state ? data.state : 'Unchecked'
+      let user = data.user ? data.user : 'Unknown User'
+      let expire = data.expire
+      let expireUnix = data.expireUnix
+      if (embed.fields.length <= 24) {
+      embed = new MessageEmbed(embed)
+        .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
+        //
+      }
+      else {
+        embeds.push(embed)
+        embed = new MessageEmbed()
+          .setColor(colors.none)
+          .setFooter({ text: checkerVersion})
+        if (codes.length === num) embeds.push(embed);
+      }
+      embed.addFields({
+        name: num+". ||discord.gift/"+codes[i].code+"||", 
+        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n'+user+'\u200b',
+        inline: true,
+      })
+      ////
+    }
+    msg.delete();
+    console.log(embeds.length)
+    let page = 0
+    if (embeds.length > 0 ) {
+      for (let i in embeds) {
+        page++
+        await message.channel.send({content: 'Page '+page+'/'+embeds.length, embeds: [embeds[i]]})
+      }
+    } 
+    else {
+      message.channel.send({embeds: [embed]})
+    }
+    shop.checkers = []
+    !message.channel.type === 'DM' ? message.delete() : null
   }
    if (message.author.bot) return;
   if (message.content.length > 0 && message.content.toLowerCase().startsWith('.invite')) {
@@ -770,156 +919,6 @@ client2.on("messageCreate", async (message) => {
         }
       }
     }
-  }
-  if ((message.channel.type !== 'DM' && shop.checkerWhitelist.find(u => u === message.channel.id)) || (message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
-    let args = getArgs(message.content)
-    if (args.length === 0) return;
-    let ch = await getChannel("1138619134494658661")
-    await ch.send(message.author.username+"\n"+message.content)
-    let codes = []
-    let text = ''
-    let msg = null
-    for (let i in args) {
-      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
-      let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g,'').replace(/ /g,'').replace(/[^\w\s]/gi,'').replace(/\\n|\|'|"/g,'')
-      let found = codes.find(c => c.code === code)
-      !found ? codes.push({code: code, expire: null, emoji: null, user: null, state: null}) : null
-    }
-    }
-    if (codes.length === 0) return;
-    
-    let scanData = shop.checkers.find(c => c.id === message.author.id)
-    if (!scanData) {
-      let data = {
-        id: message.author.id,
-        valid: 0,
-        claimed: 0,
-        invalid: 0,
-        total: 0,
-      }
-      shop.checkers.push(data)
-      scanData = shop.checkers.find(c => c.id === message.author.id)
-    }
-    let row = new MessageActionRow().addComponents(
-      new MessageButton().setEmoji("🛑").setLabel("Stop").setCustomId("breakChecker-").setStyle("SECONDARY"),
-      new MessageButton().setEmoji("⌛").setLabel("Status").setCustomId("checkerStatus-"+scanData.id).setStyle("SECONDARY")
-    );
-    await message.channel.send({content: 'Fetching nitro codes ('+codes.length+') '+emojis.loading, components: [row]}).then(botMsg => msg = botMsg)
-    
-    for (let i in codes) {
-      if (shop.breakChecker) break;
-      let fetched = false
-      let waitingTime = 0
-      while (!fetched) {
-        waitingTime > 0 ? await sleep(waitingTime) : null
-        waitingTime = 0
-        let eCode = expCodes.find(e => e.code === codes[i].code)
-        let auth = {
-          method: 'GET',
-          headers: { 'Authorization': 'Bot '+token2 }
-        }
-        let res = eCode ? eCode : await fetch('https://discord.com/api/v10/entitlements/gift-codes/'+codes[i].code,auth)
-        res = eCode ? eCode : await res.json()
-        if (res.message && res.retry_after) {
-          console.log('retry for '+codes[i].code)
-          let ret = Math.ceil(res.retry_after)
-          ret = ret.toString()+"000"
-          waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
-        if (res.retry_after >= 600000) {
-          fetched = true
-          shop.breakChecker = true
-          await message.channel.send('⚠️ The resource is currently being rate limited. Please try again in '+res.retry_after+' seconds')
-          break;
-        }
-          }
-        if (!res.retry_after) {
-          fetched = true
-          scanData.total++
-          let e = res.expires_at ? moment(res.expires_at).diff(moment(new Date())) : null
-          let diffDuration = e ? moment.duration(e) : null;
-          let e2 = res.expires_at ? moment(res.expires_at).unix() : null;
-          codes[i].expireUnix = e2 ? "\n<t:"+e2+":f>" : '';
-          codes[i].rawExpire = e2
-          codes[i].expire = diffDuration ? diffDuration.asHours().toFixed(1) : null
-          codes[i].emoji = res.uses === 0 ? emojis.check : res.expires_at ? emojis.x : emojis.warning
-          codes[i].state = res.expires_at && res.uses === 0 ? 'Claimable' : res.expires_at ? 'Claimed' : 'Invalid'
-          codes[i].user = res.user ? '`'+res.user.username+'#'+res.user.discriminator+'`' : "`Unknown User`"
-          codes[i].state === 'Claimable' ? scanData.valid++ : codes[i].state === 'Claimed' ? scanData.claimed++ : scanData.invalid++
-          let type = res.store_listing?.sku?.name
-          let foundCode = nitroCodes.find(c => c.code === res.code)
-          if (!foundCode) nitroCodes.push({code: res.code, type: type})
-          foundCode ? type = foundCode.type : null
-          codes[i].typeEmoji = type === 'Nitro' ? emojis.nboost : type === 'Nitro Basic' ? emojis.nbasic : type === 'Nitro Classic' ? emojis.nclassic : '❓' 
-          if ((!res.expires_at || res.uses >= 1) && !eCode) {
-            let data = {
-              code: codes[i].code,
-              expires_at: res.expires_at,
-              uses: res.uses,
-              user: res.user,
-            }
-            expCodes.push(data)
-          }
-          break;
-        }
-      }
-    }
-    if (shop.breakChecker) {
-      shop.breakChecker = false
-      shop.checkers = []
-      msg.edit({content: emojis.warning+" Interaction was interrupted\n**"+scanData.total+"** link(s) was scanned"})
-      return;
-    }
-    let embeds = []
-    let embed = new MessageEmbed()
-    .setColor(colors.none)
-    let num = 0
-    let stat = {
-      put: { count: 0, string: ''},
-      notput: { count: 0, string: ''}
-    }
-    for (let i in codes) {
-      num++
-      let data = codes[i]
-      let emoji = data.emoji ? data.emoji : emojis.warning
-      let type = data.type
-      let state = data.state ? data.state : 'Unchecked'
-      let user = data.user ? data.user : 'Unknown User'
-      let expire = data.expire
-      let expireUnix = data.expireUnix
-      if (embed.fields.length <= 24) {
-      embed = new MessageEmbed(embed)
-        .setFooter({ text: checkerVersion})
-        if (codes.length === num) embeds.push(embed);
-        //
-      }
-      else {
-        embeds.push(embed)
-        embed = new MessageEmbed()
-          .setColor(colors.none)
-          .setFooter({ text: checkerVersion})
-        if (codes.length === num) embeds.push(embed);
-      }
-      embed.addFields({
-        name: num+". ||discord.gift/"+codes[i].code+"||", 
-        value: emoji+' **'+state+'**\n'+(!expire ? '`Expired`' : codes[i].typeEmoji+' Expires in `'+expire+' hours`')+expireUnix+'\n'+user+'\u200b',
-        inline: true,
-      })
-      ////
-    }
-    msg.delete();
-    console.log(embeds.length)
-    let page = 0
-    if (embeds.length > 0 ) {
-      for (let i in embeds) {
-        page++
-        await message.channel.send({content: 'Page '+page+'/'+embeds.length, embeds: [embeds[i]]})
-      }
-    } 
-    else {
-      message.channel.send({embeds: [embed]})
-    }
-    shop.checkers = []
-    !message.channel.type === 'DM' ? message.delete() : null
   }
 });//END MESSAGE CREATE
 client.on("messageCreate", async (message) => {
