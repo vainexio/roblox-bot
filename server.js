@@ -307,12 +307,23 @@ client2.on("messageCreate", async (message) => {
       }
       if (data.length == 0) return message.channel.send(emojis.warning+" No billing was found.")
       for (let i in codes) {
-        let auth = { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } }
         let code = codes[i].code
         let retry = true;
 
         while (retry) {
-          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/' + code, auth)
+          let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } })
+          codeStatus = await codeStatus.json();
+          console.log(codeStatus)
+          if (!codeStatus.retry_after && codeStatus.uses == 1) {
+            codes[i].status = emojis.check
+            deletedString += codes[i].status + " " + code + "\n"
+          } else if (codeStatus.retry_after) {
+            console.log("Rate limited. Retrying in 3 seconds...")
+            await sleep(3000); // Wait for 3 seconds before retrying
+            continue
+          }
+          
+          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/' + code, { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } })
           console.log("Deletion status: ", deleteCode.status)
 
           if (deleteCode.status == 204) {
@@ -356,7 +367,7 @@ client2.on("messageCreate", async (message) => {
           console.log("Rate limited. Retrying in 3 seconds...");
           await sleep(3000); // Wait for 3 seconds before retrying
         } else {
-          message.channel.send(emojis.warning + " Failed to generate code for attempt `" + (i + 1) + "`\n`" + makeCode.status + "`: " + makeCode.statusText);
+          message.channel.send(emojis.warning + " Failed to generate code ` [" + (i + 1) + "] `\n`" + makeCode.status + "`: " + makeCode.statusText);
           retry = false;
         }
         }
