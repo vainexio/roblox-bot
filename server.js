@@ -311,12 +311,13 @@ client2.on("messageCreate", async (message) => {
         let retry = true;
 
         while (retry) {
-          let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } })
+          let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': 'Bot '+process.env.SECRET, 'Content-Type': 'application/json' } })
           codeStatus = await codeStatus.json();
-          console.log(codeStatus)
           if (!codeStatus.retry_after && codeStatus.uses == 1) {
-            codes[i].status = emojis.check
+            message.channel.send(emojis.warning + " Link was already claimed. ` ["+code+"] `")
             deletedString += codes[i].status + " " + code + "\n"
+            retry = false
+            continue
           } else if (codeStatus.retry_after) {
             console.log("Rate limited. Retrying in 3 seconds...")
             await sleep(3000); // Wait for 3 seconds before retrying
@@ -1168,8 +1169,9 @@ client.on("messageCreate", async (message) => {
   //
   if (message.channel.type === 'DM') return;
   //
-  if (message.content.includes('.codes')) {
+  if (message.content.startsWith('.codes')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    await message.react(emojis.loading)
     let auth = { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } }
     let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
     billings = await billings.json();
