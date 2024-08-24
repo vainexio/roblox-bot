@@ -344,7 +344,7 @@ client2.on("messageCreate", async (message) => {
 
         await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
       }
-      await message.channel.send("Deleted Codes ` [" + deletedCodes + "] `\n\n" + deletedString)
+      await message.channel.send("Deleted Codes ` [" + deletedCodes + "] `\n\n" + (deletedCodes > 0 ? deletedString : ""))
       if (deletedCodes == 0) return;
       await sleep(1000)
       await message.channel.send(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `")
