@@ -337,7 +337,7 @@ client2.on("messageCreate", async (message) => {
       
       let revoked = await revokeLinks(validatedCodes)
       if (revoked.error) return message.channel.send(revoked.error)
-      message.channel.send(revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(codes.length-validatedCodes.length)+"] ` Invalid/Claimed Links\n"+deletedString))
+      await deleteMsg.edit(revoked.message+"\n"+(codes.length == validatedCodes.length ? "** **" : "` ["+(codes.length-validatedCodes.length)+"] ` Invalid/Claimed Links\n"+deletedString+"\n** **"))
       // Handle empty data
       if (revoked.count == 0) return;
       if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
