@@ -32,6 +32,7 @@ let emojis = {
   nboost: '<:nitroboost:1138778798792384616>',
   nbasic: '<:nitrobasic:1138778772540235786>',
   nclassic: '<:nitrobasic:1138778772540235786>',
+  trash: '🗑️',
 }
 let keys = [ 'basic', 'netflix', 'nf', 'spoti', 'nitro', 'nb', 'swc', 'robux', 'pending', 'prem', 'comm', 'noted', 'sb', 'badge', 'db', 'vp', 'valorant', 'canva' ]
 module.exports = {

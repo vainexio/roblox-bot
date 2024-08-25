@@ -2,6 +2,8 @@ const settings = require('../storage/settings_.js')
 const {prefix, colors, theme, commands, permissions, emojis,} = settings
 const others = require('../functions/others.js')
 
+const fetch = require('node-fetch');
+
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 module.exports = {
@@ -128,7 +130,7 @@ module.exports = {
           
           if (deleteCode.status == 204 || deleteCode.status == 200) {
             deletedCodes++;
-            codes[i].status = emojis.check;
+            codes[i].status = emojis.trash;
             deletedString += codes[i].status+" "+code+"\n";
             retry = false;
           } else if (deleteCode.status == 429) {

@@ -301,7 +301,7 @@ client2.on("messageCreate", async (message) => {
       let data = []
       let deletedCodes = 0
       let deletedString = ""
-      
+      let validatedCodes = []
       // Validate codes
       for (let i in codes) {
         let code = codes[i].code
@@ -312,9 +312,8 @@ client2.on("messageCreate", async (message) => {
           let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': 'Bot '+process.env.SECRET, 'Content-Type': 'application/json' } })
           codeStatus = await codeStatus.json();
           // Return if claimed
-          if (!codeStatus.retry_after && codeStatus.uses == 1) {
-            message.channel.send(emojis.warning + " Link was already claimed. ` ["+code+"] `")
-            deletedString += codes[i].status + " " + code + "\n"
+          if ((!codeStatus.retry_after && codeStatus.uses == 1) || (codeStatus.message == 'Unknown Gift Code')) {
+            message.channel.send(emojis.warning + " Link was already claimed/invalid. ` ["+code+"] `")
             retry = false
             continue
           }
@@ -323,23 +322,20 @@ client2.on("messageCreate", async (message) => {
             console.log("Rate limited. Retrying in 3 seconds...")
             await sleep(3000);
             continue
-          } 
+          }
           // Push SKU details
           else if (!data.find(d => d.id == codeStatus.sku_id)) {
               data.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
           }
-          
-          let data = await revokeLinks(codes)
-          if (data.error) return message.channel.send(data.error)
-          await message.channel.send(data.message)
+          validatedCodes.push(codes[i])
+          retry = false
         }
-
         await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
       }
       
-      // Display deleted codes
-      await deleteMsg.edit("Deleted Codes ` [" + deletedCodes + "] `\n\n" + (deletedCodes > 0 ? deletedString : ""))
-      
+      let revoked = await revokeLinks(validatedCodes)
+      if (revoked.error) return message.channel.send(revoked.error)
+      message.channel.send(revoked.message)
       // Handle empty data
       if (deletedCodes == 0) return;
       if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
@@ -1181,7 +1177,7 @@ client.on("messageCreate", async (message) => {
     try {
       // Revoke links
       let revoked = await revokeLinks(codes)
-      if (revoked.error) message.reply(revoked.error)
+      if (revoked.error) return message.reply(revoked.error)
       await message.reply(revoked.message)
       
     } catch (err) {
