@@ -1890,7 +1890,7 @@ client.on('interactionCreate', async inter => {
       let item = options.find(a => a.name === 'item')
       let mop = options.find(a => a.name === 'mop')
       let note = options.find(a => a.name === 'note')
-      let stop_queue = options.find(a => a.name === 'stop_queue')
+      let stop_queue = true//options.find(a => a.name === 'stop_queue')
       //Send prompt
       try {
         //Get stocks
@@ -1938,7 +1938,7 @@ client.on('interactionCreate', async inter => {
         if (!stop_queue) {
           let orders = await getChannel(shop.channels.orders)
           let template = await getChannel(shop.channels.templates)
-          let msg = await template.messages.fetch("1138661169171812393")
+          let msg = await template.messages.fetch("1252193604915433483")
           let content = msg.content
           content = content
             .replace('{user}','<@'+user.user.id+'>')
