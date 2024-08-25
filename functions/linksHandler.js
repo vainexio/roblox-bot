@@ -145,7 +145,7 @@ module.exports = {
 
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
-      return { message: "Revoked Codes ` ["+deletedCodes+"] `\n"+deletedString}
+      return { message: "Revoked Codes ` ["+deletedCodes+"] `\n"+deletedString, count: deletedCodes}
     } catch (err) {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }

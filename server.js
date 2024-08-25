@@ -296,10 +296,9 @@ client2.on("messageCreate", async (message) => {
 
     try {
       let deleteMsg
-      await message.channel.send(emojis.loading + " Deleting **" + args.length + "** codes").then(msg => deleteMsg = msg)
+      await message.channel.send(emojis.loading + " Revoking **" + args.length + "** codes").then(msg => deleteMsg = msg)
       // Get billing
       let data = []
-      let deletedCodes = 0
       let deletedString = ""
       let validatedCodes = []
       // Validate codes
@@ -313,7 +312,7 @@ client2.on("messageCreate", async (message) => {
           codeStatus = await codeStatus.json();
           // Return if claimed
           if ((!codeStatus.retry_after && codeStatus.uses == 1) || (codeStatus.message == 'Unknown Gift Code')) {
-            message.channel.send(emojis.warning + " Link was already claimed/invalid. ` ["+code+"] `")
+            deletedString += "` ["+code+"] `\n"
             retry = false
             continue
           }
@@ -335,16 +334,16 @@ client2.on("messageCreate", async (message) => {
       
       let revoked = await revokeLinks(validatedCodes)
       if (revoked.error) return message.channel.send(revoked.error)
-      message.channel.send(revoked.message)
+      message.channel.send(revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "Invalid/Claimed Links ` ["+(codes.length-validatedCodes.length)+"] `\n"+deletedString))
       // Handle empty data
-      if (deletedCodes == 0) return;
+      if (revoked.count == 0) return;
       if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
       await sleep(1000)
       
       // Generate codes
       let createMsg
-      await message.channel.send(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `").then(msg => createMsg = msg)
-      let generated = await generateLinks(deletedCodes,data)
+      await message.channel.send(emojis.loading + " Generating New Codes ` [" + revoked.count + "] `").then(msg => createMsg = msg)
+      let generated = await generateLinks(revoked.count,data)
       if (generated.error) createMsg.reply(generated.error)
       await createMsg.edit(generated.message)
       
