@@ -79,7 +79,7 @@ module.exports = {
             console.log('Rate limited. Retrying in 3 seconds...');
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            console.log(emojis.warning + ' Unable to generate code ` [' + counter + '] `\n`' + makeCode.status + '`');
+            console.log(emojis.warning + '[' + counter + '] Unable to generate code\n`' + makeCode.status + '`');
             retry = false;
           }
         }
@@ -93,7 +93,7 @@ module.exports = {
       }
 
       // Send codes
-      return { message: emojis.check + ' Generated Codes ` [' + counter + '] `\n\n' + createdCodes };
+      return { message: emojis.check + '` [' + counter + '] ` Generated Codes\n\n' + createdCodes };
     } catch (err) {
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
     }
@@ -145,7 +145,7 @@ module.exports = {
 
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
-      return { message: "Revoked Codes ` ["+deletedCodes+"] `\n"+deletedString, count: deletedCodes}
+      return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString, count: deletedCodes}
     } catch (err) {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
@@ -175,16 +175,16 @@ module.exports = {
       let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
       response = await response.json()
       let counter = 0
-      codeString += "\n` SKU ` "+found.id+"\n` PLAN ` "+found.subscription+"\n"
+      codeString += "\n` [SKU] ` "+found.id+"\n` [PLAN] ` "+found.subscription+"\n"
       for (let i in response) {
         codesCount++
-        if (!codes.find(c => c == response[i].code)) {
+        if (!codes.find(c => c == response[i].code) && response[i].uses == 0) {
           codes.push(response[i].code)
           counter++
-          codeString += counter.toString()+". https://discord.gift/"+response[i].code+"\n"
+          codeString += counter.toString()+". discord.gift/"+response[i].code+"\n"
         }
       }
     }
-    return { message: "Collected Codes ` ["+codesCount+"] `"+codeString}
+    return { message: "` ["+codesCount+"] ` Collected Codes"+codeString}
   },
 };
