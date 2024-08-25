@@ -262,6 +262,9 @@ const {getRole, addRole, removeRole, hasRole} = roles
 //Tickets Handler
 const tickets = require('./functions/tickets.js')
 const {makeTicket} = tickets
+//Links Handler
+const linksHandler = require('./functions/linksHandler.js')
+const { generateLinks, revokeLinks, fetchLinks} = linksHandler
 //const {} = boostbot
 /*
 ░█████╗░██╗░░░░░██╗███████╗███╗░░██╗████████╗  ███╗░░░███╗███████╗░██████╗░██████╗░█████╗░░██████╗░███████╗
@@ -280,7 +283,7 @@ client2.on("messageCreate", async (message) => {
     message.content = message.content.replace('.regen', '')
     let args = await getArgs(message.content)
     if (args.length === 0) return;
-
+    
     let codes = []
     for (let i in args) {
       if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
@@ -292,93 +295,65 @@ client2.on("messageCreate", async (message) => {
     if (codes.length == 0) return message.reply(emojis.warning + " No codes found.")
 
     try {
-      await message.channel.send(emojis.loading + " Deleting **" + args.length + "** codes")
+      let deleteMsg
+      await message.channel.send(emojis.loading + " Deleting **" + args.length + "** codes").then(msg => deleteMsg = msg)
       // Get billing
       let data = []
       let deletedCodes = 0
       let deletedString = ""
-      let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30', { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } })
-      billings = await billings.json();
-      for (let i in billings) {
-        let bill = billings[i]
-        if (!data.find(d => d.id == bill.sku_id)) {
-          data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id })
-        }
-      }
-      if (data.length == 0) return message.channel.send(emojis.warning+" No billing was found.")
+      
+      // Validate codes
       for (let i in codes) {
         let code = codes[i].code
         let retry = true;
 
         while (retry) {
+          // Check if link is claimed
           let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': 'Bot '+process.env.SECRET, 'Content-Type': 'application/json' } })
           codeStatus = await codeStatus.json();
+          // Return if claimed
           if (!codeStatus.retry_after && codeStatus.uses == 1) {
             message.channel.send(emojis.warning + " Link was already claimed. ` ["+code+"] `")
             deletedString += codes[i].status + " " + code + "\n"
             retry = false
             continue
-          } else if (codeStatus.retry_after) {
+          }
+          // Retry if rate limited
+          else if (codeStatus.retry_after) {
             console.log("Rate limited. Retrying in 3 seconds...")
-            await sleep(3000); // Wait for 3 seconds before retrying
+            await sleep(3000);
             continue
+          } 
+          // Push SKU details
+          else if (!data.find(d => d.id == codeStatus.sku_id)) {
+              data.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
           }
           
-          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/' + code, { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } })
-          console.log("Deletion status: ", deleteCode.status)
-
-          if (deleteCode.status == 204) {
-            deletedCodes++
-            codes[i].status = emojis.check
-            deletedString += codes[i].status + " " + code + "\n"
-            retry = false;
-          } else if (deleteCode.status == 429) {
-            console.log("Rate limited. Retrying in 3 seconds...")
-            await sleep(3000); // Wait for 3 seconds before retrying
-          } else {
-            message.channel.send(emojis.warning + " Invalid Code: `" + code + "`\n`" + deleteCode.status + "`: " + deleteCode.statusText)
-            deletedString += codes[i].status + " " + code + "\n"
-            retry = false;
-          }
+          let data = await revokeLinks(codes)
+          if (data.error) return message.channel.send(data.error)
+          await message.channel.send(data.message)
         }
 
         await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
       }
-      await message.channel.send("Deleted Codes ` [" + deletedCodes + "] `\n\n" + (deletedCodes > 0 ? deletedString : ""))
+      
+      // Display deleted codes
+      await deleteMsg.edit("Deleted Codes ` [" + deletedCodes + "] `\n\n" + (deletedCodes > 0 ? deletedString : ""))
+      
+      // Handle empty data
       if (deletedCodes == 0) return;
+      if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
       await sleep(1000)
-      await message.channel.send(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `")
-
-      let createdCodes = ""
-      let counter = 0
-      for (let i = 0; i < deletedCodes; i++) {
-        let auth = { method: 'POST', body: JSON.stringify({ "sku_id": data[0].id, "subscription_plan_id": data[0].subscription, "gift_style": 4 }), headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } };
-        let retry = true;
-        
-        while (retry) {
-        let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
-        console.log("Generation status: ", makeCode.status);
-
-        if (makeCode.status == 200 || makeCode.status == 204) { // Assuming 200 is the success status for generating codes
-          makeCode = await makeCode.json();
-          counter++;
-          createdCodes += counter.toString() + ". https://discord.gift/" + makeCode.code + "\n";
-          retry = false;
-        } else if (makeCode.status == 429) {
-          console.log("Rate limited. Retrying in 3 seconds...");
-          await sleep(3000); // Wait for 3 seconds before retrying
-        } else {
-          message.channel.send(emojis.warning + " Failed to generate code ` [" + (i + 1) + "] `\n`" + makeCode.status + "`: " + makeCode.statusText);
-          retry = false;
-        }
-        }
-
-        await sleep(500); // Sleep for 0.5 seconds between each request to avoid rate limit
-      }
-      // Send codes
-      await message.channel.send(emojis.check + " Generated Codes ` [" + counter + "] `\n\n" + createdCodes)
+      
+      // Generate codes
+      let createMsg
+      await message.channel.send(emojis.loading + " Generating New Codes ` [" + deletedCodes + "] `").then(msg => createMsg = msg)
+      let generated = await generateLinks(deletedCodes,data)
+      if (generated.error) createMsg.reply(generated.error)
+      await createMsg.edit(generated.message)
+      
     } catch (err) {
-        message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
+      message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
     }
 }
   else if ((message.channel.type !== 'DM' && shop.checkerWhitelist.find(u => u === message.channel.id)) || (message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
@@ -1172,36 +1147,9 @@ client.on("messageCreate", async (message) => {
   if (message.content.startsWith('.codes')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     await message.react(emojis.loading)
-    let auth = { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } }
-    let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
-    billings = await billings.json();
-    let data = []
-    let codes = []
-    let codeString = ""
-    let codesCount = 0
-    // Get bulling
-    for (let i in billings) {
-      let bill = billings[i]
-      if (!data.find(d => d.id == bill.sku_id)) {
-        data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
-      }
-    }
-    // Collect codes
-    for (let i in data) {
-      let found = data[i]
-      let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
-      response = await response.json()
-      let counter = 0
-      for (let i in response) {
-        codesCount++
-        if (!codes.find(c => c == response[i].code)) {
-          codes.push(response[i].code)
-          counter++
-          codeString += counter.toString()+". https://discord.gift/"+response[i].code+"\n"
-        }
-      }
-    }
-    await message.reply("Collected Codes ` ["+codesCount+"] `\n\n"+codeString)
+    let data = await fetchLinks()
+    if (data.error) return message.reply(data.error)
+    await message.reply(data.message)
   }
   else if (message.content.startsWith('.generate')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
@@ -1209,60 +1157,17 @@ client.on("messageCreate", async (message) => {
     let args = await getArgs(message.content)
     if (args.length === 0) return;
     let amount = Number(args[0])
-    
-    try {
-      await message.reply(emojis.loading+" Generating **"+amount+"** codes")
-      // Get billing
-      let data = []
-      let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',{ method: 'GET', headers: {  'authorization': process.env.User, 'Content-Type': 'application/json' } })
-      billings = await billings.json();
-      for (let i in billings) {
-        let bill = billings[i]
-        if (!data.find(d => d.id == bill.sku_id)) data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
-      }
-      if (data.length == 0) return message.reply(emojis.warning+" No billing was found.")
-      await message.reply(emojis.loading+" Generating Codes ` ["+amount+"] `")
-      
-      let createdCodes = ""
-      let counter = 0
-      // Generate codes
-      for (let i = 0; i < amount; i++) {
-        let auth = {
-        method: 'POST',
-        body: JSON.stringify({ "sku_id": data[0].id, "subscription_plan_id": data[0].subscription, "gift_style": 4 }), headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } };
-        let retry = true;
-        
-        while (retry) {
-          let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
-          console.log("Generation status: ", makeCode.status);
-          if (makeCode.status == 200) {
-            makeCode = await makeCode.json();
-            counter++;
-            createdCodes += counter.toString() + ". https://discord.gift/" + makeCode.code + "\n";
-            retry = false;
-          } else if (makeCode.status == 429) {
-            console.log("Rate limited. Retrying in 3 seconds...");
-            await sleep(3000); // Wait for 3 seconds before retrying
-          } else {
-            console.log(makeCode);
-            message.reply(emojis.warning + " Unable to generate code ` [" + counter + "] `\n`" + makeCode.status + "`: " + makeCode.message);
-            retry = false;
-          }
-        }
-        await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
-      }
-      // Send codes
-      await message.reply(emojis.check+" Generated Codes ` ["+counter+"] `\n\n"+createdCodes)
-    } catch (err) {
-      message.reply(emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```")
-    }
+    await message.react(emojis.loading)
+    // Generate links
+    let data = await generateLinks(amount)
+    if (data.error) return message.reply(data.error)
+    await message.reply(data.message)
   }
   if (message.content.startsWith('.revoke')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     message.content = message.content.replace('.revoke','')
     let args = await getArgs(message.content)
     if (args.length === 0) return;
-    
     let codes = []
     for (let i in args) {
       if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
@@ -1272,52 +1177,13 @@ client.on("messageCreate", async (message) => {
       }
     }
     if (codes.length == 0) return message.reply(emojis.warning+" No codes found.")
-    
+    await message.react(emojis.loading)
     try {
-      await message.reply(emojis.loading+" Revoking **"+args.length+"** codes")
-      // Get billing
-      let data = []
-      let deletedCodes = 0
-      let deletedString = ""
-      let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',{ method: 'GET', headers: {  'authorization': process.env.User, 'Content-Type': 'application/json' } })
-      billings = await billings.json();
-      for (let i in billings) {
-        let bill = billings[i]
-        if (!data.find(d => d.id == bill.sku_id)) {
-          data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
-        }
-      }
-      if (data.length == 0) return message.reply("No billing ID was found.")
+      // Revoke links
+      let revoked = await revokeLinks(codes)
+      if (revoked.error) message.reply(revoked.error)
+      await message.reply(revoked.message)
       
-      for (let i in codes) {
-        let auth = { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } };
-        let code = codes[i].code;
-        let retry = true;
-        
-        while (retry) {
-          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/' + code, auth);
-          console.log("Revoke status: ", deleteCode.status);
-
-          if (deleteCode.status == 204 || deleteCode.status == 200) {
-            deletedCodes++;
-            codes[i].status = emojis.check;
-            deletedString += codes[i].status + " " + code + "\n";
-            retry = false;
-          } else if (deleteCode.status == 429) {
-            console.log("Rate limited. Retrying in 3 seconds...");
-            await sleep(3000); // Wait for 3 seconds before retrying
-          } else {
-            message.reply(emojis.warning + " Can't revoke code: `" + code + "`\n`" + deleteCode.status + "`: " + deleteCode.statusText);
-            deletedString += codes[i].status + " " + code + "\n";
-            console.log(deleteCode);
-            retry = false;
-          }
-        }
-
-        await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
-      }
-      await message.reply("Revoked Codes ` ["+deletedCodes+"] `\n\n"+deletedString)
-      await sleep(1000)
     } catch (err) {
       message.reply(emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```")
     }
