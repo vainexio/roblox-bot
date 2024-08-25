@@ -1890,7 +1890,7 @@ client.on('interactionCreate', async inter => {
       let item = options.find(a => a.name === 'item')
       let mop = options.find(a => a.name === 'mop')
       let note = options.find(a => a.name === 'note')
-      let stop_queue = true//options.find(a => a.name === 'stop_queue')
+      let stop_queue = options.find(a => a.name === 'stop_queue')
       //Send prompt
       try {
         //Get stocks
