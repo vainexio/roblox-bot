@@ -1939,7 +1939,7 @@ client.on('interactionCreate', async inter => {
         //Send auto queue
         let chName = quan.value+'。'+(item ? item.value : 'nitro boost')
         inter.channel.name !== chName ? inter.channel.setName(chName) : null
-        if (!stop_queue) {
+        if (price) {
           let orders = await getChannel(shop.channels.orders)
           let template = await getChannel(shop.channels.templates)
           let msg = await template.messages.fetch("1252193604915433483")
