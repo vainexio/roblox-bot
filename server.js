@@ -1146,7 +1146,19 @@ client.on("messageCreate", async (message) => {
   if (message.content.startsWith('.codes')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     await message.react(emojis.loading)
-    let data = await fetchLinks()
+    let args = await getArgs(message.content)
+    if (args.length === 0) return;
+    
+    let codes = []
+    for (let i in args) {
+      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+        let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
+        let found = codes.find(c => c === code)
+        !found ? codes.push({ code: code, status: emojis.warning }) : null
+      }
+    }
+    
+    let data = await fetchLinks(codes)
     if (data.error) return message.reply(data.error)
     await message.reply(data.message)
   }
