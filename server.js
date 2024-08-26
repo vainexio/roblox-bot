@@ -2829,15 +2829,15 @@ client.on('interactionCreate', async inter => {
       let count = 0
       let thread = [
         {
-          question: '> <:yuri_202:1252604785748742295> type the item you want to avail',
+          question: '> <a:y_starroll:1138704563529076786> which product do you want to avail?',
           answer: '',
         },
         {
-          question: '> <:yuri_202:1252604785748742295> how many of this item would you like to buy?',
+          question: '> <a:y_starroll:1138704563529076786> how many of this item do you wish to buy?',
           answer: '',
         },
         {
-          question: "> <:yuri_202:1252604785748742295> choose your payment method ( gcash, maya, paypal, skrill, rbx )",
+          question: "> <a:y_starroll:1138704563529076786> what's your mode of payment?",
           answer: '',
         },
       ]
@@ -2859,11 +2859,11 @@ client.on('interactionCreate', async inter => {
         new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Retry'),
       );
       let embed = new MessageEmbed()
-      .setDescription('<:yuri_202:1252604785748742295> item : **'+thread[0].answer+'**\n<:yuri_202:1252604785748742295> quantity : **'+thread[1].answer+'**\n<:yuri_202:1252604785748742295> payment : **'+thread[2].answer+'**')
+      .setDescription('item : **'+thread[0].answer+'**\namount : **'+thread[1].answer+'**\npayment : **'+thread[2].answer+'**')
       .setColor(colors.none)
       .setFooter({text: 'order confirmation'})
       
-      inter.channel.send({content: "> <:yuri_202:1252604785748742295> click yes if this is correct", embeds: [embed], components: [row]})
+      inter.channel.send({content: "<a:yl_flowerspin:1138705226082304020> is this your order *?*", embeds: [embed], components: [row]})
       shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
     }
     else if (id.startsWith('confirmOrder')) {
