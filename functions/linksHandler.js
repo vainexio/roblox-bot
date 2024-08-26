@@ -87,7 +87,7 @@ module.exports = {
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
 
         // If we've successfully generated a code, move to the next billing data if needed
-        if (counter < amount && billingIndex < data.length) {
+        if (counter < amount && i == amount-1) {
           billingIndex++;
         }
       }
