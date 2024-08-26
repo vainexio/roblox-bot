@@ -299,7 +299,7 @@ client2.on("messageCreate", async (message) => {
     
     try {
       let deleteMsg
-      await message.channel.send(emojis.loading + " Revoking **" + args.length + "** codes").then(msg => deleteMsg = msg)
+      await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
       // Get billing
       let data = []
       let deletedString = ""
