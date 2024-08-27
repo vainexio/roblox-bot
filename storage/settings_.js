@@ -740,6 +740,7 @@ module.exports = {
         channel: '1109020436764827699',
         status: 2,
         id: '1096319584514080859',
+        rs: '1277916151199825971',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077185666592768/Logopit_1680918349259.png?width=1440&height=360',
         types: [
           //Types
@@ -747,12 +748,13 @@ module.exports = {
             parent: 'Valorant Points',
             children: [
               //
-              { name: '125 vp', price: 50 },
-              { name: '380 vp', price: 143 },
-              { name: '790 vp', price: 285 },
-              { name: '1650 vp', price: 560 },
-              { name: '2850 vp', price: 930 },
-              { name: '5800 vp', price: 1850 },
+              { name: '375 vp', price: 145, rs: 145 },
+              { name: '650 vp', price: 243, rs: 240 },
+              { name: '1350 vp', price: 480, rs: 475 },
+              { name: '2100 vp', price: 720, rs: 715 },
+              { name: '3600 vp', price: 1195, rs: 1190 },
+              { name: '7500 vp', price: 2400, rs: 2390 },
+              { name: '*can do multiple orders*', price: 0, rs: 0 },
               //
             ],
           },
