@@ -15,7 +15,7 @@ const { exec } = require('node:child_process');
 //
 //Discord
 const Discord = require('discord.js');
-const {ActivityType, WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
+const {MessageAttachment, ActivityType, WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu} = Discord; 
 //const moment = require('moment');
 const myIntents = new Intents();
 myIntents.add(Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_VOICE_STATES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_PRESENCES, Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, Intents.FLAGS.DIRECT_MESSAGES);
@@ -246,7 +246,7 @@ function noPerms(message) {
 ╚═╝░░░░░░╚═════╝░╚═╝░░╚══╝░╚════╝░░░░╚═╝░░░╚═╝░╚════╝░╚═╝░░╚══╝╚═════╝░*/
 //Send Messages
 const sendMsg = require('./functions/sendMessage.js')
-const {sendChannel, sendUser} = sendMsg
+const {safeSend, sendChannel, sendUser} = sendMsg
 //Functions
 const get = require('./functions/get.js')
 const {getTime, chatAI, getNth, getChannel, getGuild, getUser, getMember, getRandom, getColor} = get
@@ -1143,7 +1143,7 @@ client.on("messageCreate", async (message) => {
   if (message.channel.type === 'DM') return;
   //
   if (message.content.startsWith('.codes')) {
-    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + ' Insufficient Permission' });
     await message.react(emojis.loading)
     let args = await getArgs(message.content)
     if (args.length === 0) return;
@@ -1154,12 +1154,15 @@ client.on("messageCreate", async (message) => {
         let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
         let found = codes.find(c => c === code)
         !found ? codes.push({ code: code, status: emojis.warning }) : null
-      }
+        }
     }
     
     let data = await fetchLinks(codes)
     if (data.error) return message.reply(data.error)
-    await message.reply(data.message)
+
+    // Combine the message into one large string
+    let messageContent = data.message;
+    await safeSend(message.channel,messageContent)
   }
   else if (message.content.startsWith('.generate')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
@@ -1171,7 +1174,7 @@ client.on("messageCreate", async (message) => {
     // Generate links
     let data = await generateLinks(amount)
     if (data.error) return message.reply(data.error)
-    await message.reply(data.message)
+    await safeSend(message.channel,data.message)
   }
   if (message.content.startsWith('.revoke')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
@@ -1192,7 +1195,7 @@ client.on("messageCreate", async (message) => {
       // Revoke links
       let revoked = await revokeLinks(codes)
       if (revoked.error) return message.reply(revoked.error)
-      await message.reply(revoked.message)
+      await safeSend(message.channel,data.message)
       
     } catch (err) {
       message.reply(emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```")
