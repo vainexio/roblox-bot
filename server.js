@@ -348,7 +348,8 @@ client2.on("messageCreate", async (message) => {
       await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes").then(msg => createMsg = msg)
       let generated = await generateLinks(revoked.count,data)
       if (generated.error) createMsg.reply(generated.error)
-      await createMsg.edit(generated.message)
+      await createMsg.delete()
+      await safeSend(message.channel,generated.message)
       await ch.send(message.author.username+"\n"+generated.message)
       
     } catch (err) {
@@ -1169,6 +1170,7 @@ client.on("messageCreate", async (message) => {
     message.content = message.content.replace('.generate','')
     let args = await getArgs(message.content)
     if (args.length === 0) return;
+    await message.react(emojis.loading)
     let amount = Number(args[0])
     await message.react(emojis.loading)
     // Generate links
@@ -1195,7 +1197,7 @@ client.on("messageCreate", async (message) => {
       // Revoke links
       let revoked = await revokeLinks(codes)
       if (revoked.error) return message.reply(revoked.error)
-      await safeSend(message.channel,data.message)
+      await safeSend(message.channel,revoked.message)
       
     } catch (err) {
       message.reply(emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```")
