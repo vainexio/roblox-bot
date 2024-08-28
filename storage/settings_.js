@@ -183,7 +183,7 @@ module.exports = {
     channels: {
       smsReader: '1138638222902165565',
       checker: '1138638208633159773',
-      announcements: '1109020434978054230',
+      announcements: '1278165540841459713',
       status: '1109020434810294345', //vc
       reportsVc: '1109020434810294346', //vc
       vouch: '1109020436026634260',
@@ -1016,11 +1016,11 @@ module.exports = {
       },
       {
         id: '1109020436026634265',
-        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1109020434978054230> for stock updates *!*',
+        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1278165540841459713> for stock updates *!*',
       },
       {
         id: '1168377722712621108',
-        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1109020434978054230> for stock updates *!*',
+        message: '<a:yl_exclamationan:1138705076395978802>Read <#1109020434978054229> for important notices *!*\n<:S_dot:1138714811908235444>Read <#1278165540841459713> for stock updates *!*',
       },
       {
         id: '0',
@@ -1062,12 +1062,12 @@ module.exports = {
         ),
       },
       {
-        id: '1109020434978054230',
+        id: '1278165540841459713',
         message: '** **\nBoost the server to get the Sloopier role *!*',
         order: true,
         comp: new MessageActionRow()
         .addComponents(
-          new MessageButton().setLabel('Order Here').setURL('https://discord.com/channels/1109020434449575936/1109020435754000423').setStyle('LINK').setEmoji('<a:y_catheart:1138704838360830044>')
+          new MessageButton().setLabel('order here').setURL('https://discord.com/channels/1109020434449575936/1109020435754000423').setStyle('LINK').setEmoji('<a:y_catheart:1138704838360830044>')
         )
       },
       {
