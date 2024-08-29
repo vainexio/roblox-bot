@@ -1178,7 +1178,8 @@ client.on("messageCreate", async (message) => {
     if (data.error) return message.reply(data.error)
     await safeSend(message.channel,data.message)
   }
-  if (message.content.startsWith('.revoke')) {
+  
+  else if (message.content.startsWith('.revoke')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     message.content = message.content.replace('.revoke','')
     let args = await getArgs(message.content)
