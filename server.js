@@ -981,7 +981,8 @@ client.on("messageCreate", async (message) => {
       await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
       // Get billing
       let data = []
-      let deletedString = ""
+      let invalidString = ""
+      let invalidCount = 0
       let otherAccString = ""
       let otherAccCount = 0
       let validatedCodes = []
@@ -997,7 +998,8 @@ client.on("messageCreate", async (message) => {
           codeStatus = await codeStatus.json();
           // Return if claimed
           if ((!codeStatus.retry_after && codeStatus.uses == 1) || (codeStatus.message == 'Unknown Gift Code')) {
-            deletedString += "` ["+code+"] `\n"
+            invalidString += "` ["+code+"] `\n"
+            invalidCount++
             retry = false
             continue
           }
@@ -1032,13 +1034,13 @@ client.on("messageCreate", async (message) => {
       let revoked = await revokeLinks(validatedCodes,acc)
       if (revoked.error) return message.channel.send(revoked.error)
       await deleteMsg.delete();
-      await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(codes.length-validatedCodes.length)+"] ` Invalid/Claimed Links\n"+deletedString+"** **"))
+      await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(invalidCount)+"] ` Invalid/Claimed Links\n"+invalidString+"** **"))
       if (otherAccCount > 0) {
         let string = ""
         for (let i in otherAcc) {
           string += otherAcc[i].string
         }
-        await safeSend(message.channel,string)
+        await safeSend(message.channel,"` ["+otherAccCount+"] ` Links in other account"+string)
       }
       // Handle empty data
       if (revoked.count == 0) return;
