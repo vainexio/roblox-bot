@@ -2,9 +2,9 @@
   "//1": "describes your app and its dependencies",
   "//2": "https://docs.npmjs.com/files/package.json",
   "//3": "updating this file will download and update your packages",
-  "name": "hello-express",
+  "name": "vainexio-template-1",
   "version": "0.0.1",
-  "description": "A simple Node app built on Express, instantly up and running.",
+  "description": "A discord bot template by vainexio.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -28,7 +28,7 @@
     "node": "16.x"
   },
   "repository": {
-    "url": "https://glitch.com/edit/#!/hello-express"
+    "url": "https://glitch.com/edit/#!/chisel-lavender-intelligence"
   },
   "license": "MIT",
   "keywords": [
