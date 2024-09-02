@@ -965,7 +965,7 @@ client.on("messageCreate", async (message) => {
     let args = await getArgs(message.content)
     if (args.length === 0) return;
     let acc = process.env[args[0].toLowerCase().replace(/\./g,'')]
-    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[0].toLowerCase().replace(/\./g,'')+" `.")
+    if (!acc) return message.reply(emojis.warning+" Invalid account name ` "+args[0].toLowerCase().replace(/\./g,'')+" `. Please input the account name that the link(s) were created!\n```yaml\n.regen acc_name\nlink1\nlink2\netc...```")
     let codes = []
     for (let i in args) {
       if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
