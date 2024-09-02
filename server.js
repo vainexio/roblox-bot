@@ -279,104 +279,6 @@ let expCodes = []
 let nitroCodes = []
 client2.on("messageCreate", async (message) => {
   let checkerVersion = 'Checker version 2.9'
-  if (message.content.startsWith('.regen')) {
-    if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + ' Insufficient Permission' });
-    message.content = message.content.replace('.regen', '')
-    let args = await getArgs(message.content)
-    if (args.length === 0) return;
-    let acc = process.env[args[0].toLowerCase().replace(/\./g,'')]
-    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[0].toLowerCase().replace(/\./g,'')+" `.")
-    let codes = []
-    for (let i in args) {
-      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
-        let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
-        let found = codes.find(c => c === code)
-        !found ? codes.push({ code: code, status: emojis.warning }) : null
-      }
-    }
-    if (codes.length == 0) return message.reply(emojis.warning + " No codes found.")
-    
-    try {
-      let deleteMsg
-      await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
-      // Get billing
-      let data = []
-      let deletedString = ""
-      let otherAccString = ""
-      let otherAccCount = 0
-      let validatedCodes = []
-      let otherAcc = []
-      // Validate codes
-      for (let i in codes) {
-        let code = codes[i].code
-        let retry = true;
-
-        while (retry) {
-          // Check if link is claimed
-          let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': 'Bot '+process.env.SECRET, 'Content-Type': 'application/json' } })
-          codeStatus = await codeStatus.json();
-          // Return if claimed
-          if ((!codeStatus.retry_after && codeStatus.uses == 1) || (codeStatus.message == 'Unknown Gift Code')) {
-            deletedString += "` ["+code+"] `\n"
-            retry = false
-            continue
-          }
-          // Retry if rate limited
-          else if (codeStatus.retry_after) {
-            console.log("Rate limited. Retrying in 3 seconds...")
-            await sleep(3000);
-            continue
-          }
-          // If link is on other account
-          else if (codeStatus.user.username != args[0].toLowerCase()) {
-            otherAccCount++
-            let foundAcc = otherAcc.find(d => d.name == codeStatus.user.username)
-            if (foundAcc) {
-              foundAcc.string += otherAccCount+". discord.gift/"+code+"\n"
-            } else {
-              otherAcc.push({name: codeStatus.user.username,string: "\n`"+codeStatus.user.username+"`\n"+otherAccCount+". discord.gift/"+code+"\n"}) 
-            }
-            retry = false
-            continue
-          }
-          // Push SKU details
-          else if (!data.find(d => d.id == codeStatus.sku_id)) {
-              data.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
-          }
-          validatedCodes.push(codes[i])
-          retry = false
-        }
-        await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
-      }
-      
-      let revoked = await revokeLinks(validatedCodes,acc)
-      if (revoked.error) return message.channel.send(revoked.error)
-      await deleteMsg.delete();
-      await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(codes.length-validatedCodes.length)+"] ` Invalid/Claimed Links\n"+deletedString+"** **"))
-      if (otherAccCount > 0) {
-        let string = ""
-        for (let i in otherAcc) {
-          string += otherAcc[i].string
-        }
-        await safeSend(message.channel,string)
-      }
-      // Handle empty data
-      if (revoked.count == 0) return;
-      if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
-      await sleep(1000)
-      
-      // Generate codes
-      let createMsg
-      await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes").then(msg => createMsg = msg)
-      let generated = await generateLinks(revoked.count,data,acc)
-      if (generated.error) createMsg.reply(generated.error)
-      await createMsg.delete()
-      await safeSend(message.channel,generated.message)
-      
-    } catch (err) {
-      message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
-    }
-  }
   /*if (message.content.startsWith('.regen')) {
     message.content = message.content.replace('.regen', '')
     let args = await getArgs(message.content)
@@ -454,7 +356,8 @@ client2.on("messageCreate", async (message) => {
       message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
     }
 }*/
-  else if ((message.channel.type !== 'DM' && shop.checkerWhitelist.find(u => u === message.channel.id)) || (message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
+  if (message.author.bot) return;
+  if ((message.channel.type !== 'DM' && shop.checkerWhitelist.find(u => u === message.channel.id)) || (message.channel.name?.includes('nitro-checker') && shop.checkerWhitelist.find(u => u === message.author.id)) || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
     let args = getArgs(message.content)
     if (args.length === 0) return;
     let ch = await getChannel("1138619134494658661")
@@ -604,7 +507,9 @@ client2.on("messageCreate", async (message) => {
     shop.checkers = []
     !message.channel.type === 'DM' ? message.delete() : null
   }
-  if (message.author.bot) return;
+  if (message.content.startsWith('.regen')) {
+    await message.channel.send(".regen command was moved to <@1057167023492300881>")
+  }
   if (message.content.length > 0 && message.content.toLowerCase().startsWith('.invite')) {
     let row = new MessageActionRow().addComponents(
           new MessageButton().setURL('https://discord.com/api/oauth2/authorize?client_id=1178955230608625704&permissions=8&scope=bot').setStyle('LINK').setEmoji('📩').setLabel("Invite Checkor"),
@@ -1055,6 +960,103 @@ client.on("messageCreate", async (message) => {
   }
   //
   if (message.author.bot) return;
+  if (message.content.startsWith('.regen')) {
+    message.content = message.content.replace('.regen', '')
+    let args = await getArgs(message.content)
+    if (args.length === 0) return;
+    let acc = process.env[args[0].toLowerCase().replace(/\./g,'')]
+    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[0].toLowerCase().replace(/\./g,'')+" `.")
+    let codes = []
+    for (let i in args) {
+      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+        let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
+        let found = codes.find(c => c === code)
+        !found ? codes.push({ code: code, status: emojis.warning }) : null
+      }
+    }
+    if (codes.length == 0) return message.reply(emojis.warning + " No codes found.")
+    
+    try {
+      let deleteMsg
+      await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
+      // Get billing
+      let data = []
+      let deletedString = ""
+      let otherAccString = ""
+      let otherAccCount = 0
+      let validatedCodes = []
+      let otherAcc = []
+      // Validate codes
+      for (let i in codes) {
+        let code = codes[i].code
+        let retry = true;
+
+        while (retry) {
+          // Check if link is claimed
+          let codeStatus = await fetch('https://discord.com/api/v10/entitlements/gift-codes/' + code, { method: 'GET', headers: { 'authorization': 'Bot '+process.env.SECRET, 'Content-Type': 'application/json' } })
+          codeStatus = await codeStatus.json();
+          // Return if claimed
+          if ((!codeStatus.retry_after && codeStatus.uses == 1) || (codeStatus.message == 'Unknown Gift Code')) {
+            deletedString += "` ["+code+"] `\n"
+            retry = false
+            continue
+          }
+          // Retry if rate limited
+          else if (codeStatus.retry_after) {
+            console.log("Rate limited. Retrying in 3 seconds...")
+            await sleep(3000);
+            continue
+          }
+          // If link is on other account
+          else if (codeStatus.user.username != args[0].toLowerCase()) {
+            otherAccCount++
+            let foundAcc = otherAcc.find(d => d.name == codeStatus.user.username)
+            if (foundAcc) {
+              foundAcc.string += otherAccCount+". discord.gift/"+code+"\n"
+            } else {
+              otherAcc.push({name: codeStatus.user.username,string: "\n`"+codeStatus.user.username+"`\n"+otherAccCount+". discord.gift/"+code+"\n"}) 
+            }
+            retry = false
+            continue
+          }
+          // Push SKU details
+          else if (!data.find(d => d.id == codeStatus.sku_id)) {
+              data.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
+          }
+          validatedCodes.push(codes[i])
+          retry = false
+        }
+        await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
+      }
+      
+      let revoked = await revokeLinks(validatedCodes,acc)
+      if (revoked.error) return message.channel.send(revoked.error)
+      await deleteMsg.delete();
+      await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(codes.length-validatedCodes.length)+"] ` Invalid/Claimed Links\n"+deletedString+"** **"))
+      if (otherAccCount > 0) {
+        let string = ""
+        for (let i in otherAcc) {
+          string += otherAcc[i].string
+        }
+        await safeSend(message.channel,string)
+      }
+      // Handle empty data
+      if (revoked.count == 0) return;
+      if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
+      await sleep(1000)
+      
+      // Generate codes
+      let createMsg
+      await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes").then(msg => createMsg = msg)
+      let generated = await generateLinks(revoked.count,data,acc)
+      if (generated.error) createMsg.reply(generated.error)
+      await createMsg.delete()
+      await safeSend(message.channel,generated.message)
+      
+    } catch (err) {
+      message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
+    }
+  }
   let checkerVersion = 'Checker version 2.9'
   if (message.channel.name?.includes('nitro-checker') || (message.channel.type === 'DM' && shop.checkerWhitelist.find(u => u === message.author.id))) {
     let args = getArgs(message.content)
