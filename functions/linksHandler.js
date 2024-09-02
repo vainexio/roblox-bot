@@ -7,7 +7,7 @@ const fetch = require('node-fetch');
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 module.exports = {
-  generateLinks: async function (amount,sku) {
+  generateLinks: async function (amount,sku,token) {
     try {
       // Get billing data
       let data = [];
@@ -15,7 +15,7 @@ module.exports = {
         let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30', {
           method: 'GET',
           headers: {
-            'authorization': process.env.User,
+            'authorization': token,
             'Content-Type': 'application/json',
           },
         });
@@ -58,7 +58,7 @@ module.exports = {
             gift_style: 4,
           }),
           headers: {
-            authorization: process.env.User,
+            authorization: token,
             'Content-Type': 'application/json',
           },
         };
@@ -98,7 +98,7 @@ module.exports = {
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
     }
   },
-  revokeLinks: async function (codes) {
+  revokeLinks: async function (codes,token) {
     try {
       // Get billing
       let data = []
@@ -120,7 +120,7 @@ module.exports = {
       */
       
       for (let i in codes) {
-        let auth = { method: 'DELETE', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } };
+        let auth = { method: 'DELETE', headers: { 'authorization': token, 'Content-Type': 'application/json' } };
         let code = codes[i].code;
         let retry = true;
         // Handle rate limit
@@ -150,9 +150,9 @@ module.exports = {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
   },
-  fetchLinks: async function (exclude) {
+  fetchLinks: async function (exclude,limit,token) {
     //
-    let auth = { method: 'GET', headers: { 'authorization': process.env.User, 'Content-Type': 'application/json' } }
+    let auth = { method: 'GET', headers: { 'authorization': token, 'Content-Type': 'application/json' } }
     let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
     billings = await billings.json();
     //
@@ -181,7 +181,9 @@ module.exports = {
           codes.push(response[i].code)
           counter++
           codeString += counter.toString()+". discord.gift/"+response[i].code+"\n"
+          if (counter >= limit) break
         }
+        if (counter >= limit) break
       }
     }
     return { message: "` ["+counter+"] ` Collected Codes"+codeString}
