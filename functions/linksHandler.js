@@ -31,7 +31,7 @@ module.exports = {
       }
       
       // Return if no billing
-      if (data.length == 0) return { error: emojis.warning + ' No stock keeping unit (SKU) was found.' };
+      if (data.length == 0) return { error: emojis.warning + ' No stock keeping unit was found.' };
 
       let createdCodes = '';
       let counter = 0;
@@ -105,20 +105,6 @@ module.exports = {
       let deletedCodes = 0
       let deletedString = ""
       
-      /*
-      let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',{ method: 'GET', headers: {  'authorization': process.env.User, 'Content-Type': 'application/json' } })
-      billings = await billings.json();
-      
-      for (let i in billings) {
-        let bill = billings[i]
-        if (!data.find(d => d.id == bill.sku_id)) {
-          data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
-        }
-      }
-        
-      if (data.length == 0) return { error: emojis.warning+" No stock keeping unit (SKU) was found."}
-      */
-      
       for (let i in codes) {
         let auth = { method: 'DELETE', headers: { 'authorization': token, 'Content-Type': 'application/json' } };
         let code = codes[i].code;
@@ -168,13 +154,13 @@ module.exports = {
       }
     }
     
-    if (data.length == 0) return { error: emojis.warning+" No stock keeping unit (SKU) was found."}
+    if (data.length == 0) return { error: emojis.warning+" No stock keeping unit was found."}
     // Collect codes
     for (let i in data) {
       let found = data[i]
       let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
       response = await response.json()
-      codeString += "\n` [SKU] ` "+found.id+"\n` [PLAN] ` "+found.subscription+"\n"
+      codeString += "\n` [SKU] ` "+found.id+"\n"
       console.log(response[0])
       for (let i in response) {
         if (!codes.find(c => c == response[i].code) && response[i].uses == 0 && !exclude.find(e => e.code == response[i].code)) {
@@ -186,6 +172,6 @@ module.exports = {
         if (counter >= limit) break
       }
     }
-    return { message: "` ["+counter+"] ` Collected Codes"+codeString}
+    return { message: "` ["+counter+"] ` Claimable Codes"+codeString}
   },
 };
