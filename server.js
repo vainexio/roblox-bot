@@ -2277,9 +2277,9 @@ client.on('interactionCreate', async inter => {
       else if (type.value === 'robux') {
         title = 'Expected Gamepass Price'
         footer = 'Robux Covered Tax'
-        percentage = 1.429
+        percentage = 0.4286
         let fee = value*percentage
-        total = Math.ceil(fee)
+        total = Math.ceil(value+fee)
       }
       
         let embed = new MessageEmbed()
