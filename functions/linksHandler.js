@@ -23,6 +23,7 @@ module.exports = {
       
         for (let i in billings) {
           let bill = billings[i];
+          console.log(bill)
           if (!data.find((d) => d.id == bill.sku_id))
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
         }
