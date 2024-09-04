@@ -25,20 +25,30 @@ module.exports = {
   deleteSlashes: ['1174898700338864138'],
   slashes: [
     {
+      name: 'regen',
+      type: 1,
+      description: 'Regenerate links',
+      options: [
+        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
+        { name: 'links', type: 3, description: 'Links to regen', required: true },
+      ]
+    },
+    {
+      name: 'revoke',
+      type: 1,
+      description: 'Revoke links',
+      options: [
+        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
+        { name: 'links', type: 3, description: 'Links to revoke', required: true },
+      ]
+    },
+    {
       name: 'generate',
       type: 1,
       description: 'Generate links',
       options: [
-        { name: 'account', type: 3, description: 'Account name',
-         choices: accounts,
-         required: true },
-        
-        { name: 'type', type: 3, description: 'Type of link',
-         choices: [ 
-           { name: 'nitro boost', value: 'nitro' }, 
-           { name: 'nitro basic', value: 'nitro-basic' }, 
-         ],required: true },
-        
+        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
+        { name: 'type', type: 3, description: 'Type of link', choices: [ { name: 'nitro boost', value: 'nitro' }, { name: 'nitro basic', value: 'nitro-basic' }, ],required: true },
         { name: 'amount', type: 4, description: 'Amount to generate', required: true },
       ]
     },
@@ -47,9 +57,8 @@ module.exports = {
       type: 1,
       description: 'Get claimable links',
       options: [
-        { name: 'account', type: 3, description: 'Account name',
-         choices: accounts,
-         required: true },
+        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
+        { name: 'type', type: 3, description: 'Type of link', choices: [ { name: 'nitro boost', value: 'nitro' }, { name: 'nitro basic', value: 'nitro-basic' }, ],required: false },
         { name: 'exclude', type: 4, description: "The bot won't get the links you put here", required: false },
         { name: 'limit', type: 4, description: 'Limit of links to generate', required: false },
       ]

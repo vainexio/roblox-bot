@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 async function log(msg) {
-  let channel = await getChannel("1280710557825236992")
+  let channel = await getChannel("1214149343481831465")
   console.log("🔴 New log: "+msg)
   await channel.send(msg)
 }
@@ -30,14 +30,14 @@ module.exports = {
         billings = await billings.json();
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id) && bill.sku.slug == object.type) {
+          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill.sku.slug == object.type) {
+            //console.log(bill)
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
         }
       } else {
         data = object.sku
       }
-      
       // Return if no billing
       if (data.length == 0) return { error: emojis.warning + ' No stock keeping unit was found.' };
 
@@ -55,24 +55,24 @@ module.exports = {
         }
         // Get current billing info
         let currentBilling = data[billingIndex];
-        // Authentication
-        let auth = {
-          method: 'POST',
-          body: JSON.stringify({
-            sku_id: currentBilling.id,
-            subscription_plan_id: currentBilling.subscription,
-            gift_style: 4,
-          }),
-          headers: {
-            authorization: token,
-            'Content-Type': 'application/json',
-          },
-        };
         let retry = true;
         let unable = false
         
         // Handle rate limit
         while (retry) {
+          // Authentication
+          let auth = {
+            method: 'POST',
+            body: JSON.stringify({
+              sku_id: currentBilling.id,
+              subscription_plan_id: currentBilling.subscription,
+              gift_style: style,
+            }),
+            headers: {
+              authorization: token,
+              'Content-Type': 'application/json',
+            },
+          };
           let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
           console.log('Generation status: ', makeCode.status);
 
@@ -85,7 +85,11 @@ module.exports = {
           } else if (makeCode.status == 429) {
             console.log('Rate limited. Retrying in 3 seconds...');
             await sleep(3000); // Wait for 3 seconds before retrying
-          } else {
+          } else if (makeCode.status == 404 && style !== null) {
+            style = null
+            retry = true
+          }
+          else {
             await log(emojis.warning + '` [' + counter + '] - '+makeCode.status+'` Unable to generate code - `' + makeCode.statusText + '`')
             retry = false;
             unable = true
@@ -103,8 +107,9 @@ module.exports = {
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
     }
   },
-  revokeLinks: async function (codes,token) {
+  revokeLinks: async function (codes,acc) {
     try {
+      let token = process.env[acc]
       // Get billing
       let data = []
       let deletedCodes = 0
@@ -155,7 +160,7 @@ module.exports = {
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
-      if (!data.find(d => d.id == bill.sku_id)) {
+      if (!data.find(d => d.id == bill.sku_id) && (bill.sku.slug == object.type || object.type == "all")) {
         data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
       }
     }
@@ -178,6 +183,6 @@ module.exports = {
         if (counter >= object.limit) break
       }
     }
-    return { message: "` ["+counter+"] ` Claimable Codes"+codeString}
+    return { message: "` ["+counter+"] ` Claimable Codes ["+object.type.toUpperCase()+"]"+codeString}
   },
 };
