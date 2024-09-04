@@ -20,6 +20,20 @@ module.exports = {
   deleteSlashes: ['1174898700338864138'],
   slashes: [
     {
+      name: 'generate',
+      type: 1,
+      description: 'Generate links',
+      options: [
+        { name: 'account', type: 3, description: 'ID of the embed', required: true },
+        { name: 'type', type: 3, description: 'Description of the embed', required: true },
+        { name: 'amount', type: 4, description: 'Title of the embed', required: false },
+        { name: 'color', type: 3, description: 'Color of the embed in HEX', required: false },
+        { name: 'thumbnail', type: 3, description: 'Thumbnail URL', required: false },
+        { name: 'image', type: 3, description: 'Image URL', required: false },
+        { name: 'footer', type: 3, description: 'Footer text', required: false }
+      ]
+    },
+    /*{
       name: 'embed',
       type: 1,
       description: 'Create an embed message',
@@ -222,7 +236,7 @@ module.exports = {
           "required": true,
         },
       ]
-    },
+    },*/
   ],
 };
 

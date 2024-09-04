@@ -14,11 +14,12 @@ async function log(msg) {
   await channel.send(msg)
 }
 module.exports = {
-  generateLinks: async function (amount,sku,token) {
+  generateLinks: async function (data) { //amount,sku,token,type
     try {
+      let token = process.env[data.account]
       // Get billing data
       let data = [];
-      if (!sku) {
+      if (!data.sku) {
         let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30', {
           method: 'GET',
           headers: {
@@ -29,13 +30,12 @@ module.exports = {
         billings = await billings.json();
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id)) {
-            console.log(bill)
+          if (!data.find((d) => d.id == bill.sku_id) && bill.sku.slug == data.type) {
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
         }
       } else {
-        data = sku
+        data = data.sku
       }
       
       // Return if no billing
@@ -46,14 +46,11 @@ module.exports = {
       let billingIndex = 0;
 
       // Generate codes
-      while (amount > counter) {
+      while (data.amount > counter) {
         // Ensure we have billing data to use
         if (billingIndex >= data.length) {
-          counter == amount
-          return {
-            error: `${emojis.warning} Not enough billing data to generate ${amount} gift codes. ` +
-            `Generated only ${counter} codes:\n\n${createdCodes}` 
-          };
+          counter == data.amount
+          return { error: `${emojis.warning} Not enough billing data to generate ${data.amount} gift codes. `+`Generated only ${counter} codes:\n\n${createdCodes}` };
         }
         // Get current billing info
         let currentBilling = data[billingIndex];
@@ -94,11 +91,10 @@ module.exports = {
           }
         }
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
-        if (counter < amount && unable) {
+        if (counter < data.amount && unable) {
           billingIndex++;
         }
       }
-
       // Send codes
       return { message: '` [' + counter + '] ` Generated Codes\n' + createdCodes };
     } catch (err) {
