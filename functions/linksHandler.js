@@ -1,11 +1,18 @@
 const settings = require('../storage/settings_.js')
 const {prefix, colors, theme, commands, permissions, emojis,} = settings
 const others = require('../functions/others.js')
-
+//Functions
+const get = require('../functions/get.js')
+const {getTime, chatAI, getNth, getChannel, getGuild, getUser, getMember, getRandom, getColor} = get
 const fetch = require('node-fetch');
 
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
+async function log(msg) {
+  let channel = await getChannel("1280710557825236992")
+  console.log("🔴 New log: "+msg)
+  await channel.send(msg)
+}
 module.exports = {
   generateLinks: async function (amount,sku,token) {
     try {
@@ -23,7 +30,6 @@ module.exports = {
       
         for (let i in billings) {
           let bill = billings[i];
-          console.log(bill)
           if (!data.find((d) => d.id == bill.sku_id))
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
         }
@@ -39,15 +45,15 @@ module.exports = {
       let billingIndex = 0;
 
       // Generate codes
-      for (let i = 0; i < amount; i++) {
+      while (amount > counter) {
         // Ensure we have billing data to use
         if (billingIndex >= data.length) {
-          return { 
+          counter == amount
+          return {
             error: `${emojis.warning} Not enough billing data to generate ${amount} gift codes. ` +
             `Generated only ${counter} codes:\n\n${createdCodes}` 
           };
         }
-        
         // Get current billing info
         let currentBilling = data[billingIndex];
         // Authentication
@@ -64,7 +70,8 @@ module.exports = {
           },
         };
         let retry = true;
-    
+        let unable = false
+        
         // Handle rate limit
         while (retry) {
           let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
@@ -80,15 +87,13 @@ module.exports = {
             console.log('Rate limited. Retrying in 3 seconds...');
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            console.log(emojis.warning + '[' + counter + '] Unable to generate code\n`' + makeCode.status + '`');
+            await log(emojis.warning + '[' + counter + '] Unable to generate code\n`' + makeCode.status + '`')
             retry = false;
+            unable = true
           }
         }
-
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
-
-        // If we've successfully generated a code, move to the next billing data if needed
-        if (counter < amount && i == amount-1) {
+        if (counter < amount && unable) {
           billingIndex++;
         }
       }
