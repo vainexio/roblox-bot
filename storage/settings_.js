@@ -1272,10 +1272,6 @@ module.exports = {
       level: 5,
     },
     {
-      id: '1109020434554433548',
-      level: 4
-    },
-    {
       id: '1109338607170367548', //backup server admin
       level: 5,
     }
