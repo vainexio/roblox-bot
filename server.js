@@ -1789,16 +1789,29 @@ let tStocks = 0
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    //
+    // generate
     if (cname === 'generate') {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
       let account = options.find(a => a.name === 'account')
       let amount = options.find(a => a.name === 'amount')
       let type = options.find(a => a.name === 'type')
-      await inter.reply({content: "Generating **"+amount.value+"** "+type.value+"(s)"})
+      await inter.reply({content: emojis.loading+" Generating **"+amount.value+"** "+type.name+"(s)"})
       
-      let data = await generateLinks({ amount: amount, sku: null, account: account.value, type: type.value})
+      let data = await generateLinks({ amount: amount.value, sku: null, account: account.value, type: type.value})
+      if (data.error) return inter.channel.send(data.error)
+      await safeSend(inter.channel,data.message)
+    }
+    // codes
+    if (cname === 'codes') {
+      if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
+      let options = inter.options._hoistedOptions
+      let account = options.find(a => a.name === 'account')
+      let amount = options.find(a => a.name === 'amount')
+      let type = options.find(a => a.name === 'type')
+      await inter.reply({content: emojis.loading+" Generating **"+amount.value+"** "+type.name+"(s)"})
+      
+      let data = await generateLinks({ amount: amount.value, sku: null, account: account.value, type: type.value})
       if (data.error) return inter.channel.send(data.error)
       await safeSend(inter.channel,data.message)
     }

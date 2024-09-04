@@ -14,12 +14,12 @@ async function log(msg) {
   await channel.send(msg)
 }
 module.exports = {
-  generateLinks: async function (data) { //amount,sku,token,type
+  generateLinks: async function (object) { //amount,sku,token,type
     try {
-      let token = process.env[data.account]
+      let token = process.env[object.account]
       // Get billing data
       let data = [];
-      if (!data.sku) {
+      if (!object.sku) {
         let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30', {
           method: 'GET',
           headers: {
@@ -30,12 +30,12 @@ module.exports = {
         billings = await billings.json();
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id) && bill.sku.slug == data.type) {
+          if (!data.find((d) => d.id == bill.sku_id) && bill.sku.slug == object.type) {
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
         }
       } else {
-        data = data.sku
+        data = object.sku
       }
       
       // Return if no billing
@@ -46,11 +46,11 @@ module.exports = {
       let billingIndex = 0;
 
       // Generate codes
-      while (data.amount > counter) {
+      while (object.amount > counter) {
         // Ensure we have billing data to use
         if (billingIndex >= data.length) {
-          counter == data.amount
-          return { error: `${emojis.warning} Not enough billing data to generate ${data.amount} gift codes. `+`Generated only ${counter} codes:\n\n${createdCodes}` };
+          counter == object.amount
+          return { error: `${emojis.warning} Not enough billing data to generate ${object.amount} gift codes.\n`+`Generated only ${counter} code(s):\n\n${createdCodes}` };
         }
         // Get current billing info
         let currentBilling = data[billingIndex];
@@ -73,7 +73,7 @@ module.exports = {
         // Handle rate limit
         while (retry) {
           let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
-          console.log('Generation status: ', makeCode);
+          console.log('Generation status: ', makeCode.status);
 
           // Check status
           if (makeCode.status == 200) {
@@ -91,7 +91,7 @@ module.exports = {
           }
         }
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
-        if (counter < data.amount && unable) {
+        if (counter < object.amount && unable) {
           billingIndex++;
         }
       }
@@ -115,7 +115,7 @@ module.exports = {
         // Handle rate limit
         while (retry) {
           let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
-          console.log("Revoke status: ", deleteCode);
+          console.log("Revoke status: ", deleteCode.status);
           
           if (deleteCode.status == 204 || deleteCode.status == 200) {
             deletedCodes++;
@@ -126,8 +126,8 @@ module.exports = {
             console.log("Rate limited. Retrying in 3 seconds...");
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            deletedString += codes[i].status+": `"+codes[i].statusText+"` "+code+"\n";
-            await log(codes[i].status+": `"+codes[i].statusText+"` "+code);
+            deletedString += codes[i].status+": `"+deleteCode.status+"` "+code+"\n";
+            await log(deleteCode.status+": `"+deleteCode.statusText+"` "+code);
             retry = false;
           }
         }
