@@ -369,7 +369,7 @@ module.exports = {
             parent: 'Server Backup Bot',
             children: [
               //
-              { name: 'Slot', price: 170, rs: 140 },
+              { name: 'Slot', price: 230, rs: 200 },
               { name: 'Features:\n+ Provided Bot\n+ Via Discord OAuth2\n+ Can join all verified users in an instant\n+ Can use in all sorts of servers\n\u200b'}
               //
             ],
