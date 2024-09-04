@@ -27,11 +27,12 @@ module.exports = {
           },
         });
         billings = await billings.json();
-      
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id))
+          if (!data.find((d) => d.id == bill.sku_id)) {
+            console.log(bill)
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
+          }
         }
       } else {
         data = sku
