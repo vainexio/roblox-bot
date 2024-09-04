@@ -98,6 +98,7 @@ module.exports = {
       // Send codes
       return { message: '` [' + counter + '] ` Generated Codes\n' + createdCodes };
     } catch (err) {
+      console.log(err)
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
     }
   },

@@ -981,7 +981,7 @@ client.on("messageCreate", async (message) => {
     
     try {
       let deleteMsg
-      await message.channel.send(emojis.loading + " Revoking **" + codes.length + "** codes").then(msg => deleteMsg = msg)
+      await message.channel.send(emojis.loading + " Validating **" + codes.length + "** codes").then(msg => deleteMsg = msg)
       // Get billing
       let data = []
       let invalidString = ""
@@ -990,9 +990,11 @@ client.on("messageCreate", async (message) => {
       let otherAccCount = 0
       let validatedCodes = []
       let otherAcc = []
-      
-      let nitroBoosts = []
-      let nitroBasics = []
+      let revokedCount = 0
+      let links = [
+        { name: "nitro", codes: [], billings: [] },
+        { name: "nitro-basic", codes: [], billings: [] }
+      ]
       // Validate codes
       for (let i in codes) {
         let code = codes[i].code
@@ -1016,7 +1018,7 @@ client.on("messageCreate", async (message) => {
             continue
           }
           // If link is on other account
-          else if (codeStatus.user.username != args[0].toLowerCase()) {
+          else if (codeStatus.user.username.toLowerCase() !== args[0].toLowerCase()) {
             otherAccCount++
             let foundAcc = otherAcc.find(d => d.name == codeStatus.user.username)
             if (foundAcc) {
@@ -1027,20 +1029,47 @@ client.on("messageCreate", async (message) => {
             retry = false
             continue
           }
-          // Push SKU details
-          else if (!data.find(d => d.id == codeStatus.sku_id)) {
-              data.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
-          }
+          
+          let slug = codeStatus.store_listing.sku.slug
+          let storage = links.find(l => l.name == slug)
+          if (!storage) return message.channel.send(emojis.warning+" Invalid storage: "+slug)
+          storage.codes.push(codes[i])
+          //
+          if (!storage.billings.find(d => d.id == codeStatus.sku_id)) {
+              storage.billings.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
+            }
           validatedCodes.push(codes[i])
           retry = false
         }
         await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
       }
       
-      let revoked = await revokeLinks(validatedCodes,acc)
-      if (revoked.error) return message.channel.send(revoked.error)
-      await deleteMsg.delete();
-      await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(invalidCount)+"] ` Invalid/Claimed Links\n"+invalidString+"** **"))
+      // Revoke links
+      for (let i in links) {
+        let storage = links[i]
+        if (storage.codes.length > 0) {
+          let revokeMsg
+          await message.channel.send(emojis.loading+" Revoking **"+storage.codes+"** "+storage.name+" giftcodes.").then(msg => revokeMsg = msg)
+          
+          let revoked = await revokeLinks(storage.codes,acc)
+          if (revoked.error) return message.channel.send(revoked.error)
+          revokedCount += revoked.count
+          await revokeMsg.delete();
+          await safeSend(message.channel,revoked.message+"\n"+(codes.length == validatedCodes.length ? "" : "` ["+(invalidCount)+"] ` Invalid/Claimed Links\n"+invalidString+"** **"))
+          
+          if (revokedCount == 0) return;
+          // Create links
+          let createMsg
+          await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes (Nitro Boost)").then(msg => createMsg = msg)
+          let generated = await generateLinks({ amount: revoked.count, sku: storage.billings, account: args[0], type: storage.name})
+          
+          if (generated.error) return createMsg.reply(generated.error)
+          await createMsg.delete()
+          await safeSend(message.channel,generated.message)
+          await ch.send(message.author.username+"\n"+generated.message)
+        }
+      }
+      // Links in other accounts
       if (otherAccCount > 0) {
         let string = ""
         for (let i in otherAcc) {
@@ -1048,21 +1077,8 @@ client.on("messageCreate", async (message) => {
         }
         await safeSend(message.channel,"` ["+otherAccCount+"] ` Links in other account"+string)
       }
-      // Handle empty data
-      if (revoked.count == 0) return;
-      if (data.length == 0) return message.channel.send("No stock keeping unit (SKU) was found.")
-      await sleep(1000)
-      
-      // Generate codes
-      let createMsg
-      await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes").then(msg => createMsg = msg)
-      let generated = await generateLinks(revoked.count,data,acc)
-      if (generated.error) createMsg.reply(generated.error)
-      await createMsg.delete()
-      await safeSend(message.channel,generated.message)
-      await ch.send(message.author.username+"\n"+generated.message)
-      
     } catch (err) {
+      console.log(err)
       message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
     }
   }
