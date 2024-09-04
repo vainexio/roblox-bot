@@ -20,6 +20,7 @@ let accounts = [
   { name: 'tres_acc', value: 'tres_acc' }, 
 ]
 
+
 module.exports = {
   register: true,
   deleteSlashes: ['1174898700338864138'],

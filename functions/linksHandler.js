@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 async function log(msg) {
-  let channel = await getChannel("1214149343481831465")
+  let channel = await getChannel("1280710557825236992")
   console.log("🔴 New log: "+msg)
   await channel.send(msg)
 }
@@ -152,6 +152,7 @@ module.exports = {
     //
     let auth = { method: 'GET', headers: { 'authorization': token, 'Content-Type': 'application/json' } }
     let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
+    if (billings.status == 401) return { error: emojis.warning + '`'+billings.status+'`: '+billings.statusText }
     billings = await billings.json();
     //
     let data = []
@@ -161,7 +162,6 @@ module.exports = {
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
-      if (i ==0)console.log(bill)
       if (!data.find(d => d.id == bill.sku_id) && (bill.sku?.slug == object.type || object.type == "all")) {
         data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
       }
