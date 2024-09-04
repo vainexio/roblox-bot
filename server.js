@@ -279,6 +279,7 @@ let expCodes = []
 let nitroCodes = []
 client2.on("messageCreate", async (message) => {
   let checkerVersion = 'Checker version 2.9'
+  if (message.content.startsWith('.regen')) { await message.reply('Use </regen:1280758037203779594> to regen your links *!*') }
   /*if (message.content.startsWith('.regen')) {
     message.content = message.content.replace('.regen', '')
     let args = await getArgs(message.content)
