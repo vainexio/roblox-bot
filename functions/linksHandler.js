@@ -75,7 +75,7 @@ module.exports = {
         // Handle rate limit
         while (retry) {
           let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
-          console.log('Generation status: ', makeCode.status);
+          console.log('Generation status: ', makeCode);
 
           // Check status
           if (makeCode.status == 200) {
@@ -87,7 +87,7 @@ module.exports = {
             console.log('Rate limited. Retrying in 3 seconds...');
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            await log(emojis.warning + '[' + counter + '] Unable to generate code\n`' + makeCode.status + '`')
+            await log(emojis.warning + '` [' + counter + '] - '+makeCode.status+'` Unable to generate code - `' + makeCode.statusText + '`')
             retry = false;
             unable = true
           }
@@ -118,7 +118,7 @@ module.exports = {
         // Handle rate limit
         while (retry) {
           let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
-          console.log("Revoke status: ", deleteCode.status);
+          console.log("Revoke status: ", deleteCode);
           
           if (deleteCode.status == 204 || deleteCode.status == 200) {
             deletedCodes++;
@@ -129,8 +129,8 @@ module.exports = {
             console.log("Rate limited. Retrying in 3 seconds...");
             await sleep(3000); // Wait for 3 seconds before retrying
           } else {
-            deletedString += codes[i].status+" "+code+"\n";
-            console.log(deleteCode);
+            deletedString += codes[i].status+": `"+codes[i].statusText+"` "+code+"\n";
+            await log(codes[i].status+": `"+codes[i].statusText+"` "+code);
             retry = false;
           }
         }
