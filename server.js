@@ -990,6 +990,9 @@ client.on("messageCreate", async (message) => {
       let otherAccCount = 0
       let validatedCodes = []
       let otherAcc = []
+      
+      let nitroBoosts = []
+      let nitroBasics = []
       // Validate codes
       for (let i in codes) {
         let code = codes[i].code
@@ -1249,39 +1252,13 @@ client.on("messageCreate", async (message) => {
   //
   if (message.channel.type === 'DM') return;
   //
-  if (message.content.startsWith('.codes')) {
-    if (!await getPerms(message.member, 4)) return message.reply({ content: emojis.warning + ' Insufficient Permission' });
-    let args = await getArgs(message.content)
-    if (args.length < 2) return;
-    let acc = process.env[args[1]]
-    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[1]+" `.")
-    
-    await message.react(emojis.loading)
-    let amount = Number(args[2])
-    if (isNaN(amount)) amount = 1000//return message.reply(emojis.warning+" Invalid amount to generate ` "+args[2]+" `.")
-    let codes = []
-    for (let i in args) {
-      if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
-        let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
-        let found = codes.find(c => c === code)
-        !found ? codes.push({ code: code, status: emojis.warning }) : null
-        }
-    }
-    
-    let data = await fetchLinks(codes,amount,acc)
-    if (data.error) return message.reply(data.error)
-
-    // Combine the message into one large string
-    let messageContent = data.message;
-    await safeSend(message.channel,messageContent)
-  }
-  else if (message.content.startsWith('.revoke')) {
+  if (message.content.startsWith('.revoke')) {
     if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
     message.content = message.content.replace('.revoke','')
     let args = await getArgs(message.content)
     if (args.length === 0) return;
     let acc = process.env[args[0]]
-    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[0]+" `.")
+    if (!acc) return message.reply(emojis.warning+" Invalid account name ` "+args[0]+" `.")
     
     let codes = []
     for (let i in args) {
@@ -1302,20 +1279,6 @@ client.on("messageCreate", async (message) => {
     } catch (err) {
       message.reply(emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```")
     }
-  }
-  else if (message.content.startsWith('.generate')) {
-    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
-    message.content = message.content.replace('.generate','')
-    let args = await getArgs(message.content)
-    if (args.length === 0) return;
-    let acc = process.env[args[0]]
-    if (!acc) return message.reply(emojis.warning+" Invalid account keyword ` "+args[0]+" `.")
-    await message.react(emojis.loading)
-    let amount = Number(args[1])
-    // Generate links
-    let data = await generateLinks(amount,null,acc)
-    if (data.error) return message.reply(data.error)
-    await safeSend(message.channel,data.message)
   }
   //
   else if (isCommand("help",message)) {
@@ -1796,7 +1759,7 @@ client.on('interactionCreate', async inter => {
       let account = options.find(a => a.name === 'account')
       let amount = options.find(a => a.name === 'amount')
       let type = options.find(a => a.name === 'type')
-      await inter.reply({content: emojis.loading+" Generating **"+amount.value+"** "+type.name+"(s)"})
+      await inter.reply({content: "-# "+emojis.loading+" Generating **"+amount.value+"** "+type.value+"(s)"})
       
       let data = await generateLinks({ amount: amount.value, sku: null, account: account.value, type: type.value})
       if (data.error) return inter.channel.send(data.error)
@@ -1810,8 +1773,7 @@ client.on('interactionCreate', async inter => {
       let limit = options.find(a => a.name === 'limit')
       let exclude = options.find(a => a.name === 'exclude')
       if (!limit) limit = { value: "all" }
-      if (!exclude) exclude = { value: [] }
-      await inter.reply({content: emojis.loading+" Getting **"+limit.value+"** claimable codes in "+account.value})
+      await inter.reply({content: "-# "+emojis.loading+" Getting **"+limit.value+"** claimable codes in "+account.value})
       
       let excludeCodes = []
       if (exclude) {
@@ -1821,8 +1783,8 @@ client.on('interactionCreate', async inter => {
             let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
             let found = excludeCodes.find(c => c === code)
             !found ? excludeCodes.push({ code: code, status: emojis.warning }) : null
-            }
-      }
+          }
+        }
       }
       let data = await fetchLinks({ limit: limit.value == "all" ? 1000 : limit.value, exclude: excludeCodes, account: account.value})
       if (data.error) return inter.channel.send(data.error)
