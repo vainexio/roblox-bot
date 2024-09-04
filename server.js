@@ -1807,11 +1807,24 @@ client.on('interactionCreate', async inter => {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
       let account = options.find(a => a.name === 'account')
-      let amount = options.find(a => a.name === 'amount')
-      let type = options.find(a => a.name === 'type')
-      await inter.reply({content: emojis.loading+" Generating **"+amount.value+"** "+type.name+"(s)"})
+      let limit = options.find(a => a.name === 'limit')
+      let exclude = options.find(a => a.name === 'exclude')
+      if (!limit) limit = { value: "all" }
+      if (!exclude) exclude = { value: [] }
+      await inter.reply({content: emojis.loading+" Getting **"+limit.value+"** claimable codes in "+account.value})
       
-      let data = await generateLinks({ amount: amount.value, sku: null, account: account.value, type: type.value})
+      let excludeCodes = []
+      if (exclude) {
+        let args = await getArgs(exclude.value)
+        for (let i in args) {
+          if (args[i].toLowerCase().includes('discord.gift') || args[i].toLowerCase().includes('discord.com/gifts')) {
+            let code = args[i].replace(/https:|discord.com\/gifts|discord.gift|\/|/g, '').replace(/ /g, '').replace(/[^\w\s]/gi, '').replace(/\\n|\|'|"/g, '')
+            let found = excludeCodes.find(c => c === code)
+            !found ? excludeCodes.push({ code: code, status: emojis.warning }) : null
+            }
+      }
+      }
+      let data = await fetchLinks({ limit: limit.value == "all" ? 1000 : limit.value, exclude: excludeCodes, account: account.value})
       if (data.error) return inter.channel.send(data.error)
       await safeSend(inter.channel,data.message)
     }

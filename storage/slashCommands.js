@@ -15,6 +15,11 @@ ATTACHMENT - 11
 const settings = require('../storage/settings_.js')
 const {shop, emojis, colors, theme, status} = settings
 
+let accounts = [ 
+  { name: 'dos_acc', value: 'dos_acc' }, 
+  { name: 'tres_acc', value: 'tres_acc' }, 
+]
+
 module.exports = {
   register: true,
   deleteSlashes: ['1174898700338864138'],
@@ -25,10 +30,7 @@ module.exports = {
       description: 'Generate links',
       options: [
         { name: 'account', type: 3, description: 'Account name',
-         choices: [ 
-           { name: 'dos_acc', value: 'dos_acc' }, 
-           { name: 'tres_acc', value: 'tres_acc' }, 
-         ],
+         choices: accounts,
          required: true },
         
         { name: 'type', type: 3, description: 'Type of link',
@@ -38,6 +40,18 @@ module.exports = {
          ],required: true },
         
         { name: 'amount', type: 4, description: 'Amount to generate', required: true },
+      ]
+    },
+    {
+      name: 'codes',
+      type: 1,
+      description: 'Get claimable links',
+      options: [
+        { name: 'account', type: 3, description: 'Account name',
+         choices: accounts,
+         required: true },
+        { name: 'exclude', type: 4, description: "The bot won't get the links you put here", required: false },
+        { name: 'limit', type: 4, description: 'Limit of links to generate', required: false },
       ]
     },
     /*{

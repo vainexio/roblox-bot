@@ -139,7 +139,8 @@ module.exports = {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
   },
-  fetchLinks: async function (exclude,limit,token) {
+  fetchLinks: async function (object) { //exclude,limit,token
+    let token = process.env[object.account]
     //
     let auth = { method: 'GET', headers: { 'authorization': token, 'Content-Type': 'application/json' } }
     let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
@@ -166,13 +167,13 @@ module.exports = {
       codeString += "\n` [SKU] ` "+found.id+"\n"
       console.log(response[0])
       for (let i in response) {
-        if (!codes.find(c => c == response[i].code) && response[i].uses == 0 && !exclude.find(e => e.code == response[i].code)) {
+        if (!codes.find(c => c == response[i].code) && response[i].uses == 0 && !object.exclude.find(e => e.code == response[i].code)) {
           codes.push(response[i].code)
           counter++
           codeString += counter.toString()+". discord.gift/"+response[i].code+"\n"
-          if (counter >= limit) break
+          if (counter >= object.limit) break
         }
-        if (counter >= limit) break
+        if (counter >= object.limit) break
       }
     }
     return { message: "` ["+counter+"] ` Claimable Codes"+codeString}
