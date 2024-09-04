@@ -44,6 +44,7 @@ module.exports = {
       let createdCodes = '';
       let counter = 0;
       let billingIndex = 0;
+      let style = 4
 
       // Generate codes
       while (object.amount > counter) {

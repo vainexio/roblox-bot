@@ -1033,7 +1033,7 @@ client.on("messageCreate", async (message) => {
           let slug = codeStatus.store_listing.sku.slug
           let storage = links.find(l => l.name == slug)
           if (!storage) return message.channel.send(emojis.warning+" Invalid storage: "+slug)
-          storage.codes.push(codes[i])
+          storage.codes.push({code: codes[i], style: codeStatus.gift_style ? codeStatus.gift_style : null})
           //
           if (!storage.billings.find(d => d.id == codeStatus.sku_id)) {
               storage.billings.push({ id: codeStatus.sku_id, subscription: codeStatus.subscription_plan_id })
@@ -1051,7 +1051,8 @@ client.on("messageCreate", async (message) => {
           let revokeMsg
           await message.channel.send(emojis.loading+" Revoking **"+storage.codes.length+"** "+storage.name+" giftcodes.").then(msg => revokeMsg = msg)
           
-          let revoked = await revokeLinks(storage.codes,acc)
+          let foundCodes = []
+          let revoked = await revokeLinks(foundCodes,acc)
           if (revoked.error) return message.channel.send(revoked.error)
           revokedCount += revoked.count
           await revokeMsg.delete();
