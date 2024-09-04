@@ -1950,7 +1950,7 @@ client.on('interactionCreate', async inter => {
       let exclude = options.find(a => a.name === 'exclude')
       let type = options.find(a => a.name === 'type')
       if (!limit) limit = { value: "all" }
-      await inter.reply({content: "-# "+emojis.loading+" Getting **"+limit.value+"** claimable codes in "+account.value})
+      await inter.reply({content: "-# "+emojis.loading+" Getting **"+limit.value+"** claimable "+(type ? type.value+"(s)" : "gift")+" codes in "+account.value})
       
       let excludeCodes = []
       if (exclude) {

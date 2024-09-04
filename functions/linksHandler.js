@@ -27,10 +27,11 @@ module.exports = {
             'Content-Type': 'application/json',
           },
         });
+        if (billings.status == 401) return { error: emojis.warning + '`'+billings.status+'`: '+billings.statusText }
         billings = await billings.json();
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill.sku.slug == object.type) {
+          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill?.sku?.slug == object.type) {
             //console.log(bill)
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
@@ -160,7 +161,8 @@ module.exports = {
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
-      if (!data.find(d => d.id == bill.sku_id) && (bill.sku.slug == object.type || object.type == "all")) {
+      if (i ==0)console.log(bill)
+      if (!data.find(d => d.id == bill.sku_id) && (bill.sku?.slug == object.type || object.type == "all")) {
         data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
       }
     }
@@ -183,6 +185,6 @@ module.exports = {
         if (counter >= object.limit) break
       }
     }
-    return { message: "` ["+counter+"] ` Claimable Codes ["+object.type.toUpperCase()+"]"+codeString}
+    return { message: "` ["+counter+"] ` Claimable Codes ["+object.type.toUpperCase()+"] "+codeString}
   },
 };
