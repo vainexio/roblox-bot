@@ -1049,7 +1049,7 @@ client.on("messageCreate", async (message) => {
         let storage = links[i]
         if (storage.codes.length > 0) {
           let revokeMsg
-          await message.channel.send(emojis.loading+" Revoking **"+storage.codes+"** "+storage.name+" giftcodes.").then(msg => revokeMsg = msg)
+          await message.channel.send(emojis.loading+" Revoking **"+storage.codes.length+"** "+storage.name+" giftcodes.").then(msg => revokeMsg = msg)
           
           let revoked = await revokeLinks(storage.codes,acc)
           if (revoked.error) return message.channel.send(revoked.error)
@@ -1060,7 +1060,7 @@ client.on("messageCreate", async (message) => {
           if (revokedCount == 0) return;
           // Create links
           let createMsg
-          await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes (Nitro Boost)").then(msg => createMsg = msg)
+          await message.channel.send(emojis.loading + "` [" + revoked.count + "] ` Generating New Codes ("+storage.name+")").then(msg => createMsg = msg)
           let generated = await generateLinks({ amount: revoked.count, sku: storage.billings, account: args[0], type: storage.name})
           
           if (generated.error) return createMsg.reply(generated.error)
@@ -1068,6 +1068,10 @@ client.on("messageCreate", async (message) => {
           await safeSend(message.channel,generated.message)
           await ch.send(message.author.username+"\n"+generated.message)
         }
+      }
+      
+      if (revokedCount == 0) {
+        await safeSend(message.channel,"` ["+(invalidCount)+"] ` Invalid/Claimed Links\n"+invalidString+"** **")
       }
       // Links in other accounts
       if (otherAccCount > 0) {
@@ -1077,6 +1081,8 @@ client.on("messageCreate", async (message) => {
         }
         await safeSend(message.channel,"` ["+otherAccCount+"] ` Links in other account"+string)
       }
+      
+      deleteMsg.delete()
     } catch (err) {
       console.log(err)
       message.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
