@@ -2272,7 +2272,7 @@ client.on('interactionCreate', async inter => {
         await inter.editReply({content: '<a:yt_chickclap:1138707159287345263> you order was placed ( '+orders.toString()+' )', components: [linkRow]})
       } catch (err) {
         console.log(err)
-        inter.editReply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
+        await inter.editReply({content: emojis.warning+' Unexpected Error Occurred\n```diff\n- '+err+'```'})
       }
     }
     //Calculate
