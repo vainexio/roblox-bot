@@ -1638,7 +1638,7 @@ client.on('interactionCreate', async inter => {
       if (codes.length == 0) return inter.editReply(emojis.warning + " No codes found.")
       
       let ch = await getChannel("1277242288522924033")
-      await safeSend(ch,inter.user.username+"\n"+links.vaue)
+      await safeSend(ch,inter.user.username+"\n"+links.value)
       
       try {
         let deleteMsg
