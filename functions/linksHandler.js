@@ -32,7 +32,7 @@ module.exports = {
         for (let i in billings) {
           let bill = billings[i];
           if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill?.sku?.slug == object.type) {
-            //console.log(bill)
+            console.log(bill)
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
         }
