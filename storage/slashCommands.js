@@ -19,12 +19,28 @@ let accounts = [
   { name: 'dos_acc', value: 'dos_acc' }, 
   { name: 'tres_acc', value: 'tres_acc' }, 
 ]
+let types = [
+  { name: 'nitro boost', value: 'nitro' },
+  { name: 'nitro boost yearly', value: 'nitro-yearly' },
+  { name: 'nitro basic', value: 'nitro-basic' },
+]
 
 
 module.exports = {
   register: true,
   deleteSlashes: ['1174898700338864138'],
   slashes: [
+    {
+      name: 'codes',
+      type: 1,
+      description: 'Get claimable links',
+      options: [
+        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
+        { name: 'type', type: 3, description: 'Type of link', choices: types, required: false },
+        { name: 'exclude', type: 4, description: "The bot won't get the links you put here", required: false },
+        { name: 'limit', type: 4, description: 'Limit of links to generate', required: false },
+      ]
+    },
     {
       name: 'regen',
       type: 1,
@@ -49,19 +65,8 @@ module.exports = {
       description: 'Generate links',
       options: [
         { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
-        { name: 'type', type: 3, description: 'Type of link', choices: [ { name: 'nitro boost', value: 'nitro' }, { name: 'nitro basic', value: 'nitro-basic' }, ],required: true },
+        { name: 'type', type: 3, description: 'Type of link', choices: types, required: true },
         { name: 'amount', type: 4, description: 'Amount to generate', required: true },
-      ]
-    },
-    {
-      name: 'codes',
-      type: 1,
-      description: 'Get claimable links',
-      options: [
-        { name: 'account', type: 3, description: 'Account name', choices: accounts, required: true },
-        { name: 'type', type: 3, description: 'Type of link', choices: [ { name: 'nitro boost', value: 'nitro' }, { name: 'nitro basic', value: 'nitro-basic' }, ],required: false },
-        { name: 'exclude', type: 4, description: "The bot won't get the links you put here", required: false },
-        { name: 'limit', type: 4, description: 'Limit of links to generate', required: false },
       ]
     },
     /*{

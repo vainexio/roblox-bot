@@ -16,11 +16,19 @@ async function log(msg) {
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
     try {
+      let price = 0
+      let finalType = object.type
+      if (object.type == "nitro") price = 999
+      else if (object.type == "nitro-basic") price = 299
+      else if (object.type == "nitro-yearly") {
+        price = 9999
+        finalType = "nitro"
+      }
       let token = process.env[object.account]
       // Get billing data
       let data = [];
       if (!object.sku) {
-        let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30', {
+        let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments', {
           method: 'GET',
           headers: {
             'authorization': token,
@@ -31,8 +39,8 @@ module.exports = {
         billings = await billings.json();
         for (let i in billings) {
           let bill = billings[i];
-          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill?.sku?.slug == object.type) {
-            console.log(bill)
+          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill?.sku?.slug == finalType && bill?.sku_price == price) {
+            //console.log(bill)
             data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
           }
         }
@@ -46,7 +54,6 @@ module.exports = {
       let counter = 0;
       let billingIndex = 0;
       let style = 4
-
       // Generate codes
       while (object.amount > counter) {
         // Ensure we have billing data to use
@@ -58,7 +65,6 @@ module.exports = {
         let currentBilling = data[billingIndex];
         let retry = true;
         let unable = false
-        
         // Handle rate limit
         while (retry) {
           // Authentication
@@ -81,6 +87,7 @@ module.exports = {
           if (makeCode.status == 200) {
             makeCode = await makeCode.json();
             counter++;
+            console.log(makeCode.code)
             createdCodes += counter.toString() + '. https://discord.gift/' + makeCode.code + '\n';
             retry = false;
           } else if (makeCode.status == 429) {
@@ -101,8 +108,8 @@ module.exports = {
           billingIndex++;
         }
       }
-      // Send codes
-      return { message: '` [' + counter + '] ` Generated Codes ['+object.type.toUpperCase()+']\n' + createdCodes };
+      console.log(createdCodes)
+      return { message: '` [' + counter + '] ` Generated Codes ['+finalType.toUpperCase()+']\n' + createdCodes };
     } catch (err) {
       console.log(err)
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
@@ -147,11 +154,21 @@ module.exports = {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
   },
-  fetchLinks: async function (object) { //exclude,limit,token
+  fetchLinks: async function (object) { // exclude,limit,token
+    //
+    let price = 0
+    let finalType = object.type
+    if (object.type == "nitro") price = 999
+    else if (object.type == "nitro-basic") price = 299
+    else if (object.type == "nitro-yearly") {
+      price = 9999
+      finalType = "nitro"
+    }
+    //
     let token = process.env[object.account]
     //
     let auth = { method: 'GET', headers: { 'authorization': token, 'Content-Type': 'application/json' } }
-    let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments?limit=30',auth)
+    let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments',auth)
     if (billings.status == 401) return { error: emojis.warning + '`'+billings.status+'`: '+billings.statusText }
     billings = await billings.json();
     //
@@ -162,7 +179,7 @@ module.exports = {
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
-      if (!data.find(d => d.id == bill.sku_id) && (bill.sku?.slug == object.type || object.type == "all")) {
+      if (!data.find(d => d.id == bill.sku_id) && ((bill.sku?.slug == finalType && bill?.sku_price == price) || object.type == "all")) {
         data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
       }
     }
