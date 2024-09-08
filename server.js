@@ -2975,15 +2975,11 @@ client.on('interactionCreate', async inter => {
       let count = 0
       let thread = [
         {
-          question: '> <a:y_starroll:1138704563529076786> which product do you want to avail?',
+          question: '> ﻿<a:elgaragea26:1137977194661027912>﻿ **may i know what item do you need**\n> -# include qty / subscription / denom ',
           answer: '',
         },
         {
-          question: '> <a:y_starroll:1138704563529076786> how many of this item do you wish to buy?',
-          answer: '',
-        },
-        {
-          question: "> <a:y_starroll:1138704563529076786> what's your mode of payment?",
+          question: '> <a:elgaragea26:1137977194661027912> **input below your prefer mode of payment** \n> -# click [here](https://discord.com/channels/1136691147016777749/1186135778401722409/1282009723683737652) to check available mode of payments',
           answer: '',
         },
       ]
@@ -3005,9 +3001,9 @@ client.on('interactionCreate', async inter => {
         new MessageButton().setCustomId('orderFormat').setStyle('SECONDARY').setLabel('Retry'),
       );
       let embed = new MessageEmbed()
-      .setDescription('item : **'+thread[0].answer+'**\namount : **'+thread[1].answer+'**\npayment : **'+thread[2].answer+'**')
-      .setColor(colors.none)
-      .setFooter({text: 'order confirmation'})
+      .setDescription('⠀𝒐𝒓𝒅𝒆𝒓\n'+thread[0].answer+'\n ⠀𝒑𝒂𝒚𝒎𝒆𝒏𝒕\n'+thread[1].answer)
+      .setColor('#FFFFFF')
+      //.setFooter({text: 'order confirmation'})
       
       inter.channel.send({content: "<a:yl_flowerspin:1138705226082304020> is this your order *?*", embeds: [embed], components: [row]})
       shop.orderForm.splice(shop.orderForm.indexOf(inter.user.id),1)
