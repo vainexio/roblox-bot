@@ -399,13 +399,13 @@ module.exports = {
           //
         ],
       },
-      /*{
+      {
         //Category
         name: 'Server Boosting',
         keywords: ['sb','boosting','boost'],
-        channel: '1054720561277841438',
-        rs: '1078708432091226112',
-        status: 4,
+        channel: '1276066006313336874',
+        rs: '1258245208907448392',
+        status: 2,
         id: '1096319576331014155',
         image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077185905676309/Logopit_1680918458337.png?width=1440&height=360',
         types: [
@@ -414,19 +414,13 @@ module.exports = {
             parent: '3 Months',
             children: [
               //
-              { name: '2 server boosts', price: 50, rs: 0 },
-              { name: '8 server boosts', price: 140, rs: 0 },
-              { name: '14 server boosts', price: 190, rs: 0 },
-              //
-            ],
-          },
-          {
-            parent: 'Lifetime Boosts',
-            children: [
-              //
-              { name: '2 server boosts', price: 400, rs: 300 },
-              { name: '8 server boosts', price: 700, rs: 600 },
-              { name: '14 server boosts', price: 1000, rs: 1000 },
+              { name: '2x server boosts', price: 75, rs: 70 },
+              { name: '4x server boosts', price: 130, rs: 115 },
+              { name: '6x server boosts', price: 180, rs: 170 },
+              { name: '8x server boosts', price: 225, rs: 215 },
+              { name: '14x server boosts', price: 399, rs: 380 },
+              { name: 'mins-hours process', price: 0, rs: 0 },
+              { name: '80d warranty', price: 0, rs: 0 },
               //
             ],
           },
@@ -434,7 +428,7 @@ module.exports = {
           //
         ],
       },
-      {
+      /*{
         //Category
         name: 'Disney+',
         keywords: ['disney'],
@@ -523,7 +517,7 @@ module.exports = {
             parent: 'Monthly Subscription',
             children: [
               //
-              { name: 'Nitro Basic (Not avail)', price: 0, rs: 0 },
+              { name: 'Nitro Basic (Not avail)', price: 80, rs: 0 },
               { name: 'Nitro Boost (Full warr)', price: 155, rs: 150 },
               //
             ],
@@ -533,7 +527,7 @@ module.exports = {
             children: [
               //
               { name: 'Nitro Basic (Not avail)', price: 0 },
-              { name: 'Nitro Boost', price: 1150, rs: 1100},
+              { name: 'Nitro Boost', price: 1000, rs: 950},
               //
             ],
           },
