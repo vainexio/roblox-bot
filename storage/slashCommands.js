@@ -21,8 +21,9 @@ let accounts = [
 ]
 let types = [
   { name: 'nitro boost', value: 'nitro' },
-  { name: 'nitro boost yearly', value: 'nitro-yearly' },
   { name: 'nitro basic', value: 'nitro-basic' },
+  { name: 'nitro yearly', value: 'nitro-yearly' },
+  { name: 'basic yearly', value: 'basic-yearly' },
 ]
 
 

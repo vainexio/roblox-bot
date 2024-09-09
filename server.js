@@ -149,7 +149,7 @@ client.on("ready", async () => {
     }
     for (let i in slashes) {
       let json = slashes[i]
-      await sleep(1000)
+      await sleep(2000)
       let response = await fetch(discordUrl, {
         method: 'post',
         body: JSON.stringify(json),

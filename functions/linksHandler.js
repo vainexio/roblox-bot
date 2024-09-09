@@ -20,10 +20,8 @@ module.exports = {
       let finalType = object.type
       if (object.type == "nitro") price = 999
       else if (object.type == "nitro-basic") price = 299
-      else if (object.type == "nitro-yearly") {
-        price = 9999
-        finalType = "nitro"
-      }
+      else if (object.type == "nitro-yearly") { price = 9999, finalType = "nitro" }
+      else if (object.type == "basic-yearly") { price = 2999, finalType = "nitro-basic" }
       let token = process.env[object.account]
       // Get billing data
       let data = [];
@@ -109,7 +107,7 @@ module.exports = {
         }
       }
       console.log(createdCodes)
-      return { message: '` [' + counter + '] ` Generated Codes ['+finalType.toUpperCase()+']\n' + createdCodes };
+      return { message: '` [' + counter + '] ` Generated Codes ['+object.type.toUpperCase()+']\n' + createdCodes };
     } catch (err) {
       console.log(err)
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
@@ -160,10 +158,8 @@ module.exports = {
     let finalType = object.type
     if (object.type == "nitro") price = 999
     else if (object.type == "nitro-basic") price = 299
-    else if (object.type == "nitro-yearly") {
-      price = 9999
-      finalType = "nitro"
-    }
+    else if (object.type == "nitro-yearly") { price = 9999, finalType = "nitro" }
+    else if (object.type == "basic-yearly") { price = 2999, finalType = "nitro-basic" }
     //
     let token = process.env[object.account]
     //
