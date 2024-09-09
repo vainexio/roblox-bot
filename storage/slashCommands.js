@@ -20,10 +20,10 @@ let accounts = [
   { name: 'tres_acc', value: 'tres_acc' }, 
 ]
 let types = [
-  { name: 'nitro boost', value: 'nitro' },
-  { name: 'nitro basic', value: 'nitro-basic' },
-  { name: 'nitro yearly', value: 'nitro-yearly' },
-  { name: 'basic yearly', value: 'basic-yearly' },
+  { name: '🟥 nitro', value: 'nitro' },
+  { name: '🟥 nitro yearly', value: 'nitro-yearly' },
+  { name: '🟦 basic', value: 'nitro-basic' },
+  { name: '🟦 basic yearly', value: 'basic-yearly' },
 ]
 
 
