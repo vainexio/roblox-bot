@@ -9,9 +9,9 @@ const fetch = require('node-fetch');
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 async function log(msg) {
-  let channel = await getChannel("1280710557825236992")
+  //let channel = await getChannel("1280710557825236992")
   console.log("🔴 New log: "+msg)
-  await channel.send(msg)
+  //await channel.send(msg)
 }
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
@@ -179,8 +179,8 @@ module.exports = {
     // Get all billing
     for (let i in billings) {
       let bill = billings[i]
-      if (!data.find(d => d.id == bill.sku_id) && ((bill.sku?.slug == finalType && bill?.sku_price == price) || object.type == "all")) {
-        data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id})
+      if (!data.find(d => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && ((bill.sku?.slug == finalType && bill?.sku_price == price) || object.type == "all")) {
+        data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id, type: bill.sku.slug+":  "+bill.sku_price})
       }
     }
     
@@ -190,7 +190,7 @@ module.exports = {
       let found = data[i]
       let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
       response = await response.json()
-      codeString += "\n` [SKU] ` "+found.id+"\n"
+      codeString += "\n` [SKU] ` "+found.id+"\n` [TYPE] ` "+found.type+"\n"
       console.log(response[0])
       for (let i in response) {
         if (!codes.find(c => c == response[i].code) && response[i].uses == 0 && !object.exclude.find(e => e.code == response[i].code)) {
