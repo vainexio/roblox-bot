@@ -1306,7 +1306,7 @@ client.on("messageCreate", async (message) => {
 
     // Move the channel to the category
     try {
-        await message.channel.setParent(category.id);
+        await message.channel.setParent(category.id, { lockPermissions: true });
         message.channel.send(`Channel has been moved to category: ${categoryName}`);
     } catch (error) {
         console.error(error);
