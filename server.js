@@ -1287,6 +1287,32 @@ client.on("messageCreate", async (message) => {
     )
     await message.channel.send({content: msg.content, components: [row]})
   }
+  else if (isCommand('parent',message)) {
+    if (!await getPerms(message.member,4)) return message.reply({content: emojis.warning+' Insufficient Permission'});
+    const args = message.content.split(' ').slice(1); // Get the arguments
+    const categoryName = args.join(' '); // Category name after .parent
+
+    if (!categoryName) {
+        return message.channel.send('Please provide a category name.');
+    }
+
+    // Find the category by name
+    const category = message.guild.channels.cache.find(channel => 
+        channel.type === 'GUILD_CATEGORY' && channel.name.toLowerCase() === categoryName.toLowerCase());
+
+    if (!category) {
+        return message.channel.send('Category not found.');
+    }
+
+    // Move the channel to the category
+    try {
+        await message.channel.setParent(category.id);
+        message.channel.send(`Channel has been moved to category: ${categoryName}`);
+    } catch (error) {
+        console.error(error);
+        message.channel.send('An error occurred while moving the channel.');
+    }
+  }
   //Sticky
   let sticky = stickyModel ? await stickyModel.findOne({channelId: message.channel.id}) : null
   if (sticky) {
