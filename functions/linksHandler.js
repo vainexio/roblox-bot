@@ -187,7 +187,7 @@ module.exports = {
       let response = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes?sku_id='+found.id+'&subscription_plan_id='+found.subscription,auth)
       response = await response.json()
       codeString += "\n` [SKU] ` "+found.id+"\n` [TYPE] ` "+found.type+"\n"
-      console.log(response[0])
+      //console.log(response[0])
       for (let i in response) {
         if (!codes.find(c => c == response[i].code) && response[i].uses == 0 && !object.exclude.find(e => e.code == response[i].code)) {
           codes.push(response[i].code)
