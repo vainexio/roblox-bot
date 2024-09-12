@@ -13,6 +13,9 @@ async function log(msg) {
   console.log("🔴 New log: "+msg)
   await channel.send(msg)
 }
+
+const version = "Handler version: v2.0.0"
+
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
     try {
@@ -109,7 +112,7 @@ module.exports = {
         }
       }
       console.log(createdCodes)
-      return { message: '` [' + counter + '] ` Generated Codes ['+object.type.toUpperCase()+']\n' + createdCodes };
+      return { message: '` [' + counter + '] ` Generated Codes ['+object.type.toUpperCase()+']\n'+createdCodes+'-# '+version };
     } catch (err) {
       console.log(err)
       return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
@@ -151,7 +154,7 @@ module.exports = {
 
         await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
-      return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString, count: deletedCodes}
+      return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString+'-# '+version, count: deletedCodes}
     } catch (err) {
       return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
@@ -197,11 +200,10 @@ module.exports = {
           codes.push(response[i].code)
           counter++
           codeString += counter.toString()+". discord.gift/"+response[i].code+"\n"
-          if (counter >= object.limit) break
         }
         if (counter >= object.limit) break
       }
     }
-    return { message: "` ["+counter+"] ` Claimable Codes ["+object.type.toUpperCase()+"] "+codeString}
+    return { message: "` ["+counter+"] ` Claimable Codes ["+object.type.toUpperCase()+"] "+codeString+'-# '+version}
   },
 };
