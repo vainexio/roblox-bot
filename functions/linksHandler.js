@@ -9,9 +9,9 @@ const fetch = require('node-fetch');
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
 
 async function log(msg) {
-  //let channel = await getChannel("1280710557825236992")
+  let channel = await getChannel("1280710557825236992")
   console.log("🔴 New log: "+msg)
-  //await channel.send(msg)
+  await channel.send(msg)
 }
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
@@ -89,14 +89,16 @@ module.exports = {
             createdCodes += counter.toString() + '. https://discord.gift/' + makeCode.code + '\n';
             retry = false;
           } else if (makeCode.status == 429) {
-            console.log('Rate limited. Retrying in 3 seconds...');
-            await sleep(3000); // Wait for 3 seconds before retrying
+            makeCode = await makeCode.json();
+            let retry = makeCode.retry_after * 1000
+            console.log("Rate limited. Retrying in "+retry+"ms...");
+            await sleep(retry);
           } else if (makeCode.status == 404 && style !== null) {
             style = null
             retry = true
           }
           else {
-            await log(emojis.warning + '` [' + counter + '] - '+makeCode.status+'` Unable to generate code - `' + makeCode.statusText + '`')
+            await log(emojis.warning + ' `[' + counter + '] - '+makeCode.status+'` Unable to generate code - `' + makeCode.statusText + '`')
             retry = false;
             unable = true
           }
@@ -136,8 +138,10 @@ module.exports = {
             deletedString += codes[i].status+" "+code+"\n";
             retry = false;
           } else if (deleteCode.status == 429) {
-            console.log("Rate limited. Retrying in 3 seconds...");
-            await sleep(3000); // Wait for 3 seconds before retrying
+            deleteCode = await deleteCode.json();
+            let retry = deleteCode.retry_after * 1000
+            console.log("Rate limited. Retrying in "+retry+"ms...");
+            await sleep(retry);
           } else {
             deletedString += codes[i].status+": `"+deleteCode.status+"` "+code+"\n";
             await log(deleteCode.status+": `"+deleteCode.statusText+"` "+code);
