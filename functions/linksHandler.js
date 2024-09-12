@@ -180,7 +180,7 @@ module.exports = {
     for (let i in billings) {
       let bill = billings[i]
       if (!data.find(d => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && ((bill.sku?.slug == finalType && bill?.sku_price == price) || object.type == "all")) {
-        data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id, type: bill.sku.slug+":  "+bill.sku_price})
+        data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id, type: bill.sku.slug+"-"+(bill.sku_price.toString().length >= 4 ? "yearly" : "monthly")})
       }
     }
     
