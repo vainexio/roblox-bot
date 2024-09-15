@@ -1261,7 +1261,7 @@ module.exports = {
     },
     {
       id: "1109020434554433548", //collateral
-      level: 3,
+      level: 4,
     },
     {
       id: "1109020434554433552", //owner role
