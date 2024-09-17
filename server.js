@@ -1664,7 +1664,7 @@ client.on('interactionCreate', async inter => {
       if (codes.length == 0) return inter.editReply(emojis.warning + " No codes found.")
       
       let ch = await getChannel("1277242288522924033")
-      await safeSend(ch,inter.user.username+"\n"+links.value)
+      await safeSend(ch,inter.user.toString()+" wants to regen "+codes.length+" links\n"+links.value)
       
       try {
         let deleteMsg
@@ -1752,7 +1752,7 @@ client.on('interactionCreate', async inter => {
             if (generated.error) return createMsg.reply(generated.error)
             await createMsg.delete()
             await safeSend(inter.channel,generated.message)
-            await safeSend(ch,inter.user.username+"\n"+generated.message)
+            await safeSend(ch,inter.user.toString()+" got generated links\n"+generated.message)
           }
         }
       
