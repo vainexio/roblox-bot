@@ -321,7 +321,7 @@ module.exports = {
             parent: 'Nitro Stocks Dropper',
             children: [
               //
-              { name: 'Covered hosting', price: 199 },
+              { name: 'Covered hosting', price: 299 },
               { name: 'Features:\n+ </drop:1102423261914091530> command\n+ </stocks:1102433613116616734> command\n+ nitro checker (50 links/sec)\n\u200b'}
               //
             ],
@@ -345,7 +345,29 @@ module.exports = {
               //
               { name: 'through bot dms', price: 60, rs: 40 },
               { name: 'through server channel', price: 200, rs: 150 },
-              { name: 'Features:\n+ Provided Bot (gudetama)\n+ Can scan 50 links per second\n+ Shows difference between valid, calimed and invalid links\n+ Shows accurate expiration (date & time) of links\n+ Fool proof (avoids scanning duplicated links)\n\u200b'}
+              { name: 'Features:\n+ Provided Bot (assistant)\n+ Can scan 50 links per second\n+ Shows difference between valid, calimed and invalid links\n+ Shows accurate expiration (date & time) of links\n+ Fool proof (avoids scanning duplicated links)\n\u200b'}
+              //
+            ],
+          },
+        ],
+      },
+      {
+        //Category
+        name: 'Gamepass Scanner',
+        keywords: ['scanner','gp scanner'],
+        channel: '1138621480440188940',
+        status: 2,
+        id: '1096319574284193842',
+        rs: '1258243478744334469',
+        image: 'https://media.discordapp.net/attachments/1093391705753002064/1094077237592076389/Logopit_1680918672598.png?width=1440&height=360',
+        types: [
+          //Types
+          {
+            parent: 'gamepass links scanner',
+            children: [
+              //
+              { name: 'server invite', price: 110, rs: 100 },
+              { name: 'Features:\n+ Provided Bot (assistant)\n+ ` scan, nct, ct ` commands\n\u200b'}
               //
             ],
           },
@@ -409,11 +431,11 @@ module.exports = {
             parent: '3 Months',
             children: [
               //
-              { name: '2x server boosts', price: 75, rs: 70 },
+              { name: '2x server boosts', price: 70, rs: 70 },
               { name: '4x server boosts', price: 130, rs: 115 },
               { name: '6x server boosts', price: 180, rs: 170 },
               { name: '8x server boosts', price: 225, rs: 215 },
-              { name: '14x server boosts', price: 399, rs: 380 },
+              { name: '14x server boosts', price: 380, rs: 380 },
               { name: 'mins-hours process', price: 0, rs: 0 },
               { name: '80d warranty', price: 0, rs: 0 },
               //
@@ -512,8 +534,8 @@ module.exports = {
             parent: 'Monthly Subscription',
             children: [
               //
-              { name: 'Nitro Basic (Not avail)', price: 80, rs: 0 },
-              { name: 'Nitro Boost (Full warr)', price: 155, rs: 150 },
+              { name: 'Nitro Basic (Not avail)', price: 0, rs: 0 },
+              { name: 'Nitro Boost (Full warr)', price: 150, rs: 145 },
               //
             ],
           },
@@ -522,7 +544,7 @@ module.exports = {
             children: [
               //
               { name: 'Nitro Basic (Not avail)', price: 0 },
-              { name: 'Nitro Boost', price: 1000, rs: 950},
+              { name: 'Nitro Boost', price: 950, rs: 850},
               //
             ],
           },
