@@ -148,6 +148,7 @@ module.exports = {
     checkerWhitelist: [
       "775026782776721409", // oct 15
       "917000871047471104", // nov 7
+      "793313413617942538", // oct 22
     ],
     scanner: [],
     expected: [],
