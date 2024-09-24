@@ -433,11 +433,11 @@ module.exports = {
             parent: '3 Months',
             children: [
               //
-              { name: '2x server boosts', price: 70, rs: 70 },
-              { name: '4x server boosts', price: 130, rs: 115 },
-              { name: '6x server boosts', price: 180, rs: 170 },
-              { name: '8x server boosts', price: 225, rs: 215 },
-              { name: '14x server boosts', price: 380, rs: 380 },
+              { name: '2x server boosts', price: 65, rs: 60 },
+              { name: '4x server boosts', price: 110, rs: 100 },
+              { name: '6x server boosts', price: 140, rs: 130 },
+              { name: '8x server boosts', price: 200, rs: 190 },
+              { name: '14x server boosts', price: 280, rs: 275 },
               { name: 'mins-hours process', price: 0, rs: 0 },
               { name: '80d warranty', price: 0, rs: 0 },
               //
@@ -780,29 +780,25 @@ module.exports = {
         keywords: ['roblox','robux','rbx','bobux'],
         channel: '1109020436764827700',
         rs: '1258243460209578096',
-        status: 4,
+        status: 2,
         id: '1096319583121584208',
         image: "https://media.discordapp.net/attachments/1093391705753002064/1094077237839532123/Logopit_1680918693719.png?width=1440&height=360",
         types: [
           //Types
-          /*{
+          {
             parent: 'Via Group Payout',
             children: [
               //
-              { name: '100 robux', price: 25, rs: 0 },
-              { name: '200 robux', price: 50, rs: 0 },
-              { name: '300 robux', price: 75, rs: 0 },
-              { name: '400 robux', price: 100, rs: 0 },
-              { name: '500 robux', price: 125, rs: 0 },
-              { name: '600 robux', price: 150, rs: 0 },
-              { name: '700 robux', price: 175, rs: 0 },
-              { name: '800 robux', price: 200, rs: 0 },
-              { name: '900 robux', price: 225, rs: 0 },
-              { name: '1000 robux', price: 250, rs: 0 },
-              { name: 'Must be in the group for 14 days!\n> Group: [click me](https://www.roblox.com/groups/33092141/ValerieVin#!/about)', price: 0, rs: 0 },
+              { name: '500 robux', price: 145, rs: 0 },
+              { name: '600 robux', price: 174, rs: 0 },
+              { name: '700 robux', price: 203, rs: 0 },
+              { name: '800 robux', price: 232, rs: 0 },
+              { name: '900 robux', price: 268, rs: 0 },
+              { name: '1000 robux', price: 290, rs: 0 },
+              { name: 'Must be in the group for 14 days!\n` [Join Here] ` https://www.roblox.com/groups/6648268/Kingsman-2-0', price: 0, rs: 0 },
               //
             ],
-          },*/
+          },
           {
             parent: 'Via Gamepass',
             children: [
@@ -811,13 +807,13 @@ module.exports = {
               { name: '200 robux', price: 74, rs: 67 },
               { name: '300 robux', price: 100, rs: 95 },
               { name: '400 robux', price: 130, rs: 125 },
-              { name: '500 robux', price: 159, rs: 154 },
-              { name: '600 robux', price: 187, rs: 182 },
-              { name: '700 robux', price: 215, rs: 209 },
-              { name: '800 robux', price: 243, rs: 239 },
-              { name: '900 robux', price: 263, rs: 256 },
-              { name: '1000 robux', price: 295, rs: 285, booster: 275 },
-              { name: '*covered tax (days process)*', price: 0, rs: 0 },
+              { name: '500 robux', price: 163, rs: 160 },
+              { name: '600 robux', price: 195, rs: 192 },
+              { name: '700 robux', price: 228, rs: 224 },
+              { name: '800 robux', price: 260, rs: 256 },
+              { name: '900 robux', price: 293, rs: 288 },
+              { name: '1000 robux', price: 325, rs: 320, booster: 320 },
+              { name: '*covered tax (hrs-3d process)*', price: 0, rs: 0 },
               //
             ],
           },
