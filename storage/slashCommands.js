@@ -70,6 +70,14 @@ module.exports = {
         { name: 'amount', type: 4, description: 'Amount to generate', required: true },
       ]
     },
+    {
+      name: 'eligible',
+      type: 1,
+      description: 'Check if a user is eligible on the group for payout!',
+      options: [
+        { name: 'username', type: 3, description: 'Roblox username', required: true },
+      ]
+    },
     /*{
       name: 'embed',
       type: 1,
