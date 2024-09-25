@@ -1571,10 +1571,79 @@ client.on('interactionCreate', async inter => {
     if (cname === 'eligible') {
       //if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
-      let account = options.find(a => a.name === 'username')
-      
+      let username = options.find(a => a.name === 'username')
+      await inter.reply({content: "Checking eligibility"})
       try {
+        const url = 'https://users.roblox.com/v1/usernames/users';
+        const headers = {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate',
+          'Content-Type': 'application/json;charset=utf-8',
+          'X-Bound-Auth-Token': 'V1QeI18dHOM5b0tNzRvWibmecPve3szl8NEIuXZ71iQ=|1727263621|dnNCjJtce0cfMES3mrwljq6hqZWZkeEq0v0qbMxVBk1E3eJ7WQ5t3Bxsske7FcE4muGTxqzx4wMwMSkVWcdQgQ==',
+          'X-Csrf-Token': 'k8auVTxtNkuZ',
+          'Origin': 'https://www.roblox.com',
+          'Referer': 'https://www.roblox.com/',
+          'Sec-Fetch-Dest': 'empty',
+          'Sec-Fetch-Mode': 'cors',
+          'Sec-Fetch-Site': 'same-site',
+          'Te': 'trailers'
+        };
+        const body = JSON.stringify({
+          "usernames": [username.value],
+          "excludeBannedUsers": true
+        });
         
+        let response = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: body
+        })
+        if (response.status === 200) {
+          response = await response.json()
+          let data = response.data
+          console.log(response)
+          if (!data) return inter.editReply({content: emojis.x+" Could not find username."})
+          
+          let userId = data[0].id
+          let name = data[0].name
+          let displayName = data[0].displayName
+          
+          const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+userId;
+          
+          const headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate',
+            'X-Bound-Auth-Token': '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727263623|+9RvLD0aZ9zAERlH1ShM1cuQdjFDw5hE4HSwn/Djeh4Gd37htwG9YKIQi869nu+6DaBFiLztY/fZ6sVIIyDYig==',
+            'Origin': 'https://www.roblox.com',
+            'Referer': 'https://www.roblox.com/',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'Te': 'trailers'
+          };
+          let res = await fetch(url, {
+            method: 'GET',
+            headers: headers
+          })
+          if (res.status == 200) {
+            res = await res.json()
+            let status = res.usersGroupPayoutEligibility[userId]
+            console.log(status)
+            let embed = new MessageEmbed()
+            .addField({ name: "Member Status", value: status})
+            .setColor(colors.none)
+            
+            await inter.editReply({embeds: [embed]})
+          } else {
+            console.log(res)
+          }
+        } else {
+          console.log(res)
+        }
       } catch (err) {
         console.log(err)
         inter.channel.send(emojis.warning + " An unexpected error occured.\n```diff\n- " + err + "```")
