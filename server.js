@@ -1612,38 +1612,66 @@ client.on('interactionCreate', async inter => {
           
           const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+userId;
           
-          const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
-            'Accept': 'application/json, text/plain, */*',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate',
-            'X-Bound-Auth-Token': '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727263623|+9RvLD0aZ9zAERlH1ShM1cuQdjFDw5hE4HSwn/Djeh4Gd37htwG9YKIQi869nu+6DaBFiLztY/fZ6sVIIyDYig==',
-            'Origin': 'https://www.roblox.com',
-            'Referer': 'https://www.roblox.com/',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-site',
-            'Te': 'trailers',
-            'cookie': "RBXEventTrackerV2=CreateDate=3/4/2024 12:33:32 AM&rbxid=563130786&browserid=217688103020; GuestData=UserID=-278646009; __utma=200924205.301619212.1709533963.1727227159.1727263387.5; __utmz=200924205.1709533963.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_41DE9EE67AE1A0E529EA2B6271B49639DD14376C26757140439B68C2057FC206962EC0B6F00DF785D9FE5C5BEF15455ACECCB7718BADE083CCCC62BEEAFA5195E44FF8B4CD5F0386E4C9DC3BF0C22D6EFA46872D5532FB77255E16A72A4FEC3849C3428D322F785CF44E4A1DA2B7B990ED54C33A43F51541C5544C98B2710E487C4197832CC1B717FB9BECB0F8033AC2740D95769DE1CA2E3A07FF5CC7B4D4D4CCA79906AFE1DCF53E18C2D52F06C0F4E4782DF0B51CD5C95311EC8A867B7C5E122E1A15AA9E2C9DB6434C0DFF7EFBADB99F37B3E55DE52C1092E973142A93E75837E3CABA5936378BE4F2A60E64411F1F18BB97CE0430F354F6FD0B7ACF6BBA5A443A4F424E18AD38C2B3588EBBE4182B96D3E8E41332F6F01B21FE4640E2C2D3AC146A67E62A54CDC78779DC403D8D6AA776DC866C3B8D8DBE27E557080A630DC6FE34EE369C8D4E7B257849DAA7B99B6A00BD635B09FF1232EDA238D443511E3532D1C8509D1A2E03301441FEC2E2B02457A4BE16F7BB081FE4D75495EC4CD141D10A5310BB1724B4B6E729FDB5FC4065EDD7D293A6F6FC43970B27E754C44946A7D376DF1C25B2799DBC9B4D97CE43A84953D02BF990D3275AB00015939BD2DD002AEEAF71D68F67E74B296FF68A01D0AB39F980FABF8F15E64696EBC0EDBA636CED2587F76EA518EE70E74C4F64B9867687C8C986606733A8C299FB49C2DC0B5CB9FA16103C77C5F9761B1DFCB3C1022B9EB8F3AE05B8CA1A4914C84EC702743A4EE11C405956E23061C32C8DF95365AC53065E1694D36525D5DC026C8E5661C706541023EC837E9664AE56290E48F746FB26E5AF3E3A2BBAE1039183D20D4FDF4C3944EDAD7809E1DDE99D72781B26F735B3E62470F7C2DF961C3E8F6976ACAE1111E4A8763BF8298032C6789CAD805E32D3D45AE414394E252A8E30EC85E140D116BDEF838329155D653BAE744823A4BE3F3F677DD61D3FC2F3B0452A0EED3CA8007F481EFA4C5DEAB8FE2CD102D6353820EFED2DCBDEEA285A40B92DCE6A32B5AFDE69B0DD9ABA660D30DA3795316B7C8DBE028AA2E1585D3143432FB87B4F3A; .RBXIDCHECK=662568c9-0efd-47b7-aa0d-8430d7b19a83; _ga_BK4ZY0C59K=GS1.1.1709534652.1.1.1709534815.0.0.0; _ga=GA1.2.1330559498.1709534653; RBXSource=rbx_acquisition_time=09/25/2024 01:18:34&rbx_acquisition_referrer=https://www.roblox.com/Login&rbx_medium=Social&rbx_source=www.roblox.com&rbx_campaign=&rbx_adgroup=&rbx_keyword=&rbx_matchtype=&rbx_send_info=0; rbx-ip2=1; RBXSessionTracker=sessionid=0fa4b23d-b996-4589-9d35-d82ea57b2cd7; __utmb=200924205.0.10.1727263387; __utmc=200924205; rbxas=a73f71292a777f34ab2767c400af3030f1d0a4b99871fc5e23eb40a004a6107c"
-          };
-          let res = await fetch(url, {
-            method: 'GET',
-            headers: headers
-          })
-          if (res.status == 200) {
-            res = await res.json()
-            let status = res.usersGroupPayoutEligibility[userId]
-            console.log(status)
-            let embed = new MessageEmbed()
-            .addField({ name: "Member Status", value: status})
-            .setColor(colors.none)
-            
-            await inter.editReply({embeds: [embed]})
-          } else {
-            console.log(res,"noooo")
-          }
-        } else {
-          console.log(response)
+          let csrfToken = '';
+let sessionCookies = '';
+
+// Function to get CSRF Token and store session cookies
+async function getCsrfToken() {
+  const response = await fetch('https://auth.roblox.com/v1/authentication-ticket', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Cookie': '.ROBLOSECURITY='+process.env.Cookie // Replace with actual .ROBLOSECURITY cookie
+    }
+  });
+
+  if (response.status === 401) {
+    csrfToken = response.headers.get('x-csrf-token');  // Store CSRF token
+    sessionCookies = response.headers.get('set-cookie');  // Store session cookies
+  } else {
+    console.log(response)
+    throw new Error('Failed to retrieve CSRF token');
+  }
+}
+
+// Function to make an authorized request with CSRF token and session cookies
+async function makeAuthorizedRequest() {
+
+  const headers = {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
+    'Accept': 'application/json, text/plain, */*',
+    'Accept-Language': 'en-US,en;q=0.5',
+    'Accept-Encoding': 'gzip, deflate',
+    'X-Csrf-Token': csrfToken,  // Include the CSRF token
+    'Cookie': `.ROBLOSECURITY=${process.env.Cookie}; ${sessionCookies}`,  // Include session cookies
+    'Origin': 'https://www.roblox.com',
+    'Referer': 'https://www.roblox.com/',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-site',
+    'Te': 'trailers'
+  };
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: headers
+  });
+
+  if (response.ok) {
+    const data = await response.json();
+    console.log(data);
+  } else {
+    console.error(`Request failed with status ${response.status}`);
+  }
+}
+
+// Step 1: Get the CSRF token and session cookies
+getCsrfToken().then(() => {
+  // Step 2: Use the token and cookies for the authorized request
+  makeAuthorizedRequest();
+}).catch(error => {
+  console.error('Error:', error);
+});
         }
       } catch (err) {
         console.log(err)
