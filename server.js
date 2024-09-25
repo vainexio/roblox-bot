@@ -1613,17 +1613,11 @@ client.on('interactionCreate', async inter => {
           const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+userId;
           
           const headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:130.0) Gecko/20100101 Firefox/130.0',
+            'Cookie': process.env.Cookie,
             'Accept': 'application/json, text/plain, */*',
             'Accept-Language': 'en-US,en;q=0.5',
             'Accept-Encoding': 'gzip, deflate',
-            'X-Bound-Auth-Token': '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727263623|+9RvLD0aZ9zAERlH1ShM1cuQdjFDw5hE4HSwn/Djeh4Gd37htwG9YKIQi869nu+6DaBFiLztY/fZ6sVIIyDYig==',
-            'Origin': 'https://www.roblox.com',
-            'Referer': 'https://www.roblox.com/',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-site',
-            'Te': 'trailers'
+            'X-Bound-Auth-Token': '47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727264742|Rq1HduYmWHltt3+NRiGQaniI7CqtOlL1C+MWF6ZAzspVmP+2RqgkeOrQpBHO0YnCpCUtMgHlCPzpHbFccQuJIw==',
           };
           let res = await fetch(url, {
             method: 'GET',
@@ -1639,10 +1633,10 @@ client.on('interactionCreate', async inter => {
             
             await inter.editReply({embeds: [embed]})
           } else {
-            console.log(res)
+            console.log(res,"noooo")
           }
         } else {
-          console.log(res)
+          console.log(response)
         }
       } catch (err) {
         console.log(err)
