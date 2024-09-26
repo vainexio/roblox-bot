@@ -140,11 +140,32 @@ module.exports = {
       let deletedString = ""
       
       for (let i in codes) {
-        let auth = { method: 'DELETE', headers: { 'authorization': token, 'Content-Type': 'application/json' } };
+        
         let code = codes[i].code;
         let retry = true;
         // Handle rate limit
         while (retry) {
+          count++
+          let ip
+          if (count > ips.length-1) count = 0
+          ip = ips[count]
+          // Authentication
+          let auth = {
+            method: 'DELETE',
+            headers: {
+              authorization: token,
+              'Content-Type': 'application/json',
+              'X-Originating-IP': ip,
+              'X-Forwarded-For': ip,
+              'X-Remote-IP': ip,
+              'X-Remote-Addr': ip,
+              'X-Client-IP': ip,
+              'X-Host': ip,
+              'X-Forwared-Host': ip,
+              'X-Forwarded-For': ip,
+              'X-Forwarded-For': ip,
+            },
+          };
           let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
           console.log("Revoke status: ", deleteCode.status);
           
