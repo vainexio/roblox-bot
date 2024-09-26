@@ -178,15 +178,15 @@ module.exports = {
             deleteCode = await deleteCode.json();
             let retry = deleteCode.retry_after * 1000
             console.log("Rate limited. Retrying in "+retry+"ms...");
-            await sleep(retry);
+            await sleep(retry); //retry
           } else {
             deletedString += codes[i].status+": `"+deleteCode.status+"` "+code+"\n";
             await log(deleteCode.status+": `"+deleteCode.statusText+"` "+code);
             retry = false;
           }
         }
-
-        await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
+        
+        //await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
       return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString+'-# '+version, count: deletedCodes}
     } catch (err) {
