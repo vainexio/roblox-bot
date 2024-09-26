@@ -14,7 +14,7 @@ async function log(msg) {
   await channel.send(msg)
 }
 
-const version = "Handler version: v2.0.0"
+const version = "Handler version: v2.0.2"
 
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
@@ -83,7 +83,7 @@ module.exports = {
             headers: {
               authorization: token,
               'Content-Type': 'application/json',
-              'X-Originating-IP': ip,
+              /*'X-Originating-IP': ip,
               'X-Forwarded-For': ip,
               'X-Remote-IP': ip,
               'X-Remote-Addr': ip,
@@ -91,7 +91,7 @@ module.exports = {
               'X-Host': ip,
               'X-Forwared-Host': ip,
               'X-Forwarded-For': ip,
-              'X-Forwarded-For': ip,
+              'X-Forwarded-For': ip,*/
             },
           };
           let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
@@ -119,7 +119,6 @@ module.exports = {
             unable = true
           }
         }
-        //await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
         if (counter < object.amount && unable) {
           billingIndex++;
         }
@@ -155,7 +154,7 @@ module.exports = {
             headers: {
               authorization: token,
               'Content-Type': 'application/json',
-              'X-Originating-IP': ip,
+              /*'X-Originating-IP': ip,
               'X-Forwarded-For': ip,
               'X-Remote-IP': ip,
               'X-Remote-Addr': ip,
@@ -163,7 +162,7 @@ module.exports = {
               'X-Host': ip,
               'X-Forwared-Host': ip,
               'X-Forwarded-For': ip,
-              'X-Forwarded-For': ip,
+              'X-Forwarded-For': ip,*/
             },
           };
           let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
