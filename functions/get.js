@@ -14,7 +14,7 @@ module.exports = {
   getTime: function(stamp) {
     return Math.floor(new Date(stamp).getTime()/1000.0);
   },
-  chatAI: async function(content,type) {
+  chatAI2: async function(content,type) {
     let data = {}
     let chosenAPI = null
     if (content.toLowerCase().includes('show me') || type === 'image') {

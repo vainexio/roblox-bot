@@ -249,7 +249,7 @@ const sendMsg = require('./functions/sendMessage.js')
 const {safeSend, sendChannel, sendUser} = sendMsg
 //Functions
 const get = require('./functions/get.js')
-const {getTime, chatAI, getNth, getChannel, getGuild, getUser, getMember, getRandom, getColor} = get
+const {getTime, chatAI2, getNth, getChannel, getGuild, getUser, getMember, getRandom, getColor} = get
 //Command Handler
 const cmdHandler = require('./functions/commands.js')
 const {checkCommand, isCommand, isMessage, getTemplate} = cmdHandler
@@ -265,7 +265,7 @@ const {makeTicket} = tickets
 //Links Handler
 const linksHandler = require('./functions/linksHandler.js')
 const { generateLinks, revokeLinks, fetchLinks} = linksHandler
-//const {} = boostbot
+const { ai } = require('./functions/ai.js')
 /*
 ░█████╗░██╗░░░░░██╗███████╗███╗░░██╗████████╗  ███╗░░░███╗███████╗░██████╗░██████╗░█████╗░░██████╗░███████╗
 ██╔══██╗██║░░░░░██║██╔════╝████╗░██║╚══██╔══╝  ████╗░████║██╔════╝██╔════╝██╔════╝██╔══██╗██╔════╝░██╔════╝
@@ -3233,7 +3233,7 @@ app.get('/gcash', async function (req, res) {
   }
   
 });
-app.post('/submit', (req, res) => {
+app.post('/submit', async (req, res) => {
     const { model, messages } = req.body;
 
     if (!model || !messages) {
@@ -3242,19 +3242,8 @@ app.post('/submit', (req, res) => {
 
     console.log('Model:', model);
     console.log('Messages:', messages);
-
-    // Simulate an AI response
-    const response = {
-        choices: [
-            {
-                message: {
-                    content: `Received your message: ${messages[0].content}`,
-                }
-            }
-        ]
-    };
-
-    res.json(response);
+  let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
+  res.json(reso.response);
 });
 app.get('/sms', async function (req, res) {
   let msg = req.query.msg
