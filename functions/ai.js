@@ -2,7 +2,6 @@ const AI_index = "TEST"
 const open_ai = process.env['AI_'+AI_index]
 const fetch = require('node-fetch');
 const moment = require('moment');
-const fs = require("fs-extra");
 const { config } = require('../storage/settings_.js')
 module.exports = {
   //

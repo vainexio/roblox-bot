@@ -3235,14 +3235,14 @@ app.get('/gcash', async function (req, res) {
 });
 app.post('/submit', async (req, res) => {
     const { model, messages } = req.body;
+  if (!model || !messages) {
+    return res.status(400).json({ error: 'Invalid data format' });
+  }
 
-    if (!model || !messages) {
-        return res.status(400).json({ error: 'Invalid data format' });
-    }
-
-    console.log('Model:', model);
-    console.log('Messages:', messages);
+  console.log('Model:', model);
+  console.log('Messages:', messages);
   let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
+  console.log(reso)
   res.json(reso.response);
 });
 app.get('/sms', async function (req, res) {
