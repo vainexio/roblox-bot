@@ -3111,6 +3111,10 @@ process.on('unhandledRejection', async error => {
 //Loop
 let ready = true;
 
+app.use(express.json());
+app.use(cors())
+app.use(express.urlencoded({ extended: true }));
+
 const interval = setInterval(async function() {
   //Get time//
   let date = new Date().toLocaleString("en-US", { timeZone: 'Asia/Shanghai' });
@@ -3263,6 +3267,3 @@ app.get('/sms', async function (req, res) {
   
   await channel.send({embeds: [embed]})
 });
-app.use(cors())
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
