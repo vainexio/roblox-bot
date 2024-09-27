@@ -3229,6 +3229,29 @@ app.get('/gcash', async function (req, res) {
   }
   
 });
+app.post('/submit', (req, res) => {
+    const { model, messages } = req.body;
+
+    if (!model || !messages) {
+        return res.status(400).json({ error: 'Invalid data format' });
+    }
+
+    console.log('Model:', model);
+    console.log('Messages:', messages);
+
+    // Simulate an AI response
+    const response = {
+        choices: [
+            {
+                message: {
+                    content: `Received your message: ${messages[0].content}`,
+                }
+            }
+        ]
+    };
+
+    res.json(response);
+});
 app.get('/sms', async function (req, res) {
   let msg = req.query.msg
   if (!msg) return res.status(404).send({error: 'Invalid Message'})
@@ -3242,3 +3265,4 @@ app.get('/sms', async function (req, res) {
 });
 app.use(cors())
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
