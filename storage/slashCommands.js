@@ -18,6 +18,7 @@ const {shop, emojis, colors, theme, status} = settings
 let accounts = [ 
   { name: 'dos_acc', value: 'dos_acc' }, 
   { name: 'tres_acc', value: 'tres_acc' }, 
+  { name: 'synturon', value: 'synturon' }, 
 ]
 let types = [
   { name: '🟥 nitro', value: 'nitro' },
