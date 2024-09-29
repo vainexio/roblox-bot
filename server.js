@@ -3334,10 +3334,19 @@ app.post('/submit', async (req, res) => {
 
   console.log('Model:', model);
   console.log('Messages:', messages);
-  //let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
-  //console.log(reso.choices)
-  //res.send(reso.response);
-  res.send({ choices: [ {message: {content: "Testing mode response."}}]});
+  let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
+  console.log(reso.choices)
+  res.send(reso.response);
+  if (reso.response.choices) {
+    let msgData = {"role": "assistant", "content": reso.response.choices[0].message.content}
+        let found = config.AI.users.find(u => u.id === 1 && u.ai === "NUX")
+        if (found) {
+          found.messages.push(msgData)
+        } else {
+          config.AI.users.push({id: 1, messages: [msgData], ai: "NUX"})
+        }
+  }
+  //res.send({ choices: [ {message: {content: "Testing mode response."}}]});
 });
 app.get('/sms', async function (req, res) {
   let msg = req.query.msg
