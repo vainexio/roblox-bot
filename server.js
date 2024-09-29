@@ -3334,9 +3334,10 @@ app.post('/submit', async (req, res) => {
 
   console.log('Model:', model);
   console.log('Messages:', messages);
-  let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
-  console.log(reso.choices)
-  res.send(reso.response);
+  //let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
+  //console.log(reso.choices)
+  //res.send(reso.response);
+  res.send({ choices: [ {message: {content: "Testing mode response."}}]});
 });
 app.get('/sms', async function (req, res) {
   let msg = req.query.msg
