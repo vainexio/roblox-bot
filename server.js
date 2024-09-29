@@ -1623,8 +1623,11 @@ client.on('interactionCreate', async inter => {
             }
             // Retry if rate limited
             else if (codeStatus.retry_after) {
-              console.log("Rate limited. Retrying in 3 seconds...")
-              await sleep(3000);
+              console.log('retry for '+codes[i].code)
+              let ret = Math.ceil(codeStatus.retry_after)
+              ret = ret.toString()+"000"
+              let waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
+              await sleep(waitingTime)
               continue
             }
             // If link is on other account
@@ -1651,7 +1654,7 @@ client.on('interactionCreate', async inter => {
             validatedCodes.push(codes[i])
             retry = false
           }
-          await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
+          //await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
         }
         // Revoke links
         for (let i in links) {
@@ -1750,8 +1753,11 @@ client.on('interactionCreate', async inter => {
             }
             // Retry if rate limited
             else if (codeStatus.retry_after) {
-              console.log("Rate limited. Retrying in 3 seconds...")
-              await sleep(3000);
+              console.log('retry for '+codes[i].code)
+              let ret = Math.ceil(codeStatus.retry_after)
+              ret = ret.toString()+"000"
+              let waitingTime = Number(ret) < 300000 ? Number(ret) : 60000
+              await sleep(waitingTime)
               continue
             }
             // If link is on other account
@@ -1778,7 +1784,6 @@ client.on('interactionCreate', async inter => {
             validatedCodes.push(codes[i])
             retry = false
           }
-          await sleep(1000) // Sleep for 1 second between each request to avoid rate limits
         }
         // Revoke links
         for (let i in links) {

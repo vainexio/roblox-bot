@@ -15,10 +15,10 @@ async function log(msg) {
 }
 
 const version = "Handler version: v2.0.2"
-
 module.exports = {
   generateLinks: async function (object) { //amount,sku,token,type
     try {
+      let switcher = false
       let price = 0
       let finalType = object.type
       if (object.type == "nitro") price = 999
@@ -94,7 +94,8 @@ module.exports = {
               'X-Forwarded-For': ip,*/
             },
           };
-          let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
+          switcher = !switcher
+          let makeCode = await fetch('https://discord.com/api/'+(switcher ? 'v9' : 'v10')+'/users/@me/entitlements/gift-codes', auth);
           console.log('Generation status: ', makeCode.status);
 
           // Check status
@@ -137,6 +138,7 @@ module.exports = {
       let data = []
       let deletedCodes = 0
       let deletedString = ""
+      let switcher = false
       
       for (let i in codes) {
         
@@ -165,7 +167,8 @@ module.exports = {
               'X-Forwarded-For': ip,*/
             },
           };
-          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
+          switcher = !switcher
+          let deleteCode = await fetch('https://discord.com/api/'+(switcher ? 'v9' : 'v10')+'/users/@me/entitlements/gift-codes/'+code, auth);
           console.log("Revoke status: ", deleteCode.status);
           
           if (deleteCode.status == 204 || deleteCode.status == 200) {
