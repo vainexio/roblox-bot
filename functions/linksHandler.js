@@ -7,46 +7,7 @@ const {getTime, chatAI, getNth, getChannel, getGuild, getUser, getMember, getRan
 const fetch = require('node-fetch');
 
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
-const {HttpsProxyAgent} = require('https-proxy-agent');
 
-// List of proxies
-const proxyList = [
-  'http://182.16.78.219:80',
-  'http://157.254.53.50:80',
-  'http://39.109.113.97:4090',
-  'http://8.217.190.116:80',
-  'http://43.132.219.102:80',
-  'http://182.16.78.221:80',
-  'http://182.16.78.222:80',
-  'http://185.228.234.84:80',
-  'http://103.30.43.183:3128',
-  'http://148.66.6.210:80',
-  'http://119.13.77.25:39904',
-  'http://124.156.100.83:8118',
-  'https://47.240.28.31:8888',
-  'http://185.242.233.230:3128',
-  'http://103.42.41.179:3080',
-  'http://119.13.84.133:3128',
-  'http://103.227.192.46:8111',
-  'http://118.26.39.141:3128',
-  'http://42.200.124.211:8080',
-  'http://14.199.30.127:80',
-  'http://183.178.50.58:8080',
-  'http://223.19.156.41:80',
-  'http://190.232.927.15:9999',
-  'http://152.32.254.214:9002',
-  'http://42.118.59.97:80',
-  'http://212.3.187.82:8080',
-  'http://223.197.178.186:3128',
-  'http://115.252.33.62:80',
-  'http://1.64.204.68:8080'
-];
-
-// Helper function to get a random proxy from the list
-function getRandomProxy() {
-  const randomIndex = Math.floor(Math.random() * proxyList.length);
-  return proxyList[randomIndex];
-}
 async function log(msg) {
   let channel = await getChannel("1280710557825236992")
   console.log("🔴 New log: "+msg)
@@ -56,172 +17,181 @@ async function log(msg) {
 const version = "Handler version: v2.0.2"
 
 module.exports = {
-  generateLinks: async function (object) { // amount, sku, token, type
-  try {
-    let price = 0;
-    let finalType = object.type;
-    if (object.type === "nitro") price = 999;
-    else if (object.type === "nitro-basic") price = 299;
-    else if (object.type === "nitro-yearly") { price = 9999; finalType = "nitro"; }
-    else if (object.type === "basic-yearly") { price = 2999; finalType = "nitro-basic"; }
-    
-    let token = process.env[object.account];
-    let data = [];
-
-    // Get billing data
-    if (!object.sku) {
-      const proxy = getRandomProxy();
-      const agent = new HttpsProxyAgent(proxy);
-
-      let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments', {
-        method: 'GET',
-        headers: {
-          'authorization': token,
-          'Content-Type': 'application/json',
-        },
-        agent // Use the proxy agent for this request
-      });
-
-      if (billings.status === 401) return { error: emojis.warning + '`' + billings.status + '`: ' + billings.statusText };
-
-      billings = await billings.json();
-      for (let i in billings) {
-        let bill = billings[i];
-        if (!data.find((d) => d.id === bill.sku_id && d.subscription === bill.sku_subscription_plan_id) && bill?.sku?.slug === finalType && bill?.sku_price === price) {
-          data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
-        }
-      }
-    } else {
-      data = object.sku;
-    }
-
-    if (data.length === 0) return { error: emojis.warning + ' No stock keeping unit was found.' };
-
-    let createdCodes = '';
-    let counter = 0;
-    let billingIndex = 0;
-    let style = 4;
-
-    // Generate codes
-    while (object.amount > counter) {
-      if (billingIndex >= data.length) {
-        return { error: `${emojis.warning} Not enough billing data to generate ${object.amount} gift codes.\nGenerated only ${counter} code(s):\n\n${createdCodes}` };
-      }
-
-      let currentBilling = data[billingIndex];
-      let retry = true;
-      let unable = false;
-
-      while (retry) {
-        const proxy = getRandomProxy();  // Get a new random proxy for each request
-        const agent = new HttpsProxyAgent(proxy);
-
-        let auth = {
-          method: 'POST',
-          body: JSON.stringify({
-            sku_id: currentBilling.id,
-            subscription_plan_id: currentBilling.subscription,
-            gift_style: style,
-          }),
+  generateLinks: async function (object) { //amount,sku,token,type
+    try {
+      let price = 0
+      let finalType = object.type
+      if (object.type == "nitro") price = 999
+      else if (object.type == "nitro-basic") price = 299
+      else if (object.type == "nitro-yearly") { price = 9999, finalType = "nitro" }
+      else if (object.type == "basic-yearly") { price = 2999, finalType = "nitro-basic" }
+      let token = process.env[object.account]
+      // Get billing data
+      let data = [];
+      if (!object.sku) {
+        let billings = await fetch('https://discord.com/api/v9/users/@me/billing/payments', {
+          method: 'GET',
           headers: {
-            authorization: token,
+            'authorization': token,
             'Content-Type': 'application/json',
           },
-          agent // Use proxy agent here as well
-        };
+        });
+        if (billings.status == 401) return { error: emojis.warning + '`'+billings.status+'`: '+billings.statusText }
+        billings = await billings.json();
+        for (let i in billings) {
+          let bill = billings[i];
+          if (!data.find((d) => d.id == bill.sku_id && d.subscription == bill.sku_subscription_plan_id) && bill?.sku?.slug == finalType && bill?.sku_price == price) {
+            //console.log(bill)
+            data.push({ id: bill.sku_id, subscription: bill.sku_subscription_plan_id });
+          }
+        }
+      } else {
+        data = object.sku
+      }
+      // Return if no billing
+      if (data.length == 0) return { error: emojis.warning + ' No stock keeping unit was found.' };
 
-        let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
-        console.log('Generation status: ', makeCode.status);
+      let createdCodes = '';
+      let counter = 0;
+      let billingIndex = 0;
+      let style = 4
+      // Generate codes
+      while (object.amount > counter) {
+        // Ensure we have billing data to use
+        if (billingIndex >= data.length) {
+          counter == object.amount
+          return { error: `${emojis.warning} Not enough billing data to generate ${object.amount} gift codes.\n`+`Generated only ${counter} code(s):\n\n${createdCodes}` };
+        }
+        // Get current billing info
+        let currentBilling = data[billingIndex];
+        let retry = true;
+        let unable = false
+        // Handle rate limit
+        while (retry) {
+          count++
+          let ip
+          if (count > ips.length-1) count = 0
+          ip = ips[count]
+          // Authentication
+          let auth = {
+            method: 'POST',
+            body: JSON.stringify({
+              sku_id: currentBilling.id,
+              subscription_plan_id: currentBilling.subscription,
+              gift_style: style,
+            }),
+            headers: {
+              authorization: token,
+              'Content-Type': 'application/json',
+              /*'X-Originating-IP': ip,
+              'X-Forwarded-For': ip,
+              'X-Remote-IP': ip,
+              'X-Remote-Addr': ip,
+              'X-Client-IP': ip,
+              'X-Host': ip,
+              'X-Forwared-Host': ip,
+              'X-Forwarded-For': ip,
+              'X-Forwarded-For': ip,*/
+            },
+          };
+          let makeCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes', auth);
+          console.log('Generation status: ', makeCode.status);
 
-        if (makeCode.status === 200) {
-          makeCode = await makeCode.json();
-          counter++;
-          console.log(makeCode.code);
-          createdCodes += `${counter}. https://discord.gift/${makeCode.code}\n`;
-          retry = false;
-        } else if (makeCode.status === 429) {
-          makeCode = await makeCode.json();
-          let retryAfter = makeCode.retry_after * 1000;
-          console.log("Rate limited. Retrying in " + retryAfter + "ms...");
-          await sleep(retryAfter);
-        } else if (makeCode.status === 404 && style !== null) {
-          style = null;
-          retry = true;
-        } else {
-          await log(emojis.warning + ' `[' + counter + '] - ' + makeCode.status + '` Unable to generate code - `' + makeCode.statusText + '`');
-          retry = false;
-          unable = true;
+          // Check status
+          if (makeCode.status == 200) {
+            makeCode = await makeCode.json();
+            counter++;
+            console.log(makeCode.code)
+            createdCodes += counter.toString() + '. https://discord.gift/' + makeCode.code + '\n';
+            retry = false;
+          } else if (makeCode.status == 429) {
+            makeCode = await makeCode.json();
+            let retry = makeCode.retry_after * 1000
+            console.log("Rate limited. Retrying in "+retry+"ms...");
+            await sleep(retry);
+          } else if (makeCode.status == 404 && style !== null) {
+            style = null
+            retry = true
+          }
+          else {
+            await log(emojis.warning + ' `[' + counter + '] - '+makeCode.status+'` Unable to generate code - `' + makeCode.statusText + '`')
+            retry = false;
+            unable = true
+          }
+        }
+        if (counter < object.amount && unable) {
+          billingIndex++;
         }
       }
-
-      if (counter < object.amount && unable) {
-        billingIndex++;
-      }
+      console.log(createdCodes)
+      return { message: '` [' + counter + '] ` Generated Codes ['+object.type.toUpperCase()+']\n'+createdCodes+'-# '+version };
+    } catch (err) {
+      console.log(err)
+      return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
     }
-
-    console.log(createdCodes);
-    return { message: '` [' + counter + '] ` Generated Codes [' + object.type.toUpperCase() + ']\n' + createdCodes + '-# ' + version };
-  } catch (err) {
-    console.log(err);
-    return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
-  }
-},
-  revokeLinks: async function (codes, acc) {
-  try {
-    let token = process.env[acc];
-    let deletedCodes = 0;
-    let deletedString = "";
-
-    for (let i in codes) {
-      let code = codes[i].code;
-      let retry = true;
-      let unable = false;
-
-      while (retry) {
-        const proxy = getRandomProxy();  // Get a random proxy for each request
-        const agent = new HttpsProxyAgent(proxy);
-
-        // Authentication request using proxy
-        let auth = {
-          method: 'DELETE',
-          headers: {
-            authorization: token,
-            'Content-Type': 'application/json',
-          },
-          agent // Use the proxy agent for this request
-        };
-
-        let deleteCode = await fetch(`https://discord.com/api/v9/users/@me/entitlements/gift-codes/${code}`, auth);
-        console.log("Revoke status: ", deleteCode.status);
-
-        if (deleteCode.status === 204 || deleteCode.status === 200) {
-          deletedCodes++;
-          codes[i].status = emojis.trash;
-          deletedString += `${codes[i].status} ${code}\n`;
-          retry = false;  // Exit the loop if successful
-        } else if (deleteCode.status === 429) {  // Rate limit handling
-          deleteCode = await deleteCode.json();
-          let retryAfter = deleteCode.retry_after * 1000;
-          console.log(`Rate limited. Retrying in ${retryAfter}ms...`);
-          await sleep(retryAfter);  // Retry after the rate limit delay
-        } else {
-          deletedString += `${codes[i].status}: \`${deleteCode.status}\` ${code}\n`;
-          await log(`${deleteCode.status}: \`${deleteCode.statusText}\` ${code}`);
-          retry = false;
-          unable = true;
+  },
+  revokeLinks: async function (codes,acc) {
+    try {
+      let token = process.env[acc]
+      // Get billing
+      let data = []
+      let deletedCodes = 0
+      let deletedString = ""
+      
+      for (let i in codes) {
+        
+        let code = codes[i].code;
+        let retry = true;
+        // Handle rate limit
+        while (retry) {
+          count++
+          let ip
+          if (count > ips.length-1) count = 0
+          ip = ips[count]
+          // Authentication
+          let auth = {
+            method: 'DELETE',
+            headers: {
+              authorization: token,
+              'Content-Type': 'application/json',
+              /*'X-Originating-IP': ip,
+              'X-Forwarded-For': ip,
+              'X-Remote-IP': ip,
+              'X-Remote-Addr': ip,
+              'X-Client-IP': ip,
+              'X-Host': ip,
+              'X-Forwared-Host': ip,
+              'X-Forwarded-For': ip,
+              'X-Forwarded-For': ip,*/
+            },
+          };
+          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
+          console.log("Revoke status: ", deleteCode.status);
+          
+          if (deleteCode.status == 204 || deleteCode.status == 200) {
+            deletedCodes++;
+            codes[i].status = emojis.trash;
+            deletedString += codes[i].status+" "+code+"\n";
+            retry = false;
+          } else if (deleteCode.status == 429) {
+            deleteCode = await deleteCode.json();
+            let retry = deleteCode.retry_after * 1000
+            console.log("Rate limited. Retrying in "+retry+"ms...");
+            await sleep(retry); //retry
+          } else {
+            deletedString += codes[i].status+": `"+deleteCode.status+"` "+code+"\n";
+            await log(deleteCode.status+": `"+deleteCode.statusText+"` "+code);
+            retry = false;
+          }
         }
+        
+        //await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
-
-      if (unable) {
-        console.log(`Unable to delete code: ${code}`);
-      }
+      return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString+'-# '+version, count: deletedCodes}
+    } catch (err) {
+      return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
     }
-
-    return { message: `\` [${deletedCodes}] \` Revoked Codes\n${deletedString}-# ${version}`, count: deletedCodes };
-  } catch (err) {
-    return { error: `${emojis.warning} An unexpected error occurred.\n\`\`\`diff\n- ${err}\`\`\`` };
-  }
-},
+  },
   fetchLinks: async function (object) { // exclude,limit,token
     //
     let price = 0
