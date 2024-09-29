@@ -16,7 +16,7 @@
     "moment": "^2.29.4",
     "discord.js": "^13.16.0",
     "express-rate-limit": "^6.7.0",
-    "https-proxy-agent": "^5.0.1",
+    "https-proxy-agent": "^7.0.5",
     "url": "^0.11.0",
     "discord-html-transcripts": "^2.X.X",
     "@discordjs/voice": "^0.17.0",

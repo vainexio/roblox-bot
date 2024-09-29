@@ -7,7 +7,7 @@ const {getTime, chatAI, getNth, getChannel, getGuild, getUser, getMember, getRan
 const fetch = require('node-fetch');
 
 const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep, getPercentageEmoji, randomTable, scanString, requireArgs, getArgs, makeButton, makeRow} = others
-const HttpsProxyAgent = require('https-proxy-agent');
+const {HttpsProxyAgent} = require('https-proxy-agent');
 
 // List of proxies
 const proxyList = [
@@ -166,68 +166,62 @@ module.exports = {
     return { error: emojis.warning + ' An unexpected error occurred.\n```diff\n- ' + err + '```' };
   }
 },
-  revokeLinks: async function (codes,acc) {
-    try {
-      let token = process.env[acc]
-      // Get billing
-      let data = []
-      let deletedCodes = 0
-      let deletedString = ""
-      
-      for (let i in codes) {
-        
-        let code = codes[i].code;
-        let retry = true;
-        // Handle rate limit
-        while (retry) {
-          count++
-          let ip
-          if (count > ips.length-1) count = 0
-          ip = ips[count]
-          // Authentication
-          let auth = {
-            method: 'DELETE',
-            headers: {
-              authorization: token,
-              'Content-Type': 'application/json',
-              /*'X-Originating-IP': ip,
-              'X-Forwarded-For': ip,
-              'X-Remote-IP': ip,
-              'X-Remote-Addr': ip,
-              'X-Client-IP': ip,
-              'X-Host': ip,
-              'X-Forwared-Host': ip,
-              'X-Forwarded-For': ip,
-              'X-Forwarded-For': ip,*/
-            },
-          };
-          let deleteCode = await fetch('https://discord.com/api/v9/users/@me/entitlements/gift-codes/'+code, auth);
-          console.log("Revoke status: ", deleteCode.status);
-          
-          if (deleteCode.status == 204 || deleteCode.status == 200) {
-            deletedCodes++;
-            codes[i].status = emojis.trash;
-            deletedString += codes[i].status+" "+code+"\n";
-            retry = false;
-          } else if (deleteCode.status == 429) {
-            deleteCode = await deleteCode.json();
-            let retry = deleteCode.retry_after * 1000
-            console.log("Rate limited. Retrying in "+retry+"ms...");
-            await sleep(retry); //retry
-          } else {
-            deletedString += codes[i].status+": `"+deleteCode.status+"` "+code+"\n";
-            await log(deleteCode.status+": `"+deleteCode.statusText+"` "+code);
-            retry = false;
-          }
+  revokeLinks: async function (codes, acc) {
+  try {
+    let token = process.env[acc];
+    let deletedCodes = 0;
+    let deletedString = "";
+
+    for (let i in codes) {
+      let code = codes[i].code;
+      let retry = true;
+      let unable = false;
+
+      while (retry) {
+        const proxy = getRandomProxy();  // Get a random proxy for each request
+        const agent = new HttpsProxyAgent(proxy);
+
+        // Authentication request using proxy
+        let auth = {
+          method: 'DELETE',
+          headers: {
+            authorization: token,
+            'Content-Type': 'application/json',
+          },
+          agent // Use the proxy agent for this request
+        };
+
+        let deleteCode = await fetch(`https://discord.com/api/v9/users/@me/entitlements/gift-codes/${code}`, auth);
+        console.log("Revoke status: ", deleteCode.status);
+
+        if (deleteCode.status === 204 || deleteCode.status === 200) {
+          deletedCodes++;
+          codes[i].status = emojis.trash;
+          deletedString += `${codes[i].status} ${code}\n`;
+          retry = false;  // Exit the loop if successful
+        } else if (deleteCode.status === 429) {  // Rate limit handling
+          deleteCode = await deleteCode.json();
+          let retryAfter = deleteCode.retry_after * 1000;
+          console.log(`Rate limited. Retrying in ${retryAfter}ms...`);
+          await sleep(retryAfter);  // Retry after the rate limit delay
+        } else {
+          deletedString += `${codes[i].status}: \`${deleteCode.status}\` ${code}\n`;
+          await log(`${deleteCode.status}: \`${deleteCode.statusText}\` ${code}`);
+          retry = false;
+          unable = true;
         }
-        
-        //await sleep(1000); // Sleep for 1 second between each request to avoid rate limits
       }
-      return { message: "` ["+deletedCodes+"] ` Revoked Codes\n"+deletedString+'-# '+version, count: deletedCodes}
-    } catch (err) {
-      return { error: emojis.warning+" An unexpected error occured.\n```diff\n- "+err+"```"}
+
+      if (unable) {
+        console.log(`Unable to delete code: ${code}`);
+      }
     }
-  },
+
+    return { message: `\` [${deletedCodes}] \` Revoked Codes\n${deletedString}-# ${version}`, count: deletedCodes };
+  } catch (err) {
+    return { error: `${emojis.warning} An unexpected error occurred.\n\`\`\`diff\n- ${err}\`\`\`` };
+  }
+},
   fetchLinks: async function (object) { // exclude,limit,token
     //
     let price = 0
