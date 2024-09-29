@@ -69,8 +69,8 @@ module.exports = {
     chatAPI: 'https://api.openai.com/v1/chat/completions',
     imageAPI: 'https://api.openai.com/v1/images/generations',
     models: [
-      'gpt-3.5-turbo-1106',
-      'gpt-3.5-turbo',
+      'gpt-4o-2024-08-06',
+      //'gpt-3.5-turbo',
     ]//  
   },
   },

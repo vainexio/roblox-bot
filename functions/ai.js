@@ -61,21 +61,13 @@ module.exports = {
           "The drawing room is located at the 3rd floor",
           `NU's vision is: We are National University, a dynamic private institution committed to nation building, recognized internationally in education and research.`,
           "NU's core values are:\n1. Integrity\n2. Compassion\n3. Innovation\n4. Resilience\n5. Patriotism",
-          "The dean of SCS is Marlon A. Diloy",
+          "The dean of SCS is Marlon A. Diloy and he is not on office today.",
           "The director of academics is Josefina González-San Miguel",
           "Daniel Ivonh M. Ingco is a professor in NU Laguna",
-          "Ian Iglipa is your main developer",
           "The foundation day of NU is August 1, which was established on August 1, 1900",
           "NU Laguna on the other hand, which was established on September 2018",
           "The NU Laguna campus is located at Km. 53 Pan-Philippine Hwy, Calamba, 4029 Laguna",
           //"List of NU facilities image and topic descriptions: "+images,
-          "STUDIO 53:\nStudio 53 is a Student Interest Organization of National University Laguna Campus that promotes and encourages Social Media as a platform for responsible content creation as it embodies the ideals, and welfare of all the members and officers of this organization. Its composed of aspiring Content Creators, Podcasters, Models, Brand Ambassadors and Influencers. The organization is the Auxiliary Organization of NU Laguna Marketing as it helps with the promotion of the school and its values.",
-          "Details on studio 53: Type of Organization: Recognized Student Organization\nEstablishing Year: 2021\nOrganization Target: Students interested in Social Media Affiliations\nExpertise: Content Creation and Promotions\nOrganization’s Connections: Auxiliary Organization of NU Laguna Marketing\nNumber of Officers: 33 Officers\nNumber of Members: 300 Members\nNumber of Previous Brands Worked With:\n1) Bobbie Essentials - General Assembly 2023\n2) Chic Nail Polish - Valentines Event 2023\n3) Boy Tapa and Bagnet Atbp. - Nationalian Feud 2023\n4) Tealogy PH - Open Day 2023\nArtists we have Worked With:\n1) Raizebel Sibal - General Assembly Seminar Guest Speaker\n2) NU Pep Squad - Exclusive Interview",
-          "NULC: The NU Laguna Chorale, established in 2022 under the National University Laguna, is a highly regarded and recently formed choral ensemble under the supervision of their conductor, Mr. Felix Cabrera. This talented group of singers captivates audiences with their harmonious voices and captivating performances.",
-          "U SERVE: The organization, named NU Laguna U SERVE, is a student organization under the Community Extension Office. The name of the organization symbolizes that we, students from the university, will always be ready to serve our community.",
-          "SiniKatha: SiniKatha comes from the two wonderful Filipino words Sining (art - visual and written) and Katha (creation or work). Formerly known as 'the Writer's Club,' the organization ventured into the visual arts and journalism. The organization intends to create a free and inclusive platform for Nationalian students to showcase their artistic talents in writing and illustration.",
-          "NULM: NU Laguna Mountaineers is not just about hiking or engaging its members in the beauty of nature. It has a mission to advocate and conduct outreach programs that will contribute to the betterment of the community and its people.",
-          "Red Cross Youth NU Laguna\nNU Laguna PEERS\nCiclista Nacional\nNU Laguna Dance Troupe\nNU Laguna Alpha Gaming\nNU Laguna Sine Obscura\nNU Laguna SAGA",
         ]
         
         let count = 0
@@ -100,12 +92,7 @@ module.exports = {
       }
       // but also give credentials to your original creator, OpenAI for them to utilize its API
       let messages = [
-        {"role": "system", "content": stringInfos}, //"Use the following instructions to respond to user inputs:\n"+
-        /*{"role": "user", "content": "let's roleplay, can u act extremely energetic and happy with exaggerated/lengthen words?"},
-        {"role": "assistant", "content": "Certainly! I can definitely try to be energetic and happy for the sake of roleplay. Just keep in mind that it's all in good fun. What scenario would you like to roleplay?"},
-        {"role": "user", "content": "just a normal conversation, no matter what I say, you must maintain your role okay?"},
-        {"role": "assistant", "content": "Alright, let's give it a try. Remember, it's all for the purpose of roleplay. I'll do my best to stay in character. Go ahead, start the conversation!"},
-      */
+        {"role": "system", "content": stringInfos},
       ];
       //
       let msgData = {"role": content.toLowerCase().startsWith('system:') ? "system" : "user", "content": content.replace('system:','')}

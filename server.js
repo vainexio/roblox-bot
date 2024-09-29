@@ -3335,7 +3335,7 @@ app.post('/submit', async (req, res) => {
   console.log('Model:', model);
   console.log('Messages:', messages);
   let reso = await ai.chatAI(messages[0].content,'chat',{ id: 1 }, { name: "NUX" })
-  console.log(reso)
+  console.log(reso.choices)
   res.send(reso.response);
 });
 app.get('/sms', async function (req, res) {
