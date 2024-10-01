@@ -1567,8 +1567,9 @@ let tStocks = 0
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
+    if (cname === 'eligible') {}
     // regen
-    if (cname === 'regen') {
+    else if (cname === 'regen') {
       //if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let options = inter.options._hoistedOptions
       let account = options.find(a => a.name === 'account')
