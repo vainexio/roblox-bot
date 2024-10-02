@@ -1574,9 +1574,6 @@ client.on('interactionCreate', async inter => {
     // Replace these with your actual tokens
     const robloxSecurityToken = process.env.Cookie; // IMPORTANT: Keep this secure
 
-    // Construct the Cookie header
-    const cookie = `.ROBLOSECURITY=${robloxSecurityToken}; other_cookies_if_any`;
-
     // Replicate browser headers
     const headers = {
         "Accept": "application/json, text/plain, */*",
@@ -1584,7 +1581,7 @@ client.on('interactionCreate', async inter => {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
                       "AppleWebKit/537.36 (KHTML, like Gecko) " +
                       "Chrome/129.0.0.0 Safari/537.36",
-        "Cookie": cookie,
+        "Cookie": robloxSecurityToken,
         "Referer": "https://www.roblox.com/",
         "Referrer-Policy": "strict-origin-when-cross-origin",
         "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
