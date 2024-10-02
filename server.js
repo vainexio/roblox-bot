@@ -1570,33 +1570,7 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Disable SSL validation
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    if (cname === 'eligible') {
-      async function fetchWithProxy(url, proxyUrl) {
-    const agent = new HttpsProxyAgent(proxyUrl)
-
-    const robloxSecurityToken = process.env.Cookie;
-
-    try {
-        const headers = {
-            "Accept": "application/json",
-            "Cookie": robloxSecurityToken,
-        };
-
-        const response = await fetch(url, { method: "GET", headers: headers, agent: agent });
-      console.log(response);
-      if (response.status !== 200) return
-        const data = await response.json();
-        console.log(data);
-    } catch (error) {
-        console.error('Error fetching data:', error);
-    }
-}
-
-const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761';
-const proxyUrl = 'http://8.212.168.170:9080';
-
-fetchWithProxy(url, proxyUrl);
-    }
+    if (cname === 'eligible') {}
     // regen
     else if (cname === 'regen') {
       //if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
