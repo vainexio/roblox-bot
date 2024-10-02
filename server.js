@@ -1565,41 +1565,24 @@ let yay = true
 let cStocks = 0
 let tStocks = 0
 const tunnel = require('tunnel');
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Disable SSL validation
 
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
     if (cname === 'eligible') {
       async function fetchWithProxy(url, proxyUrl) {
-    const agent = tunnel.httpsOverHttp({
-        proxy: {
-            host: '8.220.141.8',
-            port: 9080,
-        }
-    });
+    const agent = new HttpsProxyAgent(proxyUrl)
 
     const robloxSecurityToken = process.env.Cookie;
 
     try {
         const headers = {
-            "Accept": "application/json, text/plain, */*",
-            "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                          "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                          "Chrome/129.0.0.0 Safari/537.36",
+            "Accept": "application/json",
             "Cookie": robloxSecurityToken,
-            "Referer": "https://www.roblox.com/",
-            "Referrer-Policy": "strict-origin-when-cross-origin",
-            "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-            "sec-ch-ua-mobile": "?0",
-            "sec-ch-ua-platform": "\"Windows\"",
-            "sec-fetch-dest": "empty",
-            "sec-fetch-mode": "cors",
-            "sec-fetch-site": "same-site",
-            "Priority": "u=1, i"
         };
 
-        const response = await fetch(url, { method: "GET", headers, agent });
+        const response = await fetch(url, { method: "GET", headers: headers, agent: agent });
       console.log(response);
       if (response.status !== 200) return
         const data = await response.json();
@@ -1610,7 +1593,7 @@ client.on('interactionCreate', async inter => {
 }
 
 const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761';
-const proxyUrl = 'http://8.220.141.8:9080';
+const proxyUrl = 'http://8.212.168.170:9080';
 
 fetchWithProxy(url, proxyUrl);
     }
@@ -3309,45 +3292,6 @@ const interval = setInterval(async function() {
   }
   
   },5000)
-
-app.get('/payout-eligibility', async (req, res) => {
-  // Replace with your proxy URL
-  const proxyUrl = 'http://8.212.165.164:80'; 
-  const agent = new HttpsAgent({
-  proxy: 'http://<proxy-ip>:<proxy-port>',
-  secureProtocol: 'TLSv1_2_method', // Specify the TLS version
-});
-
-  try {
-    const response = await fetch("https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761", {
-  "headers": {
-    "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
-    "accept-language": "en-PH,en-US;q=0.9,en;q=0.8",
-    "cache-control": "max-age=0",
-    "priority": "u=0, i",
-    "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"Windows\"",
-    "sec-fetch-dest": "document",
-    "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "none",
-    "sec-fetch-user": "?1",
-    "upgrade-insecure-requests": "1",
-    "cookie": "RBXEventTrackerV2=CreateDate=11/13/2023 6:09:04 AM&rbxid=563130786&browserid=179081139099; fs_uid=#o-1SEB77-na1#3332ce93-f09e-487d-82e5-6c1d6fbd37e1:5e1c90dd-7e79-44cb-8e7d-50177d21113d:1700877128348::1#/1732365203; _ga_6EQHKRQ6YR=GS1.1.1702265208.11.1.1702267133.0.0.0; _ga_SFYEMVLMML=GS1.1.1705898432.1.1.1705899115.0.0.0; __utmz=200924205.1709533078.575.5.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); _ga_WLM169WM8N=GS1.1.1721722190.1.0.1721722190.0.0.0; _ga_9HRYHVCY79=GS1.1.1722101016.3.1.1722101345.0.0.0; _ga_SYC96EWQ74=GS1.1.1722105129.2.0.1722105141.0.0.0; GuestData=UserID=-1715287369; RBXSource=rbx_acquisition_time=09/17/2024 13:10:39&rbx_acquisition_referrer=&rbx_medium=Social&rbx_source=&rbx_campaign=&rbx_adgroup=&rbx_keyword=&rbx_matchtype=&rbx_send_info=0; .RBXIDCHECK=b40b2674-b4e8-4663-bbcb-67ba2fe8224b; _gid=GA1.2.68228634.1727797039; RBXSessionTracker=sessionid=792bde2f-b2a6-489d-8733-19f02f63045f; __utma=200924205.2120101382.1688793703.1727796953.1727825235.1183; __utmb=200924205.0.10.1727825235; __utmc=200924205; _ga=GA1.1.2120101382.1688793703; _ga_F8VP9T1NT3=GS1.1.1727826555.112.1.1727826956.0.0.0; rbx-ip2=1; .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_281F9BA272D4F1900A4782D326C704EE4985FD490F06DBC06803ADC10586E084DF1E1489581D386FC0968036AC39609E743ADF0118BF15627EE317A4A39F03946B1BB00E542B88C239B395D326B04FA07D281C29B7BDAEA5A8F7BA752475B7BB3EFFE45D4BE2F585E5E4387423215A378D9DC445EFBEC75154C16F846A475D892236A631189E8A590CABF44B1CFF49D6B05527478CCCB96B45DF57AD1BF0AE23D4920E8AE99E53444A20CB9CE67E8E86331988BBBBF46C67AEEFE44EDED15210381DBC7713F9B65CF403F59B1713144AF12A26E38E1F81687F6298888EE0D48F500BD67AF26AEC7AC00718CCC607C28119D783FAFB0EFA77C0C55C76DD470046B6185025E02A0226B825C2E8D5D818B9B232FAB1F475546DAD1F616E3B66B215C1D36C84CF53A2DFA25C9BC4C02C43F649F1C108AA13F4DE06D90CED88F8607E48D13629FA18F5314D533C42149EAF1161BE5F072043F7E06818458C3C24F43680DF678DEB4C7C9D14B8BEEBB3E530611759C4575222679E8CAA9D29C22FD4B2D8C5A69CF2A9569C416A4136420D0BDE8CC17C6599CE7005BD30FE6122588B621803488614F9F679B336E097502A149801D6B84852C9CAC7A1E3F9D6618993CD5937733AAFEBBFEF0E38EAED70F9D821EE34E18A584F867A043990D6F24A04A2A9D29F01E99121E27E010D96A3BE33C1FB69DB7E3407D931ADCC9D378D3D09461720726D33FFFFB85C8F786D750631ADD807BEFEB953F298E3B33393092D550F66180CB04951453D68A920D85CE6D58B1514BD670B5B2A190F99528300810C05680E45E13C6B92292AD75DF45D3144B586080CC9E3A6F80111B491F4DCF8E06897D81D2BE257CD70685811A68F389C35BD8F27513F63E9BCECD0461766664017D5D22C7641BE46844886EDA55CB1EEF4F5247D8408A4C51317352789257CCAD378D24043075888D38B52D007D8147B92B3E3C476D4285EF088980530B29656933978F515E6AB2D15CEB952C22492DE5A631EE75770CDF9263812125E9902C21F3958E670C052096AE2CECBFBA95FF6C9178C67798039C39011F8E46802551E4953F0D1BD; rbxas=cbb147997d1ca9f0a26aaf03405660fa69f4d4298406e62b1bb10f8612c95bad; ak_bmsc=300016E3DEACBC9D793870060F315ED5~000000000000000000000000000000~YAAQPXwhF1Yg7C+SAQAA+XipShnQ1OMboSSurXDf69FhP161umAKyO2AsK/hmLwxhSmruOba711AzMa83OeU3yDSFcLXu50XqUt4G7NDaguRtwIieHvNA1nhMrrWj27+P7Wpo5wU4zj1eirr08CFPeqQFadneeO04n7t588BnFOwOW9BlRj1/tIoDvP448a0q2LJ8AuLTo1UrbESICfipjpa0IomYDtrnRtPochCC4DDU6mIuWI/d47H1GKvqk55OVflPFEaTZ8pfPxaCnXNSNSeCUOBblG/i1tbFfjBp8SnY5EUuPU0GDMZi1R2AENy6gLc4j1avI8wr672C2mbXL5jaGrcTejurTLjajwXxELE86L6AoE+CF8K6jOvic2IfdKlVXmhhVsqIw==; bm_mi=FE06ABC32FE6B5BB60FD7727680B3C38~YAAQPXwhF1An7C+SAQAAgfetShmQq3TkDW3ZNAlbrD0vnTGDs1Y1uYD9YCOfk65fpTrlyOAgXLFgkH665YsvehSMWxwB81utspTtAxssPo2b2ar32bzEJDZZCNrip2k3f/SuNkFqFdUKhT3bOAzuKgKpONKFQNd2Fvh8rZnlwrjWQEG0fJUhJC5vyI49EzLlKYpCLwu2PSOgJ5Yz93vxBv2lZVTCp7HnGe187GygFv8IBNi8BxjOjyJqZs3yX19TggefgEvQ6fxR2SpThKV69bqKAevzWLyuMZlSvFqQF72gI85BBf+CO0Scz5WuhUd6yaam7E1F9AqshzujObPUCaPBvSFyFC1Vz2zQno2Qnw==~1; UnifiedLoggerSession=CreatorHub%3D%7B%22sessionId%22%3A%22d44d2b3a-4217-4f7e-b748-0596a840789d%22%2C%22lastActivity%22%3A1727829765735%7D; _ga_BK4ZY0C59K=GS1.1.1727829468.148.1.1727829805.0.0.0; bm_sv=792C41CF543A8E92CAD31419456B9113~YAAQPXwhFzgw7C+SAQAAGU6yShmUMPhR9iPel/WygzTtY7w1r/ugEevRf1rBUFT5huDEAHbJ0O+uWy/cwFO3TXXzsx3B2HB1Uj7OfKmqRvoEaDfgSyAlGQZ0bDFJCBGpAk0dTl0jrNXACQTKHVFU5nH+5/tHmIJdq1bX2FwSZKS+ashXCZjhQUVJNU4PBEt9qT7Q3RSDoq8aUSxuhz2jUvYIBzbHMtLxq7RmmQbib3YTFdbnQRMFANaplOuaSmARnQ==~1"
-  },
-  agent: agent,
-  "referrerPolicy": "strict-origin-when-cross-origin",
-  "body": null,
-  "method": "GET"
-});
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error(error);
-    res.status(500).send('Error fetching data');
-  }
-});
 
 app.get('/gcash', async function (req, res) {
   let text = req.query.text.length > 0 ? req.query.text : req.query.bigtext
