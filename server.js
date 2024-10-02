@@ -1574,7 +1574,7 @@ client.on('interactionCreate', async inter => {
       let auth = {
         method: "GET",
         headers: {
-          "x-bound-auth-token": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727834926|JJZtn3KPMugUo/GBdPXjtLKb5MRM0TtHieifANXxtV+/D4Gsfu7c0Q2tSc4BtW/1tX3ilj7tb4BZR3g9MWeSbg==",
+          "X-CRSF-TOKEN": "CayYXdMy53p1",
           Cookie: process.env.Cookie
         }
       }
