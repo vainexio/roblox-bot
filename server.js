@@ -4,7 +4,7 @@ const app = express();
 const fetch = require('node-fetch');
 const mongoose = require('mongoose');
 const moment = require('moment')
-const {HttpsProxyAgent} = require('https-proxy-agent');
+const {HttpsProxyAgent } = require('https-proxy-agent');
 const url = require('url');
 const discordTranscripts = require('discord-html-transcripts');
 const { joinVoiceChannel } = require('@discordjs/voice');
@@ -1568,8 +1568,41 @@ client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
     if (cname === 'eligible') {
+      async function fetchWithProxy(url, proxyUrl) {
+    const agent = new HttpsProxyAgent(proxyUrl);
+const robloxSecurityToken = process.env.Cookie;
+    try {
+      const headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                      "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                      "Chrome/129.0.0.0 Safari/537.36",
+        "Cookie": robloxSecurityToken,
+        "Referer": "https://www.roblox.com/",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "Priority": "u=1, i"
+    };
+        const response = await fetch(url, { method: "GET", headers: headers, agent });
+        const data = await response.text();
+        console.log(data);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    }
+}
+
+const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761';
+const proxyUrl = 'http://8.220.141.8:9080';
+
+fetchWithProxy(url, proxyUrl);
       async function checkPayoutEligibility() {
-    const url = "http://8.220.141.8:9080https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
+    const url = "https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
     
     // Replace these with your actual tokens
     const robloxSecurityToken = process.env.Cookie; // IMPORTANT: Keep this secure
@@ -1594,7 +1627,7 @@ client.on('interactionCreate', async inter => {
     };
 
     try {
-        const response = await fetch(url, {
+        const response = await fetch("http://8.220.141.8:9080" + url, {
             method: "GET",
             headers: headers
         });
@@ -3314,8 +3347,11 @@ const interval = setInterval(async function() {
 
 app.get('/payout-eligibility', async (req, res) => {
   // Replace with your proxy URL
-  const proxyUrl = 'http://8.220.141.8:9080'; 
-  const agent = new HttpsProxyAgent(proxyUrl);
+  const proxyUrl = 'http://8.212.165.164:80'; 
+  const agent = new HttpsAgent({
+  proxy: 'http://<proxy-ip>:<proxy-port>',
+  secureProtocol: 'TLSv1_2_method', // Specify the TLS version
+});
 
   try {
     const response = await fetch("https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761", {
