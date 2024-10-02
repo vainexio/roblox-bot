@@ -1570,7 +1570,18 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Disable SSL validation
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    if (cname === 'eligible') {}
+    if (cname === 'eligible') {
+      let auth = {
+        method: "GET",
+        headers: {
+          "x-bound-auth-token": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727834926|JJZtn3KPMugUo/GBdPXjtLKb5MRM0TtHieifANXxtV+/D4Gsfu7c0Q2tSc4BtW/1tX3ilj7tb4BZR3g9MWeSbg==",
+          Cookie: process.env.Cookie
+        }
+      }
+      let response = await fetch('https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761',auth)
+      response = await response.json()
+      console.log(response)
+    }
     // regen
     else if (cname === 'regen') {
       //if (!await getPerms(inter.member,4)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
