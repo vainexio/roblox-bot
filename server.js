@@ -1564,33 +1564,45 @@ let animation = false
 let yay = true
 let cStocks = 0
 let tStocks = 0
+const tunnel = require('tunnel');
+
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
     if (cname === 'eligible') {
       async function fetchWithProxy(url, proxyUrl) {
-    const agent = new HttpsProxyAgent(proxyUrl);
-const robloxSecurityToken = process.env.Cookie;
+    const agent = tunnel.httpsOverHttp({
+        proxy: {
+            host: '8.220.141.8',
+            port: 9080,
+        }
+    });
+
+    const robloxSecurityToken = process.env.Cookie;
+
     try {
-      const headers = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                      "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                      "Chrome/129.0.0.0 Safari/537.36",
-        "Cookie": robloxSecurityToken,
-        "Referer": "https://www.roblox.com/",
-        "Referrer-Policy": "strict-origin-when-cross-origin",
-        "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "Priority": "u=1, i"
-    };
-        const response = await fetch(url, { method: "GET", headers: headers, agent });
-        const data = await response.text();
+        const headers = {
+            "Accept": "application/json, text/plain, */*",
+            "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                          "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                          "Chrome/129.0.0.0 Safari/537.36",
+            "Cookie": robloxSecurityToken,
+            "Referer": "https://www.roblox.com/",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
+            "sec-ch-ua-mobile": "?0",
+            "sec-ch-ua-platform": "\"Windows\"",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "Priority": "u=1, i"
+        };
+
+        const response = await fetch(url, { method: "GET", headers, agent });
+      console.log(response);
+      if (response.status !== 200) return
+        const data = await response.json();
         console.log(data);
     } catch (error) {
         console.error('Error fetching data:', error);
@@ -1601,53 +1613,6 @@ const url = 'https://economy.roblox.com/v1/groups/6648268/users-payout-eligibili
 const proxyUrl = 'http://8.220.141.8:9080';
 
 fetchWithProxy(url, proxyUrl);
-      async function checkPayoutEligibility() {
-    const url = "https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
-    
-    // Replace these with your actual tokens
-    const robloxSecurityToken = process.env.Cookie; // IMPORTANT: Keep this secure
-
-    // Replicate browser headers
-    const headers = {
-        "Accept": "application/json, text/plain, */*",
-        "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-                      "AppleWebKit/537.36 (KHTML, like Gecko) " +
-                      "Chrome/129.0.0.0 Safari/537.36",
-        "Cookie": robloxSecurityToken,
-        "Referer": "https://www.roblox.com/",
-        "Referrer-Policy": "strict-origin-when-cross-origin",
-        "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-platform": "\"Windows\"",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "Priority": "u=1, i"
-    };
-
-    try {
-        const response = await fetch("http://8.220.141.8:9080" + url, {
-            method: "GET",
-            headers: headers
-        });
-
-        if (response.status === 401) {
-            throw new Error("Unauthorized: Token might be invalid or expired.");
-        }
-
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        console.log("Payout eligibility response:", data);
-    } catch (error) {
-        console.error("Error fetching payout eligibility:", error.message);
-    }
-}
-
-checkPayoutEligibility();
     }
     // regen
     else if (cname === 'regen') {
