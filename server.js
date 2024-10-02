@@ -1570,20 +1570,41 @@ client.on('interactionCreate', async inter => {
     if (cname === 'eligible') {
       async function checkPayoutEligibility() {
     const url = "https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
-    const cookie = process.env.Cookie
-    const authToken = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727826858|NLr0HE12o/c7yz9zpvDU2x9mlCSRIvMZ8TnPAVETjV30YM/unYgnwL+RMERIV4V1tsobnwlgM48BzWBYJOSdXQ=="; // Replace with your actual x-bound-auth-token
+    
+    // Replace these with your actual tokens
+    const robloxSecurityToken = process.env.Cookie; // IMPORTANT: Keep this secure
+
+    // Construct the Cookie header
+    const cookie = `.ROBLOSECURITY=${robloxSecurityToken}; other_cookies_if_any`;
+
+    // Replicate browser headers
+    const headers = {
+        "Accept": "application/json, text/plain, */*",
+        "Accept-Language": "en-PH,en-US;q=0.9,en;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
+                      "AppleWebKit/537.36 (KHTML, like Gecko) " +
+                      "Chrome/129.0.0.0 Safari/537.36",
+        "Cookie": cookie,
+        "Referer": "https://www.roblox.com/",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
+        "sec-ch-ua-mobile": "?0",
+        "sec-ch-ua-platform": "\"Windows\"",
+        "sec-fetch-dest": "empty",
+        "sec-fetch-mode": "cors",
+        "sec-fetch-site": "same-site",
+        "Priority": "u=1, i"
+    };
 
     try {
         const response = await fetch(url, {
             method: "GET",
-            headers: {
-                "Accept": "application/json, text/plain, */*",
-                "x-bound-auth-token": authToken,
-                "Cookie": cookie,
-                "Referer": "https://www.roblox.com/",
-                "Referrer-Policy": "strict-origin-when-cross-origin"
-            }
+            headers: headers
         });
+
+        if (response.status === 401) {
+            throw new Error("Unauthorized: Token might be invalid or expired.");
+        }
 
         if (!response.ok) {
             throw new Error(`Error: ${response.status} ${response.statusText}`);
@@ -3293,6 +3314,28 @@ const interval = setInterval(async function() {
   }
   
   },5000)
+
+app.get('/payout-eligibility', async (req, res) => {
+  const url = "https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
+  const cookie = ".ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_850A2AAFCE79E338701A86E238FCC83F079289407B8F23EF13B3FECAAF97C3A977023C197272F3C103BD6B850AA068D2877065C2068D1AA79AA3A3CB1B17A896D5C3D916E2BDE009BEADD86F4633E5FFE5BD8C849E47FAC8005B041D8167DF6C1CA2908AB1359A7FB0A62885C8FD13DEE578EC9EBA84930FA3F17C19978C464209280DDC01B702170654E354072A51A0B864445AC78A35FF29FDD5195E0C37C7F1AD8555B68BC68FA8433AC802B9985CC33E9687C5A16BBDAF98F6D38CF283224FA78878596FEA3D41CD8E204113DD84023426526BC1D43822A7FA6A252FE4DDA1BB13B209A734B722C90B39152F45E9385C96E274CC4298505F1DD0291E3801CC0D81D2175E710B1EA63A955E2A27092F443715C448F4D273A56C2368D8CDB053249744C4010FC84E169D9FD8B75F69A3DC2399FF03B8A99121CD9B334A7962F5164330F1490F375E8991AD36D187F044EC71700CB060F9BD77B43DC7225BF6243D073968A3A526AAE8235178D6E8DE588E51A265C8470161CBA1994D23142702017326D444CF89D081A9FA04F1229C7496C22054111FB87ACC656D901BBC788A2381320756CE30D38E416E365050B1A1B8111C233847A463574EE813C653C2084E56F1A057479728A00731083E16ACFCC835DD0DFB5C4ABBAC10B2A0EDB4D5947C7931CB352391E5B8265FD83C4B2BF1124E8347C33CE344FCAA11427CE93B5F2014DD6C3C2A2E59B1E604583B64834B0631FED70B0B41E0028CC9059767BAAFBEBE8533BE9A32619FC79D3F7CCC5567221EEDF39083FEB0E4A0FC513ECFFBC3B9FFFA5CBEACB9D70604E9229D752FEEB6F4D7FD8A364F5E427B2415DA5704795C6C3CDE47B86590EB0616ADE0FCA4F836583ABC1F99092831FA56238545E2B15685D83E7200B4A921ABCB3BB7B50983EEEAEDCD8CB432531F63ED09FF6BEA0B6035322DCE85D187DB3254B765E348CF5FEB761AD824B9C7B407D16474E65916CC808D152EA8667A67BC0053EF711BE35DA0801046C3FB893D736FAFA52F873746BFB57A73EC92C34586142A01CF7DE237F637523EF0661A560A91570962A9437A8F25"; // Replace with your actual .ROBLOSECURITY token
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+        "Cookie": cookie,
+        "Referer": "https://www.roblox.com/",
+        "Referrer-Policy": "strict-origin-when-cross-origin"
+      }
+    });
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.get('/gcash', async function (req, res) {
   let text = req.query.text.length > 0 ? req.query.text : req.query.bigtext
