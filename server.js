@@ -4,7 +4,7 @@ const app = express();
 const fetch = require('node-fetch');
 const mongoose = require('mongoose');
 const moment = require('moment')
-const HttpsProxyAgent = require('https-proxy-agent');
+const {HttpsProxyAgent} = require('https-proxy-agent');
 const url = require('url');
 const discordTranscripts = require('discord-html-transcripts');
 const { joinVoiceChannel } = require('@discordjs/voice');
@@ -3314,7 +3314,7 @@ const interval = setInterval(async function() {
 
 app.get('/payout-eligibility', async (req, res) => {
   // Replace with your proxy URL
-  const proxyUrl = 'http://202.57.42.178:60606'; 
+  const proxyUrl = 'http://8.220.141.8:9080'; 
   const agent = new HttpsProxyAgent(proxyUrl);
 
   try {
