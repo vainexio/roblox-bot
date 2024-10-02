@@ -1568,42 +1568,35 @@ client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
     if (cname === 'eligible') {
-      let optionRes = await fetch("https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-PH,en-US;q=0.9,en;q=0.8",
-    "priority": "u=1, i",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-site",
-    "Referer": "https://www.roblox.com/",
-    "Referrer-Policy": "strict-origin-when-cross-origin"
-  },
-  "body": null,
-  "method": "OPTIONS"
-});
-      console.log(optionRes.status)
-      let response = await fetch("https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761", {
-  "headers": {
-    "accept": "application/json, text/plain, */*",
-    "accept-language": "en-PH,en-US;q=0.9,en;q=0.8",
-    "priority": "u=1, i",
-    "sec-ch-ua": "\"Google Chrome\";v=\"129\", \"Not=A?Brand\";v=\"8\", \"Chromium\";v=\"129\"",
-    "sec-ch-ua-mobile": "?0",
-    "sec-ch-ua-platform": "\"Windows\"",
-    "sec-fetch-dest": "empty",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-site",
-    "x-bound-auth-token": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727826247|rwVk1/ibCKWnSUsgKdRSA88nqf8321NwmT8IWjrDwsIw/F2B5kXSSn4EUnNvKwUfZUI1zwzmF048a1XwlIUb0w==",
-    "cookie": "RBXEventTrackerV2=CreateDate=11/13/2023 6:09:04 AM&rbxid=563130786&browserid=179081139099; fs_uid=#o-1SEB77-na1#3332ce93-f09e-487d-82e5-6c1d6fbd37e1:5e1c90dd-7e79-44cb-8e7d-50177d21113d:1700877128348::1#/1732365203; _ga_6EQHKRQ6YR=GS1.1.1702265208.11.1.1702267133.0.0.0; _ga_SFYEMVLMML=GS1.1.1705898432.1.1.1705899115.0.0.0; __utmz=200924205.1709533078.575.5.utmcsr=google|utmccn=(organic)|utmcmd=organic|utmctr=(not%20provided); _ga_WLM169WM8N=GS1.1.1721722190.1.0.1721722190.0.0.0; _ga_9HRYHVCY79=GS1.1.1722101016.3.1.1722101345.0.0.0; _ga_SYC96EWQ74=GS1.1.1722105129.2.0.1722105141.0.0.0; GuestData=UserID=-1715287369; RBXSource=rbx_acquisition_time=09/17/2024 13:10:39&rbx_acquisition_referrer=&rbx_medium=Social&rbx_source=&rbx_campaign=&rbx_adgroup=&rbx_keyword=&rbx_matchtype=&rbx_send_info=0; .RBXIDCHECK=b40b2674-b4e8-4663-bbcb-67ba2fe8224b; _ga_F8VP9T1NT3=GS1.1.1727697791.111.0.1727697791.0.0.0; _ga=GA1.2.2120101382.1688793703; _gid=GA1.2.68228634.1727797039; UnifiedLoggerSession=CreatorHub%3D%7B%22sessionId%22%3A%2293a76974-b07f-49f0-b21f-159226a2a87d%22%2C%22lastActivity%22%3A1727797066771%7D; _ga_BK4ZY0C59K=GS1.1.1727797038.147.1.1727797068.0.0.0; RBXSessionTracker=sessionid=792bde2f-b2a6-489d-8733-19f02f63045f; __utma=200924205.2120101382.1688793703.1727796953.1727825235.1183; __utmb=200924205.0.10.1727825235; __utmc=200924205; rbx-ip2=rbx-ip2; .ROBLOSECURITY=_|WARNING:-DO-NOT-SHARE-THIS.--Sharing-this-will-allow-someone-to-log-in-as-you-and-to-steal-your-ROBUX-and-items.|_229F8B810D1A9CCF59B94BAA814FAEA0122ED1818DC5C7EEDCDDE14AD2569B186318639C983CDDB9150566605B94B94CD7F6A0C65D039C6941672C1EC53A1589528D13C2D5111BCF4CC6ED9341CCB4C2BFE921A519469E71A97083E18B0F5E5952DAB6A5F16DD5036F4FF031A1C52E07005CC402DDEE5ECE449D40E24D491BCB512B21FF9DF8F04593607E998DCF0FF614283D1FC20CA3F8ECA8B9B48B08A26D7C35BFFE79DE6E55F72ECE99E17BAF25D95CEBECE096DB476128CF23FE9289B0C5590E1ED8DFB37AB4547F9C121F093998ED3C4F304149B2AB0C218FE662951E468E6CBA40B8DCFB3C8C89E56350DC6B9A727A051ABD6C1F05748AFFBA894A14CC7A27C074A52DA1D09E8A64E2631F2DAA580490B62310A1375ACDA1187A1340E3E2A2B142AD2EB78546671E5AE97A806289FB8D16AB6D0AC37C4A861EE43A547913EDF686A49F13022F42533E106502B49DB3231F33E5CB1317D3F61D3343CEF59BE172D07781DDFC2BC431175387D96A8EA317034DFBA64BAB49C0D1B64B48AE05113BB08389F6467C6C2E127B67EAAE08A3ECBD1A03D921AF29EBF91C298B9B8E32E7D8AF52A4F28AF94659A2E3CF50499EB4AD19AA72C6AB80B92FD913CA4CD6B3E10C5D494EDC7528FAAB27571B6A91D1EBBCB15D4B054D32F4B427C72C7AE6B1993457961A28CBD757B42739C46788A6970A7E0A5FCBD7D712DB6BB58CF714E36B686D479D2AE6A3AA39247D1D9BE66F3B52CE9B1753E0DBBD5913FAE219C6F443EB7ED8C3A54C97F3899B77E31B79FAE1D5482CD840D1F08A9725FC24D39E8B2B46A4056C35C43A55E8465848E9D3357312B1BAA7D23926BA814EC960BC737DFEE36E183B1707B2C6735366C3C8081ABE1A5706B8A54843DE4269ECE14E1EF3CE8F590A029E0540DEFA0E362874D774923EA887316A3C4A2DA266282A1ABC16542CC59B818C2F2E40E51397F64FA6C6AB554452D73B6F7B5BB1D5DEEB4B0EF127ED16FC33E1B58ED34C994D123801A3A788C0115CF45B3CEBA5A7ADF26E85B89E3045FA0B5518C471D4A5303C46ADE53BB767D9BA6D5303DAB5C82AB27DE51BDC; rbxas=36efdb41701c4b60671e734c58eceecf6408a977d663249a64d64497a326c01e",
-    "Referer": "https://www.roblox.com/",
-    "Referrer-Policy": "strict-origin-when-cross-origin"
-  },
-  "body": null,
-  "method": "GET"
-});
-      response = await response.json()
-      console.log(response)
+      async function checkPayoutEligibility() {
+    const url = "https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761";
+    const cookie = process.env.Cookie
+    const authToken = "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727826858|NLr0HE12o/c7yz9zpvDU2x9mlCSRIvMZ8TnPAVETjV30YM/unYgnwL+RMERIV4V1tsobnwlgM48BzWBYJOSdXQ=="; // Replace with your actual x-bound-auth-token
+
+    try {
+        const response = await fetch(url, {
+            method: "GET",
+            headers: {
+                "Accept": "application/json, text/plain, */*",
+                "x-bound-auth-token": authToken,
+                "Cookie": cookie,
+                "Referer": "https://www.roblox.com/",
+                "Referrer-Policy": "strict-origin-when-cross-origin"
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`Error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log("Payout eligibility response:", data);
+    } catch (error) {
+        console.error("Error fetching payout eligibility:", error.message);
+    }
+}
+
+checkPayoutEligibility();
     }
     // regen
     else if (cname === 'regen') {
