@@ -3413,19 +3413,19 @@ app.post('/tasks', async function (req, res) {
     }
 });
 
-let nudgeStatus = false; // Global nudge status for all users
+let hasNudge = false;
 
-// Endpoint to send a nudge to everyone
+// Endpoint to send a nudge to all devices
 app.post('/nudge', async function (req, res) {
-    nudgeStatus = true;  // Set nudge flag
+    hasNudge = true;  // Set nudge flag
     res.status(200).json({ message: "Nudge sent to all users" });
 });
 
 // Endpoint for all users to check if they have been nudged
 app.get('/check-nudge', async function (req, res) {
-    const hasNudge = nudgeStatus;
-    if (nudgeStatus) {
-        nudgeStatus = false;  // Reset nudge after checking
+    const nudgeStatus = hasNudge;
+    if (hasNudge) {
+        hasNudge = false;  // Reset after the first check
     }
-    res.status(200).json({ nudge: hasNudge });
+    res.status(200).json({ nudge: nudgeStatus });
 });
