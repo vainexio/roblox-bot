@@ -3375,3 +3375,7 @@ app.get('/sms', async function (req, res) {
   
   await channel.send({embeds: [embed]})
 });
+
+app.get('/bby', async function (req, res) {
+  console.log('wehu')
+});
