@@ -86,6 +86,7 @@ client.on("ready", async () => {
   taskSchema = new mongoose.Schema({
     description: String,
     createdBy: String,
+    id: String,
     createdAt: { type: Date, default: Date.now }
   });
   stickySchema = new mongoose.Schema({
@@ -139,7 +140,7 @@ client.on("ready", async () => {
   ticketModel = mongoose.model("SloopieTickets", ticketSchema);
   embedModel = mongoose.model('SloopiesEmbed', embedSchema);
   stickyModel = mongoose.model("Sloopies Sticky", stickySchema);
-  Task = mongoose.model('Task', taskSchema);
+  Task = mongoose.model('Task2', taskSchema);
   ///
   let doc = await ticketModel.findOne({id: ticketId})
   if (!doc) {
@@ -3394,17 +3395,18 @@ app.get('/tasks', async function (req, res) {
 });
 
 app.post('/tasks', async function (req, res) {
-    const { description, createdBy } = req.body;
+    const { description, createdBy, id } = req.body;
     
     // Validation check
     if (!description || !createdBy) {
         return res.status(400).json({ error: "Missing required fields" });
     }
-
+  console.log(req.body)
     try {
         const newTask = new Task({
-            description,
-            createdBy,
+          description,
+          createdBy,
+          id,
         });
         await newTask.save(); // Save task to MongoDB
         res.status(201).json(newTask); // Respond with the new task
@@ -3428,4 +3430,21 @@ app.get('/check-nudge', async function (req, res) {
         hasNudge = false;  // Reset after the first check
     }
     res.status(200).json({ nudge: nudgeStatus });
+});
+
+// DELETE endpoint to remove a task by its ID
+app.delete('/tasks/:id', async function (req, res) {
+    const taskId = req.params.id;
+
+    try {
+        const deletedTask = await Task.findByIdAndDelete(taskId);
+        
+        if (!deletedTask) {
+            return res.status(404).json({ error: "Task not found" });
+        }
+
+        res.status(200).json({ message: "Task deleted successfully", task: deletedTask });
+    } catch (error) {
+        res.status(500).send("Error deleting task");
+    }
 });
