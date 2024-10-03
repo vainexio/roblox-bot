@@ -64,6 +64,9 @@ let phoneModel
 let taskSchema
 let Task
 
+let userSchema
+let User
+
 let ticketId = 10
 
 client.on("debug", function(info) {
@@ -133,8 +136,24 @@ client.on("ready", async () => {
       }
     ],
   })
-  
-  
+  userSchema = new mongoose.Schema({
+    deviceId: {
+        type: String,
+        required: true,
+        unique: true  // Ensures that each device has a unique ID
+    },
+    nickname: {
+        type: String,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now  // Automatically set the creation date
+    }
+});
+
+// Create the User model
+const User = mongoose.model('User', userSchema);
   phoneModel = mongoose.model("SloopiePhone", phoneSchema);
   tixModel = mongoose.model("SloopieTix", tixSchema);
   ticketModel = mongoose.model("SloopieTickets", ticketSchema);
@@ -3437,14 +3456,36 @@ app.delete('/tasks/:id', async function (req, res) {
     const taskId = req.params.id;
 
     try {
-        const deletedTask = await Task.findByIdAndDelete(taskId);
-        
-        if (!deletedTask) {
-            return res.status(404).json({ error: "Task not found" });
+        const task = await Task.findOne({id: taskId});
+        if (task) {
+          await Task.deleteOne({id: taskId});
+          res.status(200).json({ message: "Task deleted successfully", task: task });
+        } else {
+          return res.status(404).json({ error: "Task not found" });
         }
-
-        res.status(200).json({ message: "Task deleted successfully", task: deletedTask });
     } catch (error) {
         res.status(500).send("Error deleting task");
+    }
+});
+
+// POST endpoint to save a nickname
+app.post('/save-nickname', async function (req, res) {
+    const { nickname, deviceId } = req.body;
+
+    // Validation check
+    if (!nickname || !deviceId) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+        // Assuming you have a User schema to save the nickname associated with a device
+        let user = await User.findOneAndUpdate(
+            { deviceId: deviceId },  // Find user by device ID
+            { nickname: nickname },  // Update or set the nickname
+            { new: true, upsert: true }  // Create new record if not found
+        );
+        res.status(200).json({ message: "Nickname saved", user: user });
+    } catch (error) {
+        res.status(500).send("Error saving nickname");
     }
 });
