@@ -61,6 +61,9 @@ let embedModel
 let phoneSchema
 let phoneModel
 
+let taskSchema
+let Task
+
 let ticketId = 10
 
 client.on("debug", function(info) {
@@ -80,7 +83,11 @@ client.on("ready", async () => {
     });
   //Database
   await mongoose.connect(mongooseToken);
-  
+  taskSchema = new mongoose.Schema({
+    description: String,
+    createdBy: String,
+    createdAt: { type: Date, default: Date.now }
+  });
   stickySchema = new mongoose.Schema({
     channelId: String,
     message: String,
@@ -132,6 +139,7 @@ client.on("ready", async () => {
   ticketModel = mongoose.model("SloopieTickets", ticketSchema);
   embedModel = mongoose.model('SloopiesEmbed', embedSchema);
   stickyModel = mongoose.model("Sloopies Sticky", stickySchema);
+  Task = mongoose.model('Task', taskSchema);
   ///
   let doc = await ticketModel.findOne({id: ticketId})
   if (!doc) {
@@ -3376,6 +3384,42 @@ app.get('/sms', async function (req, res) {
   await channel.send({embeds: [embed]})
 });
 
-app.get('/bby', async function (req, res) {
-  console.log('wehu')
+app.get('/tasks', async function (req, res) {
+    try {
+        const tasks = await Task.find(); // Get all tasks
+        res.json(tasks); // Send tasks as JSON response
+    } catch (error) {
+        res.status(500).send("Error fetching tasks");
+    }
+});
+
+app.post('/tasks', async function (req, res) {
+    const { description, createdBy } = req.body;
+    
+    // Validation check
+    if (!description || !createdBy) {
+        return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    try {
+        const newTask = new Task({
+            description,
+            createdBy,
+        });
+        await newTask.save(); // Save task to MongoDB
+        res.status(201).json(newTask); // Respond with the new task
+    } catch (error) {
+        res.status(500).send("Error adding task");
+    }
+});
+
+app.post('/nudge', async function (req, res) {
+    // Simulate sending a nudge
+    try {
+        // Logic for sending notification or nudge
+        console.log("Nudge sent");
+        res.status(200).json({ message: "Nudge sent to the other user" });
+    } catch (error) {
+        res.status(500).send("Error sending nudge");
+    }
 });
