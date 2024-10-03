@@ -3471,7 +3471,7 @@ app.delete('/tasks/:id', async function (req, res) {
 // POST endpoint to save a nickname
 app.post('/save-nickname', async function (req, res) {
     const { nickname, deviceId } = req.body;
-
+  console.log(req.body)
     // Validation check
     if (!nickname || !deviceId) {
         return res.status(400).json({ error: "Missing required fields" });
