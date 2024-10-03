@@ -3413,13 +3413,19 @@ app.post('/tasks', async function (req, res) {
     }
 });
 
+let nudgeStatus = false; // Global nudge status for all users
+
+// Endpoint to send a nudge to everyone
 app.post('/nudge', async function (req, res) {
-    // Simulate sending a nudge
-    try {
-        // Logic for sending notification or nudge
-        console.log("Nudge sent");
-        res.status(200).json({ message: "Nudge sent to the other user" });
-    } catch (error) {
-        res.status(500).send("Error sending nudge");
+    nudgeStatus = true;  // Set nudge flag
+    res.status(200).json({ message: "Nudge sent to all users" });
+});
+
+// Endpoint for all users to check if they have been nudged
+app.get('/check-nudge', async function (req, res) {
+    const hasNudge = nudgeStatus;
+    if (nudgeStatus) {
+        nudgeStatus = false;  // Reset nudge after checking
     }
+    res.status(200).json({ nudge: hasNudge });
 });
