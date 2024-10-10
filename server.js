@@ -1640,6 +1640,7 @@ client.on('interactionCreate', async inter => {
       if (user.status !== 200) return inter.editReply({content: user.statusText})
       user = await user.json()
       user = user.data[0]
+      if (!user) return inter.editReply({content: "User not found."})
       console.log("Designated user: ",user)
       
       let auth = {
