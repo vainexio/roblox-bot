@@ -1599,17 +1599,15 @@ client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
     if (cname === 'eligible') {
-      let auth = {
-        method: "OPTIONS",
-        headers: {
-          "Accept": "*/*",
-          "Access-Control-Request-Headers": "content-type,x-bound-auth-token,x-csrf-token",
-          "Access-Control-Request-Method": "PATCH",
-          "Sec-Fetch-Mode": "cors",
-        }
-      }
-      let response = await fetch('https://groups.roblox.com/v1/groups/6648268/users/5032119885',auth)
-      console.log("OPTIONS: ",response)
+      let options = inter.options._hoistedOptions
+      let username = options.find(a => a.name === 'username')
+      let rank = options.find(a => a.name === 'rank')
+      let roles = await fetch('https://groups.roblox.com/v1/groups/34624144/roles')
+      roles = await roles.json()
+      
+      let user = await fetch('https://users.roblox.com/v1/usernames/users',{method: "POST",body: JSON.stringify({usernames: [username.value], excludeBannedUsers: false})})
+      if (user.status !== 200) return inter.reply({content: user.statusText})
+      
       let auth2 = {
         method: "PATCH",
         headers: {
