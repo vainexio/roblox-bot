@@ -1605,7 +1605,7 @@ client.on('interactionCreate', async inter => {
       await inter.deferReply();
       
       let user = await fetch('https://users.roblox.com/v1/usernames/users',{method: "POST",body: JSON.stringify({usernames: [username.value], excludeBannedUsers: false})})
-      if (user.status !== 200) return inter.editReply({content: user.statusText})
+      if (user.status !== 200) return inter.editReply({content: "Cannot find user: `"+user.status+": "+user.statusText+"`"})
       user = await user.json()
       user = user.data[0]
       console.log("Designated user: ",user)
@@ -1652,11 +1652,12 @@ client.on('interactionCreate', async inter => {
         },
         //body: JSON.stringify({roleId: role.id})
       }
-      let patchRes = await fetch('https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+user.id,auth)
-      console.log(patchRes)
-      if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
-      patchRes = await patchRes.json()
-      await inter.editReply({content: JSON.stringify(patchRes)})
+      let res = await fetch('https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+user.id,auth)
+      console.log(res)
+      if (res.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+res.status+": "+res.statusText+"`"})
+      res = await res.json()
+      let data = res.usersGroupPayoutEligibility[user.id]
+      await inter.editReply({content: "**"+user.name+"**: "+data})
     }
     // regen
     else if (cname === 'regen') {
