@@ -1621,14 +1621,42 @@ client.on('interactionCreate', async inter => {
         headers: {
           "Content-Type": 'application/json',
           "Accept": "*/*",
-          "x-csrf-token": "vnmbHf1l8Wjz",
+          "x-csrf-token": "ERqxVylgWzEl",
           "Cookie": process.env.Cookie,
         },
         body: JSON.stringify({roleId: role.id})
       }
       let patchRes = await fetch('https://groups.roblox.com/v1/groups/34624144/users/'+user.id,auth)
-      if (patchRes !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
+      if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
       await inter.editReply({content: "Successfully changed "+user.name+"'s rank to **"+role.name+"**"})
+    }
+    //
+    else if (cname === 'eligible') {
+      let options = inter.options._hoistedOptions
+      let username = options.find(a => a.name === 'username')
+      await inter.deferReply();
+      
+      let user = await fetch('https://users.roblox.com/v1/usernames/users',{method: "POST",body: JSON.stringify({usernames: [username.value], excludeBannedUsers: false})})
+      if (user.status !== 200) return inter.editReply({content: user.statusText})
+      user = await user.json()
+      user = user.data[0]
+      console.log("Designated user: ",user)
+      
+      let auth = {
+        method: "GET",
+        headers: {
+          "Content-Type": 'application/json',
+          "Accept": "*/*",
+          "x-csrf-token": "vnmbHf1l8Wjz",
+          "Cookie": process.env.Cookie,
+        },
+        //body: JSON.stringify({roleId: role.id})
+      }
+      let patchRes = await fetch('https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds='+user.id,auth)
+      console.log(patchRes)
+      if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
+      patchRes = await patchRes.json()
+      await inter.editReply({content: JSON.stringify(patchRes)})
     }
     // regen
     else if (cname === 'regen') {
