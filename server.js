@@ -167,6 +167,7 @@ client.on("interactionCreate", async (inter) => {
     let cname = inter.commandName
     
     if (cname === 'setrank') {
+      let groupId = 34624144
       let options = inter.options._hoistedOptions
       let username = options.find(a => a.name === 'username')
       let rank = options.find(a => a.name === 'rank')
@@ -176,20 +177,22 @@ client.on("interactionCreate", async (inter) => {
       if (user.status !== 200) return inter.editReply({content: "Cannot find user: `"+user.status+": "+user.statusText+"`"})
       user = await user.json()
       user = user.data[0]
+      if (!user) return inter.editReply({content: "User does not exist: `"+username.value+"`"})
       console.log("Designated user: ",user)
       
-      let userRoles = await fetch('https://groups.roblox.com/v2/users/565644761/groups/roles')
+      let userRoles = await fetch('https://groups.roblox.com/v2/users/'+user.id+'/groups/roles')
       userRoles = await userRoles.json()
-      let groupData = userRoles.data.find(d => d.group.id == 34624144)
+      let groupData = userRoles.data.find(d => d.group.id == groupId)
       let role = groupData.role
       
       
-      let groupRoles = await fetch('https://groups.roblox.com/v1/groups/34624144/roles')
+      let groupRoles = await fetch('https://groups.roblox.com/v1/groups/'+groupId+'/roles')
       groupRoles = await groupRoles.json()
       
       let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()))
       if (!targetRole) await inter.editReply({content: "Cannot find rank: `"+rank.value+"`"})
       console.log("Target role: ",targetRole)
+      
       let auth = {
         method: "PATCH",
         headers: {
@@ -200,7 +203,7 @@ client.on("interactionCreate", async (inter) => {
         },
         body: JSON.stringify({roleId: targetRole.id})
       }
-      let patchRes = await fetch('https://groups.roblox.com/v1/groups/34624144/users/'+user.id,auth)
+      let patchRes = await fetch('https://groups.roblox.com/v1/groups/'+groupId+'/users/'+user.id,auth)
       if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
       
       let thumbnail = await fetch('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds='+user.id+'&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot')
@@ -214,6 +217,8 @@ client.on("interactionCreate", async (inter) => {
         {name: "Previous Rank",value: "```diff\n- "+role.name+"```"},
         {name: "Updated Rank",value: "```diff\n+ "+targetRole.name+"```"}
       )
+      .setColor(colors.none)
+      
       await inter.editReply({content: emojis.check+" Rank Updated", embeds: [embed]})
     }
   }

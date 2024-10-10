@@ -48,10 +48,10 @@ module.exports = {
     promptMessage: null,
     bot: {
       status: {
-        status: "online",
+        status: "dnd",
         activities: [
           {
-            name: "Bot Comms",
+            name: "BA",
             type: "Watching".toUpperCase(),
             //url: 'https://www.twitch.tv/videos/1841805330'
           },
@@ -80,13 +80,13 @@ module.exports = {
   colors: colors,
   theme: colors.none,
   emojis: {
-    check: "✅",
-    x: "❌",
-    loading: "⌛",
+    check: '<a:CHECK:1138778694983356450>',
+    x: '<a:Xmark:1138778760628424735>',
+    loading: '<a:Loading:1138778730785943614>',
+    warning: '⚠️',
     nboost: '<:boost:1248993578181726269>',
     nclasic: '<a:classic:1248921754097815572>',
-    nbasic: '<:basic:1248921754097815572>',
-    warning: '⚠️',
+    nbasic: '<:basic:1248921754097815572>'
   },
   commands: [
     //
