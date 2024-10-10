@@ -180,7 +180,7 @@ client.on("interactionCreate", async (inter) => {
       
       let userRoles = await fetch('https://groups.roblox.com/v2/users/565644761/groups/roles')
       userRoles = await userRoles.json()
-      let groupData = userRoles.find(d => d.group.id == 34624144)
+      let groupData = userRoles.data.find(d => d.group.id == 34624144)
       let role = groupData.role
       
       
@@ -195,7 +195,7 @@ client.on("interactionCreate", async (inter) => {
         headers: {
           "Content-Type": 'application/json',
           "Accept": "*/*",
-          "x-csrf-token": "OXre6g8mSRHE",
+          "x-csrf-token": "xwUGfbRH2hig",
           "Cookie": process.env.Cookie,
         },
         body: JSON.stringify({roleId: targetRole.id})
@@ -203,8 +203,17 @@ client.on("interactionCreate", async (inter) => {
       let patchRes = await fetch('https://groups.roblox.com/v1/groups/34624144/users/'+user.id,auth)
       if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
       
+      let thumbnail = await fetch('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds='+user.id+'&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot')
+      thumbnail = await thumbnail.json()
+      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : ''
+      
       let embed = new MessageEmbed()
-      .addFields({name: "User"})
+      .setThumbnail(thumbnail)
+      .addFields(
+        {name: "User",value: "Display Name: `"+user.displayName+"`\nName: `"+user.name+"`"},
+        {name: "Previous Rank",value: "```diff\n- "+role.name+"```"},
+        {name: "Updated Rank",value: "```diff\n+ "+targetRole.name+"```"}
+      )
       await inter.editReply({content: emojis.check+" Rank Updated", embeds: [embed]})
     }
   }
