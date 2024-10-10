@@ -1598,15 +1598,19 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'; // Disable SSL validation
 client.on('interactionCreate', async inter => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    if (cname === 'eligible') {
+    if (cname === 'setrank') {
       let options = inter.options._hoistedOptions
       let username = options.find(a => a.name === 'username')
       let rank = options.find(a => a.name === 'rank')
-      let roles = await fetch('https://groups.roblox.com/v1/groups/34624144/roles')
-      roles = await roles.json()
       
       let user = await fetch('https://users.roblox.com/v1/usernames/users',{method: "POST",body: JSON.stringify({usernames: [username.value], excludeBannedUsers: false})})
       if (user.status !== 200) return inter.reply({content: user.statusText})
+      
+      let roles = await fetch('https://groups.roblox.com/v1/groups/34624144/roles')
+      roles = await roles.json()
+      
+      let role = roles.roles.find(r => r.name.toLowerCase().includes(rank.value))
+      if (!role) await inter.editReply({content: "Cannot find rank: `"+rank.value+"`"})
       
       let auth2 = {
         method: "PATCH",
@@ -1616,10 +1620,11 @@ client.on('interactionCreate', async inter => {
           "x-csrf-token": "zwEt+sR1ZXP1",
           "Cookie": process.env.Cookie,
         },
-        body: JSON.stringify({roleId: 42682446})
+        body: JSON.stringify({roleId: role.id})
       }
-      let patchRes = await fetch('https://groups.roblox.com/v1/groups/6648268/users/5032119885',auth2)
-      console.log("patch",patchRes)
+      let patchRes = await fetch('https://groups.roblox.com/v1/groups/34624144/users/'+user.data[0].id,auth2)
+      if (patchRes !== 200) return await inter.editReply({content: patchRes.statusText})
+      await inter.editReply({content: "Successfully changed "+user.data[0].name+"'s rank to **"+role.name+"**"})
     }
     // regen
     else if (cname === 'regen') {

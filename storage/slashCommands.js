@@ -79,6 +79,15 @@ module.exports = {
         { name: 'username', type: 3, description: 'Roblox username', required: true },
       ]
     },
+    {
+      name: 'setrank',
+      type: 1,
+      description: 'Set rank command',
+      options: [
+        { name: 'username', type: 3, description: 'Roblox username', required: true },
+        { name: 'rank', type: 3, description: 'Rank', required: true },
+      ]
+    },
     /*{
       name: 'embed',
       type: 1,
