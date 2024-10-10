@@ -1600,16 +1600,28 @@ client.on('interactionCreate', async inter => {
     let cname = inter.commandName
     if (cname === 'eligible') {
       let auth = {
-        method: "GET",
+        method: "OPTIONS",
         headers: {
-          "x-csrf-token": "CayYXdMy53p1",
-          "X-Bound-Auth-Token": "47DEQpj8HBSa+/TImW+5JCeuQeRkm5NMpJWZG3hSuFU=|1727835938|ranZ16zKSBUBfkl2gSzIWLuJbxjNv1B0l+y2aNL+lGU2GkhKrrBT/wzHTCodOzKTLGTEDG830I+61YxyvHWA/w==",
-          Cookie: process.env.Cookie
+          "Accept": "*/*",
+          "Access-Control-Request-Headers": "content-type,x-bound-auth-token,x-csrf-token",
+          "Access-Control-Request-Method": "PATCH",
+          "Sec-Fetch-Mode": "cors",
         }
       }
-      let response = await fetch('https://economy.roblox.com/v1/groups/6648268/users-payout-eligibility?userIds=565644761',auth)
-      response = await response.json()
-      console.log(response)
+      let response = await fetch('https://groups.roblox.com/v1/groups/6648268/users/5032119885',auth)
+      console.log("OPTIONS: ",response)
+      let auth2 = {
+        method: "PATCH",
+        headers: {
+          "Content-Type": 'application/json',
+          "Accept": "*/*",
+          "x-csrf-token": "zwEt+sR1ZXP1",
+          "Cookie": process.env.Cookie,
+        },
+        body: JSON.stringify({roleId: 42682446})
+      }
+      let patchRes = await fetch('https://groups.roblox.com/v1/groups/6648268/users/5032119885',auth2)
+      console.log("patch",patchRes)
     }
     // regen
     else if (cname === 'regen') {
