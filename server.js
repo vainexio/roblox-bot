@@ -182,7 +182,7 @@ client.on("interactionCreate", async (inter) => {
         body: JSON.stringify({ usernames: [username.value], excludeBannedUsers: false }),
         headers: { 'Content-Type': 'application/json' }
       });
-      await inter.editReply({content: emojis.loading+" gathering data"})
+      //await inter.editReply({content: emojis.loading+" gathering data"})
       if (userResponse.status !== 200) return inter.editReply({ content: `Cannot find user: ${userResponse.status}: ${userResponse.statusText}` });
       
       let user = (await userResponse.json()).data[0];
