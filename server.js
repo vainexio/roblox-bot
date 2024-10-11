@@ -167,6 +167,7 @@ client.on("interactionCreate", async (inter) => {
     let cname = inter.commandName
     
     if (cname === 'setrank') {
+      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
       let groupId = 34624144
       let options = inter.options._hoistedOptions
       let username = options.find(a => a.name === 'username')
@@ -198,7 +199,7 @@ client.on("interactionCreate", async (inter) => {
         headers: {
           "Content-Type": 'application/json',
           "Accept": "*/*",
-          "x-csrf-token": "xwUGfbRH2hig",
+          "x-csrf-token": "CO/lYbowo8dn",
           "Cookie": process.env.Cookie,
         },
         body: JSON.stringify({roleId: targetRole.id})
