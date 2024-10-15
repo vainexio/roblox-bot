@@ -187,13 +187,13 @@ client.on("interactionCreate", async (inter) => {
       let groupRoles = await handler.getGroupRoles(groupId)
       let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
       
-      if (!targetRole) return inter.editReply({ content: `Cannot find rank: ${rank.value}` });
+      if (!targetRole) return inter.editReply({ content: `Rank does not exist: ${rank.value}` });
       console.log('Target role:', targetRole);
       // Function to update the rank
       let updateRank = await handler.changeUserRank({groupId: groupId, userId: user.id, roleId: targetRole.id})
       let patchRes = await updateRank(handler.cToken());
       
-      if (patchRes.status !== 200) return inter.editReply({ content: `Cannot change rank: ${patchRes.statusText}` });
+      if (patchRes.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n - "+patchRes.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
@@ -216,7 +216,6 @@ client.on("interactionCreate", async (inter) => {
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
       const group = options.find(a => a.name === 'group');
-      const rank = options.find(a => a.name === 'rank');
       groupId = group.value
       await inter.deferReply();
       
@@ -225,7 +224,7 @@ client.on("interactionCreate", async (inter) => {
       
       let accept = await handler.acceptUser(groupId,user.id)
       
-      if (accept.status !== 200) return inter.editReply({ content: `Cannot accept user to group: ${patchRes.statusText}` });
+      if (accept.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot accept user to the group:\n```diff\n - "+accept.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
@@ -234,12 +233,39 @@ client.on("interactionCreate", async (inter) => {
       .setThumbnail(thumbnail)
       .addFields(
         { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
-        { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` },
-        { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` }
       )
       .setColor(colors.none);
 
-      await inter.editReply({ content: emojis.check+' Rank Updated', embeds: [embed] });
+      await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to group ('+groupId+')', embeds: [embed] });
+    }
+    else if (cname === 'kick') {
+      if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+
+      let groupId;
+      const options = inter.options._hoistedOptions;
+      const username = options.find(a => a.name === 'username');
+      const group = options.find(a => a.name === 'group');
+      groupId = group.value
+      await inter.deferReply();
+      
+      let user = await handler.getUser(username.value)
+      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
+      
+      let kick = await handler.kickUser(groupId,user.id)
+      
+      if (kick.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot kick user from the group:\n```diff\n - "+kick.statusText+"```" });
+      
+      // Get thumbnail and send response
+      let thumbnail = await handler.getUserThumbnail(user.id)
+
+      let embed = new MessageEmbed()
+      .setThumbnail(thumbnail)
+      .addFields(
+        { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
+      )
+      .setColor(colors.none);
+
+      await inter.editReply({ content: emojis.check+' '+user.name+' was kicked from the group ('+groupId+')', embeds: [embed] });
     }
   }
   else if (inter.isButton()) {

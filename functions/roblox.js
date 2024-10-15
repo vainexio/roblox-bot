@@ -104,6 +104,26 @@ module.exports = {
       }
       return patchRes;
     },
+    kickUser: async function (groupId,userId) {
+      const auth = {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "*/*",
+          "x-csrf-token": csrfToken,
+          "Cookie": `${process.env.Cookie}`,
+        },
+        body: JSON.stringify({}),
+      };
+      let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${userId}`, auth);
+      if (patchRes.status === 403) {
+        csrfToken = await refreshToken(process.env.Cookie);
+        auth.headers["x-csrf-token"] = csrfToken;
+        patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${userId}`, auth);
+        return patchRes;
+      }
+      return patchRes;
+    },
     //
     cToken: function() { return csrfToken },
     getGroupRoles: async function (groupId) {
