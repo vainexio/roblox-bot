@@ -89,17 +89,18 @@ module.exports = {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Accept": "*/*",
+          "Accept": "application/json, text/plain, */*",
           "x-csrf-token": csrfToken,
           "Cookie": `${process.env.Cookie}`,
         },
-        body: JSON.stringify({}),
       };
-      let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/join-requests/users/${userId}`, auth);
+      let link = `https://groups.roblox.com/v1/groups/${groupId}/join-requests/users/${userId}`
+      console.log(link)
+      let patchRes = await fetch(link, auth);
       if (patchRes.status === 403) {
         csrfToken = await refreshToken(process.env.Cookie);
         auth.headers["x-csrf-token"] = csrfToken;
-        patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/join-requests/users/${userId}`, auth);
+        patchRes = await fetch(link, auth);
         return patchRes;
       }
       return patchRes;
@@ -113,7 +114,6 @@ module.exports = {
           "x-csrf-token": csrfToken,
           "Cookie": `${process.env.Cookie}`,
         },
-        body: JSON.stringify({}),
       };
       let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${userId}`, auth);
       if (patchRes.status === 403) {

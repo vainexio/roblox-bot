@@ -193,7 +193,7 @@ client.on("interactionCreate", async (inter) => {
       let updateRank = await handler.changeUserRank({groupId: groupId, userId: user.id, roleId: targetRole.id})
       let patchRes = await updateRank(handler.cToken());
       
-      if (patchRes.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n - "+patchRes.statusText+"```" });
+      if (patchRes.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n- "+patchRes.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
@@ -224,7 +224,7 @@ client.on("interactionCreate", async (inter) => {
       
       let accept = await handler.acceptUser(groupId,user.id)
       
-      if (accept.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot accept user to the group:\n```diff\n - "+accept.statusText+"```" });
+      if (accept.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot accept user to the group:\n```diff\n- "+accept.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
@@ -253,7 +253,7 @@ client.on("interactionCreate", async (inter) => {
       
       let kick = await handler.kickUser(groupId,user.id)
       
-      if (kick.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot kick user from the group:\n```diff\n - "+kick.statusText+"```" });
+      if (kick.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot kick user from the group:\n```diff\n- "+kick.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
