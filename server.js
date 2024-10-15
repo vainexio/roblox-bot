@@ -172,10 +172,12 @@ client.on("interactionCreate", async (inter) => {
     if (cname === 'setrank') {
       if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
-      const groupId = 34624144;
+      let groupId;
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
       const rank = options.find(a => a.name === 'rank');
+      const group = options.find(a => a.name === 'group');
+      groupId = group.value
       
       await inter.deferReply();
       
@@ -191,17 +193,18 @@ client.on("interactionCreate", async (inter) => {
       console.log('Target role:', targetRole);
       // Function to update the rank
       let updateRank = await handler.changeUserRank({groupId: groupId, userId: user.id, roleId: targetRole.id})
-      let patchRes = await updateRank(handler.cToken());
       
-      if (patchRes.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n- "+patchRes.statusText+"```" });
+      if (updateRank.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n- "+updateRank.statusText+"```" });
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
-
+      let foundGroup = await handler.getGroup(groupId)
+      
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
       .addFields(
-        { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
+        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
+        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
         { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` },
         { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` }
       )
@@ -229,17 +232,18 @@ client.on("interactionCreate", async (inter) => {
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
-      let getGroup = await handle.getGroup(groupId)
+      let foundGroup = await handler.getGroup(groupId)
+      
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
       .addFields(
-        { name: "User", value: "Display Name: "+user.displayName+"\nName: "+user.name },
-        { name: "Group", value: "ID: "+user.displayName+"\nName: "+user.name },
+        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
+        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
       )
       .setColor(colors.none)
       .setFooter({text: client.user.username, iconURL: client.user.avatarURL()})
 
-      await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to group ('+groupId+')', embeds: [embed] });
+      await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to the group', embeds: [embed] });
     }
     else if (cname === 'kick') {
       if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
@@ -260,15 +264,18 @@ client.on("interactionCreate", async (inter) => {
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
-
+      let foundGroup = await handler.getGroup(groupId)
+      
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
       .addFields(
-        { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
+        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
+        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
       )
-      .setColor(colors.none);
+      .setColor(colors.none)
+      .setFooter({text: client.user.username, iconURL: client.user.avatarURL()})
 
-      await inter.editReply({ content: emojis.check+' '+user.name+' was kicked from the group ('+groupId+')', embeds: [embed] });
+      await inter.editReply({ content: emojis.check+' '+user.name+' was kicked from the group', embeds: [embed] });
     }
   }
   else if (inter.isButton()) {
