@@ -12,9 +12,52 @@ const {makeCode, stringJSON, fetchKey, ghostPing, moderate, getPercentage, sleep
 const version = "Handler version: v2.0.2"
 let csrfToken = "abc"
 
+async function refreshToken(cookie) {
+  const response = await fetch('https://auth.roblox.com/v2/logout', {
+    method: "POST",
+    headers: {
+      "Cookie": cookie
+    }
+  });
+  
+  if (response.status === 403) {
+    csrfToken = response.headers.get('x-csrf-token')
+    console.log("New csrfToken token: "+csrfToken)
+    return csrfToken;
+  } else {
+    return { error: "Can't get CSRF token!" }
+  }
+  throw new Error('Failed to retrieve CSRF token.');
+}
+
 module.exports = {
   handler: {
-    cToken: function() { return csrfToken },
+    changeUserRank: async function (data) {
+        const auth = {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "x-csrf-token": csrfToken,
+            "Cookie": `${process.env.Cookie}`,
+          },
+          body: JSON.stringify({ roleId: data.roleId }),
+        };
+        let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${data.groupId}/users/${data.userId}`, auth);
+        if (patchRes.status === 403) {
+          csrfToken = await refreshToken(process.env.Cookie);
+          auth.headers["x-csrf-token"] = csrfToken;
+          patchRes = await fetch(`https://groups.roblox.com/v1/groups/${data.groupId}/users/${data.userId}`, auth);
+          return patchRes;
+        }
+        return patchRes;
+      },
+    getUserThumbnail: async function (userId) {
+      let thumbnailResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${userId}&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot`);
+      let thumbnail = await thumbnailResponse.json();
+      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : '';
+      return thumbnail;
+    },
     getUser: async function (username) {
       let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
         method: 'POST',
@@ -41,24 +84,39 @@ module.exports = {
         return { error: err }
       }
     },
-    
-    refreshToken: async function (cookie) {
-      const response = await fetch('https://auth.roblox.com/v2/logout', {
+    acceptUser: async function (groupId,userId) {
+      const auth = {
         method: "POST",
         headers: {
-          "Cookie": cookie
-        }
-      });
-  
-      if (response.status === 403) {
-        csrfToken = response.headers.get('x-csrf-token')
-        console.log("New csrfToken token: "+csrfToken)
-        return csrfToken;
-      } else {
-        return { error: "Can't get CSRF token!" }
+          "Content-Type": "application/json",
+          "Accept": "*/*",
+          "x-csrf-token": csrfToken,
+          "Cookie": `${process.env.Cookie}`,
+        },
+        body: JSON.stringify({}),
+      };
+      let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/join-requests/users/${userId}`, auth);
+      if (patchRes.status === 403) {
+        csrfToken = await refreshToken(process.env.Cookie);
+        auth.headers["x-csrf-token"] = csrfToken;
+        patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/join-requests/users/${userId}`, auth);
+        return patchRes;
       }
-      throw new Error('Failed to retrieve CSRF token.');
+      return patchRes;
     },
+    //
+    cToken: function() { return csrfToken },
+    getGroupRoles: async function (groupId) {
+      try {
+        let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
+        let groupRoles = await groupRolesResponse.json();
+        return groupRoles;
+      } catch (err) {
+        return { error: err }
+      }
+    },
+    refreshToken,
+    //
     
   }
 };

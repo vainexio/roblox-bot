@@ -184,42 +184,19 @@ client.on("interactionCreate", async (inter) => {
       let role = await handler.getUserRole(groupId,user.id)
       if (role.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
       // Get group roles to find the target role
-      let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
-      let groupRoles = await groupRolesResponse.json();
+      let groupRoles = await handler.getGroupRoles(groupId)
       let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
       
       if (!targetRole) return inter.editReply({ content: `Cannot find rank: ${rank.value}` });
       console.log('Target role:', targetRole);
       // Function to update the rank
-      async function updateRank(csrfToken) {
-        const auth = {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "*/*",
-            "x-csrf-token": csrfToken,
-            "Cookie": `${process.env.Cookie}`,
-          },
-          body: JSON.stringify({ roleId: targetRole.id }),
-        };
-        let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
-        // If forbidden, retry with a new CSRF token
-        if (patchRes.status === 403) {
-          await inter.editReply({content: emojis.loading+" getting `CSRF` token"})
-          csrfToken = await handler.refreshToken(process.env.Cookie);
-          auth.headers["x-csrf-token"] = csrfToken;
-          patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
-        }
-        return patchRes;
-      }
+      let updateRank = await handler.changeUserRank({groupId: groupId, userId: user.id, roleId: targetRole.id})
       let patchRes = await updateRank(handler.cToken());
       
       if (patchRes.status !== 200) return inter.editReply({ content: `Cannot change rank: ${patchRes.statusText}` });
       
       // Get thumbnail and send response
-      let thumbnailResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot`);
-      let thumbnail = await thumbnailResponse.json();
-      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : '';
+      let thumbnail = await handler.getUserThumbnail(user.id)
 
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
@@ -235,71 +212,23 @@ client.on("interactionCreate", async (inter) => {
     else if (cname === 'accept') {
       if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
-      const groupId = 34624144;
+      let groupId;
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
       const group = options.find(a => a.name === 'group');
       const rank = options.find(a => a.name === 'rank');
-      
+      groupId = group.value
       await inter.deferReply();
       
-      // Get user information by username
-      let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-        method: 'POST',
-        body: JSON.stringify({ usernames: [username.value], excludeBannedUsers: false }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      //await inter.editReply({content: emojis.loading+" gathering data"})
-      if (userResponse.status !== 200) return inter.editReply({ content: `Cannot find user: ${userResponse.status}: ${userResponse.statusText}` });
+      let user = await handler.getUser(username.value)
+      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
       
-      let user = (await userResponse.json()).data[0];
-      if (!user) return inter.editReply({ content: `User does not exist: ${username.value}` });
-      console.log('Designated user:', user);
-      // Get current user roles in the group
-      let userRolesResponse = await fetch(`https://groups.roblox.com/v2/users/${user.id}/groups/roles`);
-      let userRoles = await userRolesResponse.json();
-      let groupData = userRoles.data.find(d => d.group.id == groupId);
-      let role = groupData.role;
-      // Get group roles to find the target role
-      let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
-      let groupRoles = await groupRolesResponse.json();
-      let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
+      let accept = await handler.acceptUser(groupId,user.id)
       
-      if (!targetRole) return inter.editReply({ content: `Cannot find rank: ${rank.value}` });
-      console.log('Target role:', targetRole);
-      
-      // Function to get the CSRF token
-      
-      // Function to update the rank
-      async function updateRank(csrfToken) {
-        const auth = {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            "Accept": "*/*",
-            "x-csrf-token": csrfToken,
-            "Cookie": `${process.env.Cookie}`,
-          },
-          body: JSON.stringify({ roleId: targetRole.id }),
-        };
-        let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
-        // If forbidden, retry with a new CSRF token
-        if (patchRes.status === 403) {
-          await inter.editReply({content: emojis.loading+" getting `CSRF` token"})
-          csrfToken = await getCsrfToken(process.env.Cookie);
-          auth.headers["x-csrf-token"] = csrfToken;
-          patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
-        }
-        return patchRes;
-      }
-      let patchRes = await updateRank(csrfToken);
-      
-      if (patchRes.status !== 200) return inter.editReply({ content: `Cannot change rank: ${patchRes.statusText}` });
+      if (accept.status !== 200) return inter.editReply({ content: `Cannot accept user to group: ${patchRes.statusText}` });
       
       // Get thumbnail and send response
-      let thumbnailResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot`);
-      let thumbnail = await thumbnailResponse.json();
-      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : '';
+      let thumbnail = await handler.getUserThumbnail(user.id)
 
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
