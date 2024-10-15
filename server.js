@@ -104,6 +104,9 @@ const { getRole, addRole, removeRole, hasRole } = roles;
 //Slash Commands
 const slashCmd = require("./storage/slashCommands.js");
 const { slashes } = slashCmd;
+// Roblox
+const robloxJs = require("./functions/roblox.js");
+const { handler } = robloxJs;
 /*
 ██████╗░███████╗██████╗░███╗░░░███╗░██████╗
 ██╔══██╗██╔════╝██╔══██╗████╗░████║██╔════╝
@@ -161,22 +164,6 @@ client.on("messageCreate", async (message) => {
 let yay = true
 let cStocks = 0
 let tStocks = 0
-let csrfToken = "abc";
-
-async function getCsrfToken(cookie) {
-  const response = await fetch('https://auth.roblox.com/v2/logout', {
-    method: "POST",
-    headers: {
-    "Cookie": cookie
-  }
-  });
-if (response.status === 403) {
-csrfToken = response.headers.get('x-csrf-token')
-console.log("New csrfToken token: "+csrfToken)
-return csrfToken;
-}
-throw new Error('Failed to retrieve CSRF token.');
-}
 
 client.on("interactionCreate", async (inter) => {
   if (inter.isCommand()) {
@@ -192,23 +179,10 @@ client.on("interactionCreate", async (inter) => {
       
       await inter.deferReply();
       
-      // Get user information by username
-      let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-        method: 'POST',
-        body: JSON.stringify({ usernames: [username.value], excludeBannedUsers: false }),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      //await inter.editReply({content: emojis.loading+" gathering data"})
-      if (userResponse.status !== 200) return inter.editReply({ content: `Cannot find user: ${userResponse.status}: ${userResponse.statusText}` });
-      
-      let user = (await userResponse.json()).data[0];
-      if (!user) return inter.editReply({ content: `User does not exist: ${username.value}` });
-      console.log('Designated user:', user);
-      // Get current user roles in the group
-      let userRolesResponse = await fetch(`https://groups.roblox.com/v2/users/${user.id}/groups/roles`);
-      let userRoles = await userRolesResponse.json();
-      let groupData = userRoles.data.find(d => d.group.id == groupId);
-      let role = groupData.role;
+      let user = await handler.getUser(username.value)
+      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
+      let role = await handler.getUserRole(groupId,user.id)
+      if (role.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
       // Get group roles to find the target role
       let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
       let groupRoles = await groupRolesResponse.json();
@@ -216,22 +190,6 @@ client.on("interactionCreate", async (inter) => {
       
       if (!targetRole) return inter.editReply({ content: `Cannot find rank: ${rank.value}` });
       console.log('Target role:', targetRole);
-      
-      // Function to get the CSRF token
-      async function getCsrfToken(cookie) {
-        const response = await fetch('https://auth.roblox.com/v2/logout', {
-          method: "POST",
-          headers: {
-            "Cookie": cookie
-          }
-        });
-        if (response.status === 403) {
-          csrfToken = response.headers.get('x-csrf-token')
-          console.log("New csrfToken token: "+csrfToken)
-          return csrfToken;
-        }
-        throw new Error('Failed to retrieve CSRF token.');
-      }
       // Function to update the rank
       async function updateRank(csrfToken) {
         const auth = {
@@ -248,13 +206,13 @@ client.on("interactionCreate", async (inter) => {
         // If forbidden, retry with a new CSRF token
         if (patchRes.status === 403) {
           await inter.editReply({content: emojis.loading+" getting `CSRF` token"})
-          csrfToken = await getCsrfToken(process.env.Cookie);
+          csrfToken = await handler.refreshToken(process.env.Cookie);
           auth.headers["x-csrf-token"] = csrfToken;
           patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
         }
         return patchRes;
       }
-      let patchRes = await updateRank(csrfToken);
+      let patchRes = await updateRank(handler.cToken());
       
       if (patchRes.status !== 200) return inter.editReply({ content: `Cannot change rank: ${patchRes.statusText}` });
       
