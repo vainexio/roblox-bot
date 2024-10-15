@@ -162,6 +162,22 @@ let yay = true
 let cStocks = 0
 let tStocks = 0
 let csrfToken = "abc";
+
+async function getCsrfToken(cookie) {
+  const response = await fetch('https://auth.roblox.com/v2/logout', {
+    method: "POST",
+    headers: {
+    "Cookie": cookie
+  }
+  });
+if (response.status === 403) {
+csrfToken = response.headers.get('x-csrf-token')
+console.log("New csrfToken token: "+csrfToken)
+return csrfToken;
+}
+throw new Error('Failed to retrieve CSRF token.');
+}
+
 client.on("interactionCreate", async (inter) => {
   if (inter.isCommand()) {
     let cname = inter.commandName
@@ -258,61 +274,85 @@ client.on("interactionCreate", async (inter) => {
 
       await inter.editReply({ content: emojis.check+' Rank Updated', embeds: [embed] });
     }
-    else if (cname === 'setrank') {
-      if (!await getPerms(inter.member,5)) return inter.reply({content: emojis.warning+' Insufficient Permission'});
-      let groupId = 34624144
-      let options = inter.options._hoistedOptions
-      let username = options.find(a => a.name === 'username')
-      let rank = options.find(a => a.name === 'rank')
+    else if (cname === 'accept') {
+      if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+
+      const groupId = 34624144;
+      const options = inter.options._hoistedOptions;
+      const username = options.find(a => a.name === 'username');
+      const group = options.find(a => a.name === 'group');
+      const rank = options.find(a => a.name === 'rank');
+      
       await inter.deferReply();
       
-      let user = await fetch('https://users.roblox.com/v1/usernames/users',{method: "POST",body: JSON.stringify({usernames: [username.value], excludeBannedUsers: false})})
-      if (user.status !== 200) return inter.editReply({content: "Cannot find user: `"+user.status+": "+user.statusText+"`"})
-      user = await user.json()
-      user = user.data[0]
-      if (!user) return inter.editReply({content: "User does not exist: `"+username.value+"`"})
-      console.log("Designated user: ",user)
+      // Get user information by username
+      let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
+        method: 'POST',
+        body: JSON.stringify({ usernames: [username.value], excludeBannedUsers: false }),
+        headers: { 'Content-Type': 'application/json' }
+      });
+      //await inter.editReply({content: emojis.loading+" gathering data"})
+      if (userResponse.status !== 200) return inter.editReply({ content: `Cannot find user: ${userResponse.status}: ${userResponse.statusText}` });
       
-      let userRoles = await fetch('https://groups.roblox.com/v2/users/'+user.id+'/groups/roles')
-      userRoles = await userRoles.json()
-      let groupData = userRoles.data.find(d => d.group.id == groupId)
-      let role = groupData.role
+      let user = (await userResponse.json()).data[0];
+      if (!user) return inter.editReply({ content: `User does not exist: ${username.value}` });
+      console.log('Designated user:', user);
+      // Get current user roles in the group
+      let userRolesResponse = await fetch(`https://groups.roblox.com/v2/users/${user.id}/groups/roles`);
+      let userRoles = await userRolesResponse.json();
+      let groupData = userRoles.data.find(d => d.group.id == groupId);
+      let role = groupData.role;
+      // Get group roles to find the target role
+      let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);
+      let groupRoles = await groupRolesResponse.json();
+      let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
       
+      if (!targetRole) return inter.editReply({ content: `Cannot find rank: ${rank.value}` });
+      console.log('Target role:', targetRole);
       
-      let groupRoles = await fetch('https://groups.roblox.com/v1/groups/'+groupId+'/roles')
-      groupRoles = await groupRoles.json()
+      // Function to get the CSRF token
       
-      let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()))
-      if (!targetRole) await inter.editReply({content: "Cannot find rank: `"+rank.value+"`"})
-      console.log("Target role: ",targetRole)
-      
-      let auth = {
-        method: "PATCH",
-        headers: {
-          "Content-Type": 'application/json',
-          "Accept": "*/*",
-          "x-csrf-token": "9s5Sbw+4NDlH",
-          "Cookie": process.env.Cookie,
-        },
-        body: JSON.stringify({roleId: targetRole.id})
+      // Function to update the rank
+      async function updateRank(csrfToken) {
+        const auth = {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "*/*",
+            "x-csrf-token": csrfToken,
+            "Cookie": `${process.env.Cookie}`,
+          },
+          body: JSON.stringify({ roleId: targetRole.id }),
+        };
+        let patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
+        // If forbidden, retry with a new CSRF token
+        if (patchRes.status === 403) {
+          await inter.editReply({content: emojis.loading+" getting `CSRF` token"})
+          csrfToken = await getCsrfToken(process.env.Cookie);
+          auth.headers["x-csrf-token"] = csrfToken;
+          patchRes = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/users/${user.id}`, auth);
+        }
+        return patchRes;
       }
-      let patchRes = await fetch('https://groups.roblox.com/v1/groups/'+groupId+'/users/'+user.id,auth)
-      if (patchRes.status !== 200) return await inter.editReply({content: "Cannot change rank: `"+patchRes.statusText+"`"})
+      let patchRes = await updateRank(csrfToken);
       
-      let thumbnail = await fetch('https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds='+user.id+'&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot')
-      thumbnail = await thumbnail.json()
-      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : ''
+      if (patchRes.status !== 200) return inter.editReply({ content: `Cannot change rank: ${patchRes.statusText}` });
       
+      // Get thumbnail and send response
+      let thumbnailResponse = await fetch(`https://thumbnails.roblox.com/v1/users/avatar-headshot?userIds=${user.id}&size=150x150&format=Png&isCircular=false&thumbnailType=HeadShot`);
+      let thumbnail = await thumbnailResponse.json();
+      thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : '';
+
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
       .addFields(
-        {name: "User",value: "Display Name: `"+user.displayName+"`\nName: `"+user.name+"`"},
-        {name: "Previous Rank",value: "```diff\n- "+role.name+"```"},
-        {name: "Updated Rank",value: "```diff\n+ "+targetRole.name+"```"}
+        { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
+        { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` },
+        { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` }
       )
-      .setColor(colors.none)
-      
-      await inter.editReply({content: emojis.check+" Rank Updated", embeds: [embed]})
+      .setColor(colors.none);
+
+      await inter.editReply({ content: emojis.check+' Rank Updated', embeds: [embed] });
     }
   }
   else if (inter.isButton()) {
