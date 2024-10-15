@@ -126,6 +126,16 @@ module.exports = {
     },
     //
     cToken: function() { return csrfToken },
+    getGroup: async function (groupId) {
+      try {
+        let group = await fetch(`https://groups.roblox.com/v1/groups/${groupId}`);
+        group = await group.json();
+        return group;
+        
+      } catch (err) {
+        return { error: err }
+      }
+    },
     getGroupRoles: async function (groupId) {
       try {
         let groupRolesResponse = await fetch(`https://groups.roblox.com/v1/groups/${groupId}/roles`);

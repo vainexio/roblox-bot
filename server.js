@@ -216,6 +216,7 @@ client.on("interactionCreate", async (inter) => {
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
       const group = options.find(a => a.name === 'group');
+      console.log(group)
       groupId = group.value
       await inter.deferReply();
       
@@ -228,13 +229,15 @@ client.on("interactionCreate", async (inter) => {
       
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
-
+      let getGroup = await handle.getGroup(groupId)
       let embed = new MessageEmbed()
       .setThumbnail(thumbnail)
       .addFields(
-        { name: "User", value: `Display Name: \`${user.displayName}\`\nName: \`${user.name}\`` },
+        { name: "User", value: "Display Name: "+user.displayName+"\nName: "+user.name },
+        { name: "Group", value: "ID: "+user.displayName+"\nName: "+user.name },
       )
-      .setColor(colors.none);
+      .setColor(colors.none)
+      .setFooter({text: client.user.username, iconURL: client.user.avatarURL()})
 
       await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to group ('+groupId+')', embeds: [embed] });
     }
