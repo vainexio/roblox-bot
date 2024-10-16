@@ -235,13 +235,9 @@ client.on("interactionCreate", async (inter) => {
       let foundGroup = await handler.getGroup(groupId)
       
       let embed = new MessageEmbed()
-      .setThumbnail(thumbnail)
-      .addFields(
-        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
-        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
-      )
+      .setAuthor({name: user.displayName+' ('+user.name+')', iconURL: thumbnail})
       .setColor(colors.none)
-      .setFooter({text: client.user.username, iconURL: client.user.avatarURL()})
+      .setFooter({text: foundGroup.name})
 
       await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to the group', embeds: [embed] });
     }
