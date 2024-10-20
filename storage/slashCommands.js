@@ -13,6 +13,7 @@ ATTACHMENT - 11
 */
 
 let groups = [ 
+  { name: 'BA', value: '34624144' }, 
   { name: 'RMP', value: '34634981' }, 
   { name: 'BOP', value: '34844808' }, 
   { name: 'UKSF', value: '8582078' },
