@@ -96,7 +96,7 @@ client.on("ready", async () => {
     xp: { type: Number, default: 0 },
   });
 
-  usersSchema.index({ id: 1 }, { unique: true });
+  usersSchema.index({ robloxId: 1 }, { unique: true });
   usersSchema.index({ discordId: 1 }, { unique: true, sparse: true });
 
   users = mongoose.model("PN_Users2", usersSchema);
