@@ -39,6 +39,7 @@ const codeByDiscord = new Map();    // discordId -> code
 // Config
 const CODE_TTL_MS = 5 * 60 * 1000; // 10 minutes default (change as needed)
 const VERIFY_SECRET = process.env.VERIFY_SECRET || null; // optional header secret for /verify
+let stopFlow = false
 
 // Utility: generate a 6-digit string, ensure uniqueness in codesByCode
 function generate6DigitCode() {
@@ -205,14 +206,16 @@ function noPerms() {
 client.on("messageCreate", async (message) => {
   //
   if (message.author.bot) return;
+  if (stopFlow) return;
   if (message.content == "killdis") {
-    process.exit(1);
+    stopFlow = true
   }
 }); //END MESSAGE CREATE
 
 //
 
 client.on("interactionCreate", async (inter) => {
+  if (stopFlow) return;
   if (inter.isCommand()) {
     let cname = inter.commandName
 
@@ -541,6 +544,7 @@ process.on('unhandledRejection', async error => {
 });
 
 app.post('/verify', async (req, res) => {
+  if (stopFlow) return;
   try {
     // Optional: shared secret check
     if (VERIFY_SECRET) {
@@ -629,6 +633,7 @@ app.post('/verify', async (req, res) => {
 // === OPTIONAL: Helper endpoint to check status (debug only) ===
 // (Remove or protect in production)
 app.get('/_verify_status/:discordId', (req, res) => {
+  if (stopFlow) return;
   const discordId = req.params.discordId;
   const code = codeByDiscord.get(discordId);
   if (!code) return res.json({ ok: true, active: false });
