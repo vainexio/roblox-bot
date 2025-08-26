@@ -1,4 +1,4 @@
-//Glitch Project
+// Project
 const express = require("express");
 const https = require("https");
 const app = express();
@@ -6,11 +6,10 @@ const fetch = require("node-fetch");
 const mongoose = require("mongoose");
 const moment = require("moment");
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
-//Discord
+// Discord
 const Discord = require("discord.js");
 const { WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu, } = Discord;
 const myIntents = new Intents();
-
 myIntents.add(
   Intents.FLAGS.GUILD_PRESENCES,
   Intents.FLAGS.GUILD_VOICE_STATES,
@@ -23,72 +22,89 @@ myIntents.add(
 );
 const client = new Client({ intents: myIntents, partials: ["CHANNEL"] });
 
-//Env
+// Secrets
 const token = process.env.SECRET;
-let listen
+const mongooseToken = process.env.MONGOOSE;
+
+// Models
+let usersSchema
+let users
 
 async function startApp() {
   console.log("Starting...");
   if (client.user) return console.log("User already logged in.")
   if (cc !== process.env.CC) return console.error("Discord bot login | Invalid CC");
   let promise = client.login(token)
-  promise?.catch(function (error) {
+
+  promise?.catch(function(error) {
     console.error("Discord bot login | " + error);
     process.exit(1);
   });
 }
 startApp();
 
-client.on("debug", async function (info) {
+client.on("debug", async function(info) {
   let status = info.split(" ");
   if (status[2] === `429`) {
-    console.log(`info -> ${info}`); //debugger
+    console.log(`info -> ${info}`);
     console.log(`Caught a 429 error!`);
     await sleep(60000)
   }
 });
-//When bot is ready
+
+// Initializer
 client.on("ready", async () => {
   console.log(client.user.id)
+  await mongoose.connect(mongooseToken);
+
+  usersSchema = new mongoose.Schema({
+    id: String,
+    xp: Number,
+  })
+
+  users = mongoose.model("PN_Users", usersSchema);
+
   if (slashCmd.register) {
-    let discordUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands"
+    let discordUrl = "https://discord.com/api/v10/applications/" + client.user.id + "/commands"
     let headers = {
-      "Authorization": "Bot "+token,
+      "Authorization": "Bot " + token,
       "Content-Type": 'application/json'
     }
     for (let i in slashes) {
+      await sleep(2000)
       let json = slashes[i]
-      await sleep(1000)
       let response = await fetch(discordUrl, {
         method: 'post',
         body: JSON.stringify(json),
         headers: headers
       });
-      console.log(json.name+' - '+response.status)
+      console.log(json.name + ' - ' + response.status)
     }
     for (let i in slashCmd.deleteSlashes) {
       await sleep(2000)
-      let deleteUrl = "https://discord.com/api/v10/applications/"+client.user.id+"/commands/"+slashCmd.deleteSlashes[i]
+      let deleteUrl = "https://discord.com/api/v10/applications/" + client.user.id + "/commands/" + slashCmd.deleteSlashes[i]
       let deleteRes = await fetch(deleteUrl, {
         method: 'delete',
         headers: headers
       })
-      console.log('Delete - '+deleteRes.status)
-      }
+      console.log('Delete - ' + deleteRes.status)
+    }
   }
+
+  //await handler.changeUserRank({groupId: "35042233", userId: "565644761", roleId: "191296077"})
   console.log("Successfully logged in to discord bot.");
-  client.user.setPresence(shop.bot.status);
+  client.user.setPresence(config.bot.status);
 });
 
 module.exports = { client: client, getPerms, noPerms };
 
-let listener = app.listen(process.env.PORT, function () {
-  console.log("Not that it matters but your app is listening on port ",listener.address());
+let listener = app.listen(process.env.PORT, function() {
+  console.log("Not that it matters but your app is listening on port ", listener.address());
 });
 
 //Settings
 const settings = require("./storage/settings_.js");
-const { prefix, shop, colors, theme, commands, permissions, emojis } = settings;
+const { prefix, config, colors, theme, commands, permissions, emojis } = settings;
 //Functions
 const get = require("./functions/get.js");
 const { getNth, getChannel, getGuild, getUser, getMember, getRandom, getColor } = get;
@@ -97,7 +113,7 @@ const cmdHandler = require("./functions/commands.js");
 const { checkCommand, isCommand, isMessage, getTemplate } = cmdHandler;
 //Others
 const others = require("./functions/others.js");
-const { makeCode, fetchKey, ghostPing, sleep, moderate, getPercentage, randomTable, scanString, requireArgs, getArgs } = others;
+const { makeCode, fetchKey, ghostPing, sleep, moderate, getPercentageBar, randomTable, scanString, requireArgs, getArgs } = others;
 //Roles Handler
 const roles = require("./functions/roles.js");
 const { getRole, addRole, removeRole, hasRole } = roles;
@@ -121,7 +137,7 @@ async function getPerms(member, level) {
   for (let i in sortedPerms) {
     if (permissions[i].id === member.id && permissions[i].level >= level) {
       highestLevel < permissions[i].level ? ((highestPerms = permissions[i]), (highestLevel = permissions[i].level)) : null;
-    } else if ( member.user && member.roles.cache.some((role) => role.id === permissions[i].id) && permissions[i].level >= level) {
+    } else if (member.user && member.roles.cache.some((role) => role.id === permissions[i].id) && permissions[i].level >= level) {
       highestLevel < permissions[i].level ? ((highestPerms = permissions[i]), (highestLevel = permissions[i].level)) : null;
     }
   }
@@ -131,14 +147,14 @@ async function getPerms(member, level) {
 async function guildPerms(message, perms) {
   //console.log(Permissions.FLAGS)
   if (message.member.permissions.has(perms)) return true
-  
+
   let embed = new MessageEmbed()
-  .addFields({name: "Insufficient Permissions",value: "You don't have the required server permissions to use this command.\n\n`"+perms.toString().toUpperCase()+"`"})
-  .setColor(colors.red);
-  
+    .addFields({ name: "Insufficient Permissions", value: "You don't have the required server permissions to use this command.\n\n`" + perms.toString().toUpperCase() + "`" })
+    .setColor(colors.red);
+
   message.channel.send({ embeds: [embed] });
 }
-function noPerms(message) {
+function noPerms() {
   let Embed = new MessageEmbed()
     .setColor(colors.red)
     .setDescription("You lack special permissions to use this command.");
@@ -153,125 +169,219 @@ function noPerms(message) {
 ╚█████╔╝███████╗██║███████╗██║░╚███║░░░██║░░░  ██║░╚═╝░██║███████╗██████╔╝██████╔╝██║░░██║╚██████╔╝███████╗
 ░╚════╝░╚══════╝╚═╝╚══════╝╚═╝░░╚══╝░░░╚═╝░░░  ╚═╝░░░░░╚═╝╚══════╝╚═════╝░╚═════╝░╚═╝░░╚═╝░╚═════╝░╚══════╝*/
 //ON CLIENT MESSAGE
-let errors = 0;
-let expCodes = [];
-let nitroCodes = []
 client.on("messageCreate", async (message) => {
   //
   if (message.author.bot) return;
 }); //END MESSAGE CREATE
 
-let yay = true
-let cStocks = 0
-let tStocks = 0
-
 client.on("interactionCreate", async (inter) => {
   if (inter.isCommand()) {
     let cname = inter.commandName
-    
-    if (cname === 'setrank') {
-      if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
-      let groupId;
+    if (cname === 'setrank') {
+      if (!await getPerms(inter.member, 4)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
       const rank = options.find(a => a.name === 'rank');
-      const group = options.find(a => a.name === 'group');
-      groupId = group.value
-      
+      const group = config.groups[0];
+      const groupId = group.groupId;
+
       await inter.deferReply();
-      
+
       let user = await handler.getUser(username.value)
-      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
-      let role = await handler.getUserRole(groupId,user.id)
-      if (role.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
+      if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" })
+      let role = await handler.getUserRole(groupId, user.id)
+      if (role.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" })
       // Get group roles to find the target role
       let groupRoles = await handler.getGroupRoles(groupId)
       let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
-      
+
       if (!targetRole) return inter.editReply({ content: `Rank does not exist: ${rank.value}` });
       console.log('Target role:', targetRole);
       // Function to update the rank
-      let updateRank = await handler.changeUserRank({groupId: groupId, userId: user.id, roleId: targetRole.id})
-      
-      if (updateRank.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot change rank:\n```diff\n- "+updateRank.statusText+"```" });
-      
+      let updateRank = await handler.changeUserRank({ groupId: groupId, userId: user.id, roleId: targetRole.id })
+
+      if (updateRank.status !== 200) return inter.editReply({ content: emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.statusText + "```" });
+
       // Get thumbnail and send response
       let thumbnail = await handler.getUserThumbnail(user.id)
-      let foundGroup = await handler.getGroup(groupId)
-      
+      //let foundGroup = await handler.getGroup(groupId)
+
       let embed = new MessageEmbed()
-      .setThumbnail(thumbnail)
-      .addFields(
-        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
-        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
-        { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` },
-        { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` }
-      )
-      .setColor(colors.none);
+        .setThumbnail(thumbnail)
+        .setFooter({ text: "User ID: "+user.id })
+        .setColor(colors.none)
+        .addFields(
+          { name: "User", value: user.displayName+" (@"+user.name+")" },
+          { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` },
+          { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` }
+        )
 
-      await inter.editReply({ content: emojis.check+' Rank Updated', embeds: [embed] });
+      await inter.editReply({ content: emojis.check + ' Rank Updated', embeds: [embed] });
     }
-    else if (cname === 'accept') {
-      if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+    else if (cname === 'xp') {
+      if (!await getPerms(inter.member, 3)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
-      let groupId;
+      const options = inter.options._hoistedOptions;
+      const type = options.find(a => a.name === 'type');
+      const username = options.find(a => a.name === 'username');
+      const amount = options.find(a => a.name === 'amount');
+      const group = config.groups[0];
+      const groupId = group.groupId;
+
+      // initial reply while processing
+      await inter.reply({ content: "-# "+emojis.loading + " Processing" });
+
+      // parse usernames (comma separated)
+      const usernames = username.value
+        .split(',')
+        .map(u => u.trim())
+        .filter(Boolean);
+
+      const xpToChange = parseInt(amount.value);
+      if (isNaN(xpToChange) || xpToChange < 0) {
+        return await inter.editReply({ content: emojis.warning + " Invalid amount." });
+      }
+      if (xpToChange > 20 && !await getPerms(inter.member, 4)) {
+        return await inter.editReply({ content: emojis.warning + " Max XP to change is 20." });
+      }
+
+      let processedCount = 0;
+
+      for (const uname of usernames) {
+        try {
+          // fetch user
+          const user = await handler.getUser(uname);
+          if (user.error) {
+            await inter.channel.send({ content: emojis.warning + ` Could not fetch **${user.name}**:\n\`\`\`diff\n- ${user.error}\n\`\`\`` });
+            continue;
+          }
+
+          // get or create DB user
+          let dbUser = await users.findOne({ id: user.id });
+          if (!dbUser) {
+            dbUser = await users.create({ id: user.id, xp: 0 });
+          }
+
+          // compute new XP
+          let newXP = dbUser.xp;
+          if (type.value === "Add" || type.value.toLowerCase() === "add") {
+            newXP = dbUser.xp + xpToChange;
+          } else if (type.value === "Subtract" || type.value.toLowerCase() === "subtract") {
+            newXP = dbUser.xp - xpToChange;
+            if (newXP < 0) newXP = 0;
+          } else {
+            await inter.channel.send({ content: emojis.warning + ` Invalid type for **${user.name}**. Use Add or Subtract.` });
+            continue;
+          }
+
+          // save update
+          dbUser.xp = newXP;
+          await dbUser.save();
+
+          // fetch thumbnail and roles
+          const thumbnail = await handler.getUserThumbnail(user.id);
+          const userRole = await handler.getUserRole(groupId, user.id) || {};
+          const groupRole = group.roles.find(r => r.id === userRole.id) || null;
+          const nextRole = groupRole ? group.roles.find(r => r.rank === groupRole.rank + 1) : null;
+          if (!nextRole) {
+            await inter.channel.send({ content: emojis.warning + ` **${user.name}** is already at the highest rank attainable through XP.` })
+            continue;
+          }
+          let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
+          
+          if (userRole.error) {
+            await inter.channel.send({ content: emojis.warning+" "+user.name+" is not in the group."})
+            continue;
+          }
+
+          // Build embed
+          const embed = new MessageEmbed()
+            .setThumbnail(thumbnail)
+            .setColor(type.value.toLowerCase() === "add" ? colors.green : colors.red) // visual cue
+            .setDescription(`${emojis.check} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
+            .setFooter({ text: "User ID: "+user.id })
+            .addFields(
+              { name: "Current Rank", value: userRole.name || "Unknown" },
+              { name: "Next Rank", value: nextRole.name+"\n"+progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP" },
+            )
+
+          // Send the embed to channel
+          await inter.channel.send({ embeds: [embed] });
+
+          // If user qualifies for promotion
+          if (groupRole && nextRole.name !== "Max Rank" && newXP >= groupRole.requiredXp) {
+            try {
+              const updateRank = await handler.changeUserRank({ groupId, userId: user.id, roleId: nextRole.id });
+
+              if (updateRank.status !== 200) {
+                await inter.channel.send({ content: emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.statusText + "```" });
+              } else {
+                // announce promotion
+                await inter.channel.send({ content: emojis.check + ` **@${user.name}** was promoted to **${nextRole.name}**!` });
+
+                // reset xp after promotion
+                dbUser.xp = 0;
+                await dbUser.save();
+              }
+            } catch (err) {
+              await inter.channel.send({ content: emojis.warning + ` Failed to promote **${user.name}**: ${err.message}` });
+            }
+          }
+
+          processedCount++;
+        } catch (err) {
+          // catch-all for per-user errors so other users still process
+          await inter.channel.send({ content: emojis.warning + ` Error processing **${user.name}**:\n\`\`\`diff\n- ${err.message}\n\`\`\`` });
+          continue;
+        }
+      } // end for loop
+
+      // final edit to the original reply
+      await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
+    }
+    else if (cname === 'viewxp') {
+
       const options = inter.options._hoistedOptions;
       const username = options.find(a => a.name === 'username');
-      const group = options.find(a => a.name === 'group');
-      console.log(group)
-      groupId = group.value
+      const group = config.groups[0]
+      const groupId = group.groupId
       await inter.deferReply();
-      
-      let user = await handler.getUser(username.value)
-      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
-      
-      let accept = await handler.acceptUser(groupId,user.id)
-      
-      if (accept.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot accept user to the group:\n```diff\n- "+accept.statusText+"```" });
-      
-      // Get thumbnail and send response
-      let thumbnail = await handler.getUserThumbnail(user.id)
-      let foundGroup = await handler.getGroup(groupId)
-      
+
+      let user = await handler.getUser(username.value);
+      if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+
+      // Get existing user document or create default
+      let dbUser = await users.findOne({ id: user.id });
+      if (!dbUser) {
+        dbUser = await users.create({ id: user.id, xp: 0 });
+      }
+
+      // Get thumbnail and group
+      let thumbnail = await handler.getUserThumbnail(user.id);
+
+      let userRole = await handler.getUserRole(groupId, user.id);
+      let groupRole = group.roles.find(r => r.id === userRole.id);
+      let nextRole = group.roles.find(r => r.rank === groupRole.rank + 1);
+      if (!nextRole) nextRole = { name: "Highest Rank Achievable with XP" }
+      let xpLeft = groupRole.requiredXp - dbUser.xp
+      xpLeft <= 0 ? xpLeft = 0 : null
+
+      let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
+      // Build embed
       let embed = new MessageEmbed()
-      .setAuthor({name: user.displayName+' ('+user.name+')', iconURL: thumbnail})
-      .setColor(colors.none)
-      .setFooter({text: foundGroup.name})
+        .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
+        .setThumbnail(thumbnail)
+        .setColor(colors.green)
+        .setFooter({ text: "User ID: "+user.id })
+        .addFields(
+          { name: "Current Rank", value: userRole.name },
+          { name: "Next Rank", value: nextRole.name+"\n"+(nextRole.id ? progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP" : getPercentageBar(1,1).bar) },
+        )
 
-      await inter.editReply({ content: emojis.check+' '+user.name+' was accepted to the group', embeds: [embed] });
-    }
-    else if (cname === 'kick') {
-      if (!await getPerms(inter.member, 5)) return inter.reply({ content: '⚠️ Insufficient Permission' });
-
-      let groupId;
-      const options = inter.options._hoistedOptions;
-      const username = options.find(a => a.name === 'username');
-      const group = options.find(a => a.name === 'group');
-      groupId = group.value
-      await inter.deferReply();
-      
-      let user = await handler.getUser(username.value)
-      if (user.error) return inter.editReply({ content: '```diff\n- '+user.error+"```" })
-      
-      let kick = await handler.kickUser(groupId,user.id)
-      
-      if (kick.status !== 200) return inter.editReply({ content: emojis.warning+" Cannot kick user from the group:\n```diff\n- "+kick.statusText+"```" });
-      
-      // Get thumbnail and send response
-      let thumbnail = await handler.getUserThumbnail(user.id)
-      let foundGroup = await handler.getGroup(groupId)
-      
-      let embed = new MessageEmbed()
-      .setThumbnail(thumbnail)
-      .addFields(
-        { name: "User", value: "`Display Name` • "+user.displayName+"\n`Name` • "+user.name },
-        { name: "Group", value: "`ID` • "+foundGroup.id+"\n`Name` • "+foundGroup.name },
-      )
-      .setColor(colors.none)
-      .setFooter({text: client.user.username, iconURL: client.user.avatarURL()})
-
-      await inter.editReply({ content: emojis.check+' '+user.name+' was kicked from the group', embeds: [embed] });
+      // Send response
+      await inter.editReply({ embeds: [embed] });
     }
   }
   else if (inter.isButton()) {
@@ -279,65 +389,13 @@ client.on("interactionCreate", async (inter) => {
     if (id.startsWith("reply-")) {
       let reply = id.replace("reply-", "");
       inter.reply({ content: "*" + reply + "*", ephemeral: true });
-    } 
+    }
     else if (id.startsWith("none")) {
       inter.deferUpdate();
     }
   }
 });
-process.on('unhandledRejection', async error => {
-  ++errors
-  console.log(error);
-  let caller_line = error.stack.split("\n");
-  let index = await caller_line.find(b => b.includes('/app'))
-  let embed = new MessageEmbed()
-  .addFields(
-    {name: 'Caller Line', value: '```'+(index ? index : 'Unknown')+'```', inline: true},
-    {name: 'Error Code', value: '```css\n[ '+error.code+' ]```', inline: true},
-    {name: 'Error', value: '```diff\n- '+(error.stack >= 1024 ? error.stack.slice(0, 1023) : error.stack)+'```'},
-  )
-  .setColor(colors.red)
-  
-  try {
-    let channel = await getChannel(shop.channels.output)
-    channel ? channel.send({embeds: [embed]}).catch(error => error) : null
-  } catch (err) {
-    console.log(err)
-  }
-});
 
-let ready = true;
-const interval = setInterval(async function() {
-  //Get time
-  let date = new Date().toLocaleString("en-US", { timeZone: 'Asia/Shanghai' });
-  let today = new Date(date);
-  let hours = (today.getHours() % 12) || 12;
-  let state = today.getHours() >= 12 ? 'PM' : 'AM';
-  let day = today.getDay();
-  let time = hours +":"+today.getMinutes()+state;
-  //Get info
-  if (ready) {
-    ready = false
-    if (!ready) {
-      setTimeout(function() {
-        ready = true;
-      },60000)
-    }
-    let template = await getChannel(shop.channels.templates)
-    let guild = await getGuild(shop.guild)
-    let channel = await getChannel('1')
-        
-    if (time === '30:0PM') {
-      ready = false
-      let msg = await template.messages.fetch("1131863357083881522")
-      channel.send({content: msg.content})
-    }
-  }
-  
-  if (!ready) {
-    setTimeout(function() {
-      ready = true
-    },50000)
-  }
-  
-  },5000)
+process.on('unhandledRejection', async error => {
+  console.log(error);
+});

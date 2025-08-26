@@ -135,10 +135,8 @@ module.exports = {
       }
     }
   },
-  sleep: function (miliseconds) {
-    var currentTime = new Date().getTime();
-    while (currentTime + miliseconds >= new Date().getTime() && !shop.breakChecker) {
-    }
+  sleep: async function (miliseconds) {
+    return new Promise(resolve => setTimeout(resolve, miliseconds));
   },
   moderate: function(member,perms) {
     if (perms) return;
@@ -154,23 +152,43 @@ module.exports = {
     let percentage = Math.round((value/totalValue)*100)
     return percentage;
   },
-  getPercentageEmoji: function (value, totalValue) {
-    value = Number(value)
-    totalValue = Number(totalValue)
-    let percentage = Math.round((value/totalValue)*100)
-    let emojiFormat = percentage >= 100 ? emojis.full1+emojis.full2+emojis.full2+emojis.full2+emojis.full3 : 
-    percentage >= 90 ? emojis.full1+emojis.full2+emojis.full2+emojis.full2+emojis.half3 :  
-    percentage >= 80 ? emojis.full1+emojis.full2+emojis.full2+emojis.full2+emojis.empty3 : 
-    percentage >= 70 ? emojis.full1+emojis.full2+emojis.full2+emojis.half2+emojis.empty3 :
-    percentage >= 60 ? emojis.full1+emojis.full2+emojis.full2+emojis.empty2+emojis.empty3 : 
-    percentage >= 50 ? emojis.full1+emojis.full2+emojis.half2+emojis.empty2+emojis.empty3 : 
-    percentage >= 40 ? emojis.full1+emojis.full2+emojis.empty2+emojis.empty2+emojis.empty3 : 
-    percentage >= 30 ? emojis.full1+emojis.half2+emojis.empty2+emojis.empty2+emojis.empty3 : 
-    percentage >= 20 ? emojis.full1+emojis.empty2+emojis.empty2+emojis.empty2+emojis.empty3 : 
-    percentage >= 10 ? emojis.half1+emojis.empty2+emojis.empty2+emojis.empty2+emojis.empty3 : 
-    percentage <= 9 ? emojis.empty1+emojis.empty2+emojis.empty2+emojis.empty2+emojis.empty3 : 
-    emojis.empty1+emojis.empty2+emojis.empty2+emojis.empty2+emojis.empty3
-    return emojiFormat;
+  getPercentageBar: function (value, totalValue, bodyCount = 8) {
+    // emojis (exact IDs you provided)
+    const FILLED_TAIL = '<:filled_tail:1409844139587272754>';
+    const FILLED_BODY = '<:filled_body:1409844133794680942>';
+    const FILLED_HEAD = '<:filled_head:1409844131496333324>';
+
+    const EMPTY_TAIL = '<:empty_tail:1409844136588083271>';
+    const EMPTY_BODY = '<:empty_body:1409844126840655914>';
+    const EMPTY_HEAD = '<:empty_head:1409844129495646358>';
+
+    // Normalize numeric inputs
+    const num = Number(value) || 0;
+    const den = Number(totalValue) || 0;
+
+    // Handle divide-by-zero: treat as 0%
+    const rawPct = den > 0 ? (num / den) * 100 : 0;
+    // clamp between 0 and 100 and round to integer percent
+    const pct = Math.max(0, Math.min(100, Math.round(rawPct)));
+
+    // number of filled bodies based on percentage and bodyCount
+    const filledBodies = Math.round((pct / 100) * bodyCount);
+
+    // choose tail: filled if at least one body is filled (you can change to pct>0 if desired)
+    const tail = filledBodies > 0 ? FILLED_TAIL : EMPTY_TAIL;
+
+    // bodies: filled first, then empty for the remainder
+    const bodies =
+      FILLED_BODY.repeat(filledBodies) + EMPTY_BODY.repeat(Math.max(0, bodyCount - filledBodies));
+
+    // head: filled only when fully filled (100%)
+    const head = filledBodies === bodyCount ? FILLED_HEAD : EMPTY_HEAD;
+
+    // return both the bar string and the computed percentage
+    return {
+      bar: tail + bodies + head,
+      percentage: pct
+    };
   },
   randomTable: function (array) {
   var currentIndex = array.length, temporaryValue, randomIndex;

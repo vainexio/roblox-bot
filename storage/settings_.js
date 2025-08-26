@@ -1,7 +1,7 @@
  let colors = {
-  red: "#ea3737",
-  blue: "#1200ff",
-  green: "#00ff04",
+  red: "#FF7373",
+  blue: "#85A3FF",
+  green: "#73FF8F",
   yellow: "#fff4a1",
   orange: "#ff6300",
   purple: "#b200ff",
@@ -14,46 +14,67 @@
 }
 
 module.exports = {
-  prefix: ";", //Prefix
-  shop: {
-    breakChecker: false,
-    checkers: [],
-    autoQueue: false,
-    refCode: false,
-    viaContent: true,
+  prefix: ";", // Prefix
+  config: {
+    groups: [
+      {
+        "groupId": 35042233,
+        "roles": [
+          {
+            "id": 190644070,
+            "name": "Basic Sailor Course",
+            "rank": 1,
+            "requiredXp": 100,
+          },
+          {
+            "id": 190704122,
+            "name": "[E1] Apprentice Seaman",
+            "rank": 2,
+            "requiredXp": 100,
+          },
+          {
+            "id": 191296077,
+            "name": "[E2] Seaman Second Class",
+            "rank": 3,
+            "requiredXp": 100,
+          },
+          {
+            "id": 190754080,
+            "name": "[E3] Seaman First Class",
+            "rank": 4,
+            "requiredXp": 100,
+          },
+          {
+            "id": 191380127,
+            "name": "[E4] Petty Officer Third Class",
+            "rank": 5,
+            "requiredXp": 100,
+          },
+          {
+            "id": 190356134,
+            "name": "[E5] Petty Officer Second Class",
+            "rank": 6,
+            "requiredXp": 100,
+          },
+          {
+            "id": 191136109,
+            "name": "[E6] Petty Officer First Class",
+            "rank": 7,
+            "requiredXp": 100,
+          },
+        ]
+      }
+    ],
     channels: {
-      checker: '',
-      boostStocks: '',
-      basicStocks: '',
-      otherStocks: '',
-      templates: '',
-      drops: '',
-      orders: '',
-      reports: '',
       output: '',
     },
-    dmMessage: '',
-    qMessage: '',
-    rMessage: '',
-    ar: {
-      responders: [
-        {
-          trigger: '.39847324',
-          content: '1152546156300218431',
-          autoDelete: true,
-          row: null,
-        },
-      ],
-    },
-    promptMessage: null,
     bot: {
       status: {
         status: "dnd",
         activities: [
           {
-            name: "BA",
+            name: "The Philippine Navy",
             type: "Watching".toUpperCase(),
-            //url: 'https://www.twitch.tv/videos/1841805330'
           },
         ],
       },
@@ -69,7 +90,7 @@ module.exports = {
       level: 4,
     },
     {
-      id: "1261689703808106508",
+      id: "",
       level: 5,
     },
     {

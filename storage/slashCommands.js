@@ -12,30 +12,62 @@ NUMBER - 10
 ATTACHMENT - 11
 */
 
-let groups = [ 
-  { name: 'BA', value: '34624144' }, 
-  { name: 'RMP', value: '34634981' }, 
-  { name: 'BOP', value: '34844808' }, 
-  { name: 'UKSF', value: '8582078' },
-  { name: 'RGG', value: '8584027' },
-  { name: 'RGR', value: '34635006' },
-  { name: 'ETS', value: '34628760' },
-]
-
 module.exports = {
   register: true,
   deleteSlashes: [],
   slashes: [
     {
+      "name": "xp",
+      "type": 1,
+      "description": "Add or subtract XP from a user",
+      "options": [
+        {
+          "name": "type",
+          "type": 3,
+          "description": "Choose whether to add or subtract XP",
+          "required": true,
+          "choices": [
+            { "name": "Add", "value": "Add" },
+            { "name": "Subtract", "value": "Subtract" }
+          ]
+        },
+        {
+          "name": "username",
+          "type": 3,
+          "description": "Roblox username",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": 4,
+          "description": "Amount of XP to add or subtract",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "viewxp",
+      "type": 1,
+      "description": "View user XP",
+      "options": [
+        {
+          "name": "username",
+          "type": 3,
+          "description": "Roblox username",
+          "required": true
+        },
+      ]
+    },
+    {
       name: 'setrank',
       type: 1,
-      description: 'Set rank command',
+      description: 'Update user rank',
       options: [
         { name: 'username', type: 3, description: 'Roblox username', required: true },
         { name: 'rank', type: 3, description: 'Rank', required: true },
-        { name: 'group', type: 3, description: 'Group name', choices: groups, required: true },
       ]
     },
+    /*
     {
       name: 'accept',
       type: 1,
@@ -53,6 +85,7 @@ module.exports = {
         { name: 'username', type: 3, description: 'Roblox username', required: true },
         { name: 'group', type: 3, description: 'Group name', choices: groups, required: true },
       ]
-    },
+    },*/
+    
   ],
 };
