@@ -518,17 +518,21 @@ app.post('/verify', async (req, res) => {
     if (VERIFY_SECRET) {
       const headerSecret = req.get('X-VERIFY-SECRET') || req.get('x-verify-secret');
       if (!headerSecret || headerSecret !== VERIFY_SECRET) {
+        console.warn('verify: invalid secret header:', req.get('x-verify-secret'));
         return res.status(401).json({ ok: false, error: 'invalid-secret' });
       }
     }
 
     const { robloxId, code, robloxUsername } = req.body ?? {};
     if (!robloxId || !code) {
-      return res.status(400).json({ ok: false, error: "missing-robloxId-or-code" });
+      console.warn('verify: missing robloxId or code', req.body);
+      return res.status(400).json({ ok: false, error: 'missing-robloxId-or-code' });
     }
 
+    // Look up in-memory code
     const entry = codesByCode.get(String(code));
     if (!entry) {
+      console.info('verify: code not found in memory:', code);
       return res.status(400).json({ ok: false, error: 'invalid-or-expired-code' });
     }
 
@@ -537,39 +541,79 @@ app.post('/verify', async (req, res) => {
       // cleanup
       codesByCode.delete(String(code));
       codeByDiscord.delete(entry.discordId);
+      console.info('verify: code expired:', code);
       return res.status(400).json({ ok: false, error: 'invalid-or-expired-code' });
     }
 
-    const discordId = entry.discordId;
+    const discordId = String(entry.discordId);
+    const targetRobloxId = String(robloxId);
 
-    // We now link this discordId <-> robloxId in DB.
-    // Handle unique constraints: other documents might already have this discordId set.
-    // 1) Find existing doc for robloxId
-    let robloxDoc = await users.findOne({ robloxId }).exec();
+    // Step A: Unlink this discordId from ANY other user that has it (except target robloxId)
+    // Use updateMany to avoid duplicate-key collisions
+    try {
+      const unlinkRes = await users.updateMany(
+        { discordId: discordId, robloxId: { $ne: targetRobloxId } },
+        { $unset: { discordId: "" } }
+      ).exec();
 
-    // 2) If another doc has this discordId but different robloxId, unset it
-    const conflictingDoc = await users.findOne({ discordId }).exec();
-    if (conflictingDoc && (!robloxDoc || conflictingDoc.robloxId !== robloxDoc.robloxId)) {
-      // remove discordId from conflicting doc (unlink previous mapping)
-      conflictingDoc.discordId = undefined;
-      await conflictingDoc.save();
+      if (unlinkRes.modifiedCount && unlinkRes.modifiedCount > 0) {
+        console.log(`verify: unlinked discordId ${discordId} from ${unlinkRes.modifiedCount} other document(s)`);
+      }
+    } catch (unlinkErr) {
+      console.warn('verify: error during unlink updateMany:', unlinkErr);
+      // continue — we'll still try to upsert; duplicated index errors handled below
     }
 
-    if (robloxDoc) {
-      // update discordId
-      robloxDoc.discordId = discordId;
-      await robloxDoc.save();
-    } else {
-      // create new document
-      robloxDoc = new users({
-        robloxId,
-        discordId,
-        xp: 0,
-      });
-      await robloxDoc.save();
+    // Step B: Upsert target robloxId with this discordId
+    let robloxDoc;
+    try {
+      robloxDoc = await users.findOneAndUpdate(
+        { robloxId: targetRobloxId },
+        { $set: { discordId: discordId }, $setOnInsert: { xp: 0 } },
+        { upsert: true, new: true, setDefaultsOnInsert: true }
+      ).exec();
+    } catch (upsertErr) {
+      // Handle rare race condition where another write created a conflicting doc that triggers E11000
+      if (upsertErr && upsertErr.code === 11000) {
+        console.warn('verify: E11000 during upsert, attempting safe retry:', upsertErr.message);
+
+        // Ensure any remaining conflicting docs are unlinked
+        try {
+          await users.updateMany({ discordId: discordId, robloxId: { $ne: targetRobloxId } }, { $unset: { discordId: "" } }).exec();
+        } catch (secondUnlinkErr) {
+          console.warn('verify: second unlink attempt failed:', secondUnlinkErr);
+        }
+
+        // Try non-upsert approach: find then set
+        robloxDoc = await users.findOne({ robloxId: targetRobloxId }).exec();
+        if (robloxDoc) {
+          robloxDoc.discordId = discordId;
+          await robloxDoc.save();
+        } else {
+          // create guardedly
+          try {
+            robloxDoc = await users.create({ robloxId: targetRobloxId, discordId: discordId, xp: 0 });
+          } catch (createErr) {
+            console.error('verify: create after retry failed:', createErr);
+            return res.status(500).json({ ok: false, error: 'server-error' });
+          }
+        }
+      } else {
+        console.error('verify: unexpected error on upsert:', upsertErr);
+        return res.status(500).json({ ok: false, error: 'server-error' });
+      }
     }
 
-    // mark code used: remove from maps
+    // Sanity: ensure we have a robloxDoc
+    if (!robloxDoc) {
+      robloxDoc = await users.findOne({ robloxId: targetRobloxId }).exec();
+      if (!robloxDoc) {
+        console.error('verify: robloxDoc missing after upsert flow for', targetRobloxId);
+        return res.status(500).json({ ok: false, error: 'server-error' });
+      }
+    }
+
+    // mark code used: cleanup in-memory maps
     codesByCode.delete(String(code));
     codeByDiscord.delete(discordId);
 
@@ -577,8 +621,22 @@ app.post('/verify', async (req, res) => {
     (async () => {
       try {
         const user = await client.users.fetch(discordId);
-        const robloxUser = await handler.getUser(robloxUsername);
-        await user.send(`${emojis.check} Your Discord account has been linked to **${robloxUser.displayName} (@${robloxUser.name})**!`);
+
+        // Try resolve roblox username/displayName if provided
+        let robloxDisplay = targetRobloxId;
+        if (typeof handler?.getUser === 'function' && robloxUsername) {
+          try {
+            const robloxUser = await handler.getUser(robloxUsername);
+            if (robloxUser && (robloxUser.displayName || robloxUser.name)) {
+              robloxDisplay = `${robloxUser.displayName ?? robloxUser.name} (@${robloxUser.name ?? ''})`;
+            }
+          } catch (ruErr) {
+            console.warn('verify: handler.getUser failed for', robloxUsername, ruErr?.message || ruErr);
+          }
+        }
+
+        const checkEmoji = (typeof emojis !== 'undefined' && emojis.check) ? emojis.check : '✅';
+        await user.send(`${checkEmoji} Your Discord account has been linked to Roblox ID **${robloxDisplay}**!`);
       } catch (dmErr) {
         console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
       }
@@ -587,17 +645,17 @@ app.post('/verify', async (req, res) => {
     // Respond to the Roblox game that verify succeeded
     return res.json({
       ok: true,
-      robloxId,
+      robloxId: targetRobloxId,
       discordId,
+      xp: robloxDoc.xp ?? 0,
       message: 'linked',
     });
 
   } catch (err) {
-    console.error("POST /verify error:", err);
+    console.error('POST /verify error:', err);
     return res.status(500).json({ ok: false, error: 'server-error' });
   }
 });
-
 // === OPTIONAL: Helper endpoint to check status (debug only) ===
 // (Remove or protect in production)
 app.get('/_verify_status/:discordId', (req, res) => {
