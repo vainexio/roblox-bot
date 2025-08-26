@@ -37,7 +37,7 @@ const codesByCode = new Map();      // code -> { discordId, expiresAt }
 const codeByDiscord = new Map();    // discordId -> code
 
 // Config
-const CODE_TTL_MS = 1 * 60 * 1000; // 10 minutes default (change as needed)
+const CODE_TTL_MS = 5 * 60 * 1000; // 10 minutes default (change as needed)
 const VERIFY_SECRET = process.env.VERIFY_SECRET || null; // optional header secret for /verify
 
 // Utility: generate a 6-digit string, ensure uniqueness in codesByCode
@@ -338,6 +338,7 @@ client.on("interactionCreate", async (inter) => {
             .setDescription(`${emojiState} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
             .setFooter({ text: "User ID: " + user.id })
             .addFields(
+              { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
               { name: "Current Rank", value: userRole.name || "Unknown" },
               { name: "Next Rank", value: nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP" },
             )
@@ -417,6 +418,7 @@ client.on("interactionCreate", async (inter) => {
         .setColor(colors.green)
         .setFooter({ text: "User ID: " + user.id })
         .addFields(
+          { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
           { name: "Current Rank", value: userRole.name },
           { name: "Next Rank", value: nextRankProgress },
         )
