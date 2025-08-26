@@ -371,7 +371,7 @@ client.on("interactionCreate", async (inter) => {
       let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null
       let nextRankProgress = notAttainable ? 
         emojis.warning+" Not attainable through XP."
-        : progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP"
+        : nextRole.name+"\n"+progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP"
       // Build embed
       let embed = new MessageEmbed()
         .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
