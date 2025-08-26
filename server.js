@@ -429,15 +429,16 @@ client.on("interactionCreate", async (inter) => {
     }
     else if (cname === 'connect') {
       try {
-        const discordId = interaction.user.id;
+        const discordId = inter.user.id;
 
+        await inter.deferReply({ ephemeral: true })
         // Prevent creating another code if there is a pending one for this user
         const existingCode = codeByDiscord.get(discordId);
         if (existingCode) {
           const entry = codesByCode.get(existingCode);
           if (entry && entry.expiresAt > Date.now()) {
             // Still valid
-            await interaction.reply({
+            await inter.editReply({
               content: `You already have an active verification code. Please join the Roblox game and enter that code. If you didn't receive it, check your DMs. (Code expires <t:${Math.floor(entry.expiresAt / 1000)}:R>)`,
               ephemeral: true,
             });
@@ -458,7 +459,7 @@ client.on("interactionCreate", async (inter) => {
         codeByDiscord.set(discordId, code);
 
         // Send ephemeral reply so command doesn't spam channel
-        await interaction.reply({
+        await inter.editReply({
           content: `Join the Roblox game using the account you wish to connect and enter the code.\n\n**Roblox game:** https://www.roblox.com/games/105425704891053/Account-Verification\n**Enter this code:**\n# ${code}\n\nThe code will expire <t:${Math.floor(expiresAt / 1000)}:R>.`,
           ephemeral: true,
         });
@@ -467,19 +468,19 @@ client.on("interactionCreate", async (inter) => {
         console.log(`Generated verification code ${code} for Discord ID ${discordId}, expires ${new Date(expiresAt).toISOString()}`);
       } catch (err) {
         console.error("handleConnect error:", err);
-        if (interaction && !interaction.replied) {
-          try { await interaction.reply({ content: "Something went wrong when generating the code.", ephemeral: true }); } catch { }
+        if (interaction && !inter.replied) {
+          try { await inter.reply({ content: "Something went wrong when generating the code.", ephemeral: true }); } catch { }
         }
       }
     }
     else if (cname === 'disconnect') {
       try {
-        const discordId = interaction.user.id;
+        const discordId = inter.user.id;
 
         // Find the DB entry linked to this Discord ID
         const doc = await users.findOne({ discordId }).exec();
         if (!doc) {
-          await interaction.reply({ content: "You don't have a linked Roblox account.", ephemeral: true });
+          await inter.reply({ content: "You don't have a linked Roblox account.", ephemeral: true });
           return;
         }
 
@@ -487,10 +488,10 @@ client.on("interactionCreate", async (inter) => {
         doc.discordId = undefined;
         await doc.save();
 
-        await interaction.reply({ content: `Your Discord has been unlinked from Roblox ID **${doc.robloxId}**.`, ephemeral: true });
+        await inter.reply({ content: `Your Discord has been unlinked from Roblox ID **${doc.robloxId}**.`, ephemeral: true });
       } catch (err) {
         console.error("handleDisconnect error:", err);
-        try { await interaction.reply({ content: "Failed to unlink your account.", ephemeral: true }); } catch { }
+        try { await inter.reply({ content: "Failed to unlink your account.", ephemeral: true }); } catch { }
       }
     }
 
