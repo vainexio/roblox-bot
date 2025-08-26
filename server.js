@@ -247,9 +247,10 @@ client.on("interactionCreate", async (inter) => {
       let processedCount = 0;
 
       for (const uname of usernames) {
+        let user
         try {
           // fetch user
-          const user = await handler.getUser(uname);
+          user = await handler.getUser(uname);
           if (user.error) {
             await inter.channel.send({ content: emojis.warning + ` Could not fetch **${user.name}**:\n\`\`\`diff\n- ${user.error}\n\`\`\`` });
             continue;
@@ -280,18 +281,17 @@ client.on("interactionCreate", async (inter) => {
           // fetch thumbnail and roles
           const thumbnail = await handler.getUserThumbnail(user.id);
           const userRole = await handler.getUserRole(groupId, user.id) || {};
+          if (userRole.error) {
+            await inter.channel.send({ content: emojis.warning+" **"+user.displayName+" (@"+user.name+")** is not in the group."})
+            continue;
+          }
           const groupRole = group.roles.find(r => r.id === userRole.id) || null;
           const nextRole = groupRole ? group.roles.find(r => r.rank === groupRole.rank + 1) : null;
-          if (!nextRole) {
-            await inter.channel.send({ content: emojis.warning + ` **${user.name}** is already at the highest rank attainable through XP.` })
+          if (!nextRole || !nextRole.requiredXp) {
+            await inter.channel.send({ content: emojis.warning + ` **${user.name}**'s rank cannot receive XP.` })
             continue;
           }
           let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
-          
-          if (userRole.error) {
-            await inter.channel.send({ content: emojis.warning+" "+user.name+" is not in the group."})
-            continue;
-          }
 
           // Build embed
           const embed = new MessageEmbed()
@@ -308,7 +308,7 @@ client.on("interactionCreate", async (inter) => {
           await inter.channel.send({ embeds: [embed] });
 
           // If user qualifies for promotion
-          if (groupRole && nextRole.name !== "Max Rank" && newXP >= groupRole.requiredXp) {
+          if (groupRole && nextRole && nextRole.requiredXp && newXP >= groupRole.requiredXp) {
             try {
               const updateRank = await handler.changeUserRank({ groupId, userId: user.id, roleId: nextRole.id });
 
@@ -329,7 +329,7 @@ client.on("interactionCreate", async (inter) => {
 
           processedCount++;
         } catch (err) {
-          // catch-all for per-user errors so other users still process
+          console.log(err)
           await inter.channel.send({ content: emojis.warning + ` Error processing **${user.name}**:\n\`\`\`diff\n- ${err.message}\n\`\`\`` });
           continue;
         }
@@ -359,13 +359,19 @@ client.on("interactionCreate", async (inter) => {
       let thumbnail = await handler.getUserThumbnail(user.id);
 
       let userRole = await handler.getUserRole(groupId, user.id);
+      if (userRole.error) return inter.editReply({ content: emojis.warning+" **"+user.displayName+" (@"+user.name+")** is not in the group."})
       let groupRole = group.roles.find(r => r.id === userRole.id);
-      let nextRole = group.roles.find(r => r.rank === groupRole.rank + 1);
-      if (!nextRole) nextRole = { name: "Highest Rank Achievable with XP" }
+      let nextRole = group.roles.find(r => r.rank === groupRole?.rank + 1);
+      let notAttainable = false
+      if (!nextRole) nextRole = { name: "N/A" }
+      if (!nextRole.requiredXp) notAttainable = true
       let xpLeft = groupRole.requiredXp - dbUser.xp
       xpLeft <= 0 ? xpLeft = 0 : null
 
-      let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
+      let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null
+      let nextRankProgress = notAttainable ? 
+        emojis.warning+" Not attainable through XP."
+        : progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP"
       // Build embed
       let embed = new MessageEmbed()
         .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
@@ -374,7 +380,7 @@ client.on("interactionCreate", async (inter) => {
         .setFooter({ text: "User ID: "+user.id })
         .addFields(
           { name: "Current Rank", value: userRole.name },
-          { name: "Next Rank", value: nextRole.name+"\n"+(nextRole.id ? progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP" : getPercentageBar(1,1).bar) },
+          { name: "Next Rank", value: nextRankProgress },
         )
 
       // Send response

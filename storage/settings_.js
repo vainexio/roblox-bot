@@ -62,6 +62,81 @@ module.exports = {
             "rank": 7,
             "requiredXp": 100,
           },
+          {
+            "id": 190424109,
+            "name": "[E7] Chief Petty Officer",
+            "rank": 8,
+          },
+          {
+            "id": 191272107,
+            "name": "[E8] Senior Chief Petty Officer",
+            "rank": 9,
+          },
+          {
+            "id": 193674056,
+            "name": "[E9] Master Chief Petty Officer",
+            "rank": 10,
+          },
+          {
+            "id": 190646120,
+            "name": "[O1] Ensign",
+            "rank": 11,
+          },
+          {
+            "id": 190352121,
+            "name": "[O2] Lieutenant Junior Grade",
+            "rank": 12,
+          },
+          {
+            "id": 190548111,
+            "name": "[O3] Lieutenant",
+            "rank": 13,
+          },
+          {
+            "id": 191314119,
+            "name": "[O4] Lieutenant Commander",
+            "rank": 14,
+          },
+          {
+            "id": 190734115,
+            "name": "[O5] Commander",
+            "rank": 15,
+          },
+          {
+            "id": 190564114,
+            "name": "[O6] Captain",
+            "rank": 16,
+          },
+          {
+            "id": 190852107,
+            "name": "[O7] Commodore",
+            "rank": 17,
+          },
+          {
+            "id": 190358142,
+            "name": "[O8] Rear Admiral",
+            "rank": 18,
+          },
+          {
+            "id": 494116083,
+            "name": "Chief of Naval Staff",
+            "rank": 19,
+          },
+          {
+            "id": 180894075,
+            "name": "Command Master Chief of the Navy",
+            "rank": 20,
+          },
+          {
+            "id": 180776078,
+            "name": "Vice Commander of the Philippine Navy",
+            "rank": 21,
+          },
+          {
+            "id": 180098078,
+            "name": "Flag Officer-in-Command of the Philippine Navy",
+            "rank": 255,
+          }
         ]
       }
     ],
@@ -104,7 +179,7 @@ module.exports = {
     check: '<a:CHECK:1138778694983356450>',
     x: '<a:Xmark:1138778760628424735>',
     loading: '<a:Loading:1138778730785943614>',
-    warning: '⚠️',
+    warning: '<:S_warning:1108743925012902049>',
     nboost: '<:boost:1248993578181726269>',
     nclasic: '<a:classic:1248921754097815572>',
     nbasic: '<:basic:1248921754097815572>'
