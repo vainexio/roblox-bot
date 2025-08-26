@@ -2,11 +2,14 @@
 const express = require("express");
 const app = express();
 const fetch = require("node-fetch");
+const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
+app.use(bodyParser.json());
+
 // Discord
 const Discord = require("discord.js");
-const { WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu, } = Discord;
+const { WebhookClient, Permissions, Client, Intents, MessageEmbed, MessageActionRow, MessageButton, MessageSelectMenu } = Discord;
 const myIntents = new Intents();
 myIntents.add(
   Intents.FLAGS.GUILD_PRESENCES,
@@ -20,6 +23,7 @@ myIntents.add(
 );
 const client = new Client({ intents: myIntents, partials: ["CHANNEL"] });
 
+const link = "https://ad7738af-9b3f-473a-9150-5f394d2a14a7-00-3lsgrdmc5s7oz.riker.replit.dev/"
 // Secrets
 const token = process.env.SECRET;
 const mongooseToken = process.env.MONGOOSE;
@@ -27,6 +31,37 @@ const mongooseToken = process.env.MONGOOSE;
 // Models
 let usersSchema
 let users
+
+// Codes
+const codesByCode = new Map();      // code -> { discordId, expiresAt }
+const codeByDiscord = new Map();    // discordId -> code
+
+// Config
+const CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes default (change as needed)
+const VERIFY_SECRET = process.env.VERIFY_SECRET || null; // optional header secret for /verify
+
+// Utility: generate a 6-digit string, ensure uniqueness in codesByCode
+function generate6DigitCode() {
+  // try up to a few times to avoid collision
+  for (let i = 0; i < 10; i++) {
+    const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+    if (!codesByCode.has(code)) return code;
+  }
+  // fallback: extremely unlikely to happen, but if it does, linear scan
+  let candidate = 100000;
+  while (codesByCode.has(String(candidate))) candidate++;
+  return String(candidate);
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [code, entry] of codesByCode.entries()) {
+    if (entry.expiresAt <= now) {
+      codesByCode.delete(code);
+      codeByDiscord.delete(entry.discordId);
+    }
+  }
+}, 60 * 1000);
 
 async function startApp() {
   console.log("Starting...");
@@ -56,10 +91,14 @@ client.on("ready", async () => {
   await mongoose.connect(mongooseToken);
 
   usersSchema = new mongoose.Schema({
-    id: String,
-    xp: Number,
-  })
+    robloxId: { type: String, unique: true, sparse: true },
+    discordId: { type: String, unique: true, sparse: true },
+    xp: { type: Number, default: 0 },
+  });
 
+  usersSchema.index({ id: 1 }, { unique: true });
+  usersSchema.index({ discordId: 1 }, { unique: true, sparse: true });
+  
   users = mongoose.model("PN_Users1", usersSchema);
 
   if (slashCmd.register) {
@@ -171,6 +210,8 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
 }); //END MESSAGE CREATE
 
+//
+
 client.on("interactionCreate", async (inter) => {
   if (inter.isCommand()) {
     let cname = inter.commandName
@@ -254,9 +295,9 @@ client.on("interactionCreate", async (inter) => {
           if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
 
           // get or create DB user
-          let dbUser = await users.findOne({ id: user.id });
+          let dbUser = await users.findOne({ robloxId: user.id });
           if (!dbUser) {
-            dbUser = await users.create({ id: user.id, xp: 0 });
+            dbUser = await users.create({ robloxId: user.id, xp: 0 });
           }
 
           // compute new XP
@@ -347,9 +388,9 @@ client.on("interactionCreate", async (inter) => {
       if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
 
       // Get existing user document or create default
-      let dbUser = await users.findOne({ id: user.id });
+      let dbUser = await users.findOne({ robloxId: user.id });
       if (!dbUser) {
-        dbUser = await users.create({ id: user.id, xp: 0 });
+        dbUser = await users.create({ robloxId: user.id, xp: 0 });
       }
 
       // Get thumbnail and group
@@ -383,6 +424,13 @@ client.on("interactionCreate", async (inter) => {
       // Send response
       await inter.editReply({ embeds: [embed] });
     }
+      else if (cname === 'connect') {
+        await handleConnect(inter)
+      }
+    else if (cname === 'disconnect') {
+      await handleDisconnect(inter)
+    }
+
   }
   else if (inter.isButton()) {
     let id = inter.customId;
@@ -399,3 +447,184 @@ client.on("interactionCreate", async (inter) => {
 process.on('unhandledRejection', async error => {
   console.log(error);
 });
+
+/////
+async function handleConnect(interaction) {
+  // interaction is the Discord Interaction object for /connect
+  try {
+    const discordId = interaction.user.id;
+
+    // Prevent creating another code if there is a pending one for this user
+    const existingCode = codeByDiscord.get(discordId);
+    if (existingCode) {
+      const entry = codesByCode.get(existingCode);
+      if (entry && entry.expiresAt > Date.now()) {
+        // Still valid
+        await interaction.reply({
+          content: `You already have an active verification code. Please join the Roblox game and enter that code. If you didn't receive it, check your DMs. (Code expires <t:${Math.floor(entry.expiresAt/1000)}:R>)`,
+          ephemeral: true,
+        });
+        return;
+      } else {
+        // stale, remove
+        codesByCode.delete(existingCode);
+        codeByDiscord.delete(discordId);
+      }
+    }
+
+    // Create a new code
+    const code = generate6DigitCode();
+    const expiresAt = Date.now() + CODE_TTL_MS;
+
+    // Store
+    codesByCode.set(code, { discordId, expiresAt });
+    codeByDiscord.set(discordId, code);
+
+    // Send ephemeral reply so command doesn't spam channel
+    await interaction.reply({
+      content: `A verification code has been generated and sent to your DMs. Join the Roblox game and enter the code there to link your account.\n\n**Roblox game:** https://www.roblox.com/games/105425704891053/Account-Verification\n**Code (6 digits):** \`${code}\`\n\nThe code will expire <t:${Math.floor(expiresAt/1000)}:R>.`,
+      ephemeral: true,
+    });
+
+    // DM the user with steps (in case they don't see ephemeral)
+    try {
+      const user = await client.users.fetch(discordId);
+      await user.send(
+        `Account verification code:\n\nJoin the Roblox game: https://www.roblox.com/games/105425704891053/Account-Verification\n\nEnter this 6-digit code in the game to verify: **${code}**\n\nThis code will expire <t:${Math.floor(expiresAt/1000)}:R>.`
+      );
+    } catch (dmErr) {
+      // If DM failed, user might have DMs closed; we already gave ephemeral reply above.
+      console.warn(`Failed to DM user ${discordId}:`, dmErr?.message || dmErr);
+    }
+
+    // (Optional) Log
+    console.log(`Generated verification code ${code} for Discord ID ${discordId}, expires ${new Date(expiresAt).toISOString()}`);
+  } catch (err) {
+    console.error("handleConnect error:", err);
+    if (interaction && !interaction.replied) {
+      try { await interaction.reply({ content: "Something went wrong when generating the code.", ephemeral: true }); } catch {}
+    }
+  }
+}
+
+async function handleDisconnect(interaction) {
+  // interaction is the Discord Interaction object for /disconnect
+  try {
+    const discordId = interaction.user.id;
+
+    // Find the DB entry linked to this Discord ID
+    const doc = await users.findOne({ discordId }).exec();
+    if (!doc) {
+      await interaction.reply({ content: "You don't have a linked Roblox account.", ephemeral: true });
+      return;
+    }
+
+    // Unlink by removing discordId from the document (keep robloxId and xp)
+    doc.discordId = undefined;
+    await doc.save();
+
+    await interaction.reply({ content: `Your Discord has been unlinked from Roblox ID **${doc.robloxId}**.`, ephemeral: true });
+  } catch (err) {
+    console.error("handleDisconnect error:", err);
+    try { await interaction.reply({ content: "Failed to unlink your account.", ephemeral: true }); } catch {}
+  }
+}
+
+app.post('/verify', async (req, res) => {
+  try {
+    // Optional: shared secret check
+    if (VERIFY_SECRET) {
+      const headerSecret = req.get('X-VERIFY-SECRET') || req.get('x-verify-secret');
+      if (!headerSecret || headerSecret !== VERIFY_SECRET) {
+        return res.status(401).json({ ok: false, error: 'invalid-secret' });
+      }
+    }
+
+    const { robloxId, code } = req.body ?? {};
+    if (!robloxId || !code) {
+      return res.status(400).json({ ok: false, error: "missing-robloxId-or-code" });
+    }
+
+    const entry = codesByCode.get(String(code));
+    if (!entry) {
+      return res.status(400).json({ ok: false, error: 'invalid-or-expired-code' });
+    }
+
+    // Check expiry
+    if (entry.expiresAt <= Date.now()) {
+      // cleanup
+      codesByCode.delete(String(code));
+      codeByDiscord.delete(entry.discordId);
+      return res.status(400).json({ ok: false, error: 'invalid-or-expired-code' });
+    }
+
+    const discordId = entry.discordId;
+
+    // We now link this discordId <-> robloxId in DB.
+    // Handle unique constraints: other documents might already have this discordId set.
+    // 1) Find existing doc for robloxId
+    let robloxDoc = await users.findOne({ robloxId }).exec();
+
+    // 2) If another doc has this discordId but different robloxId, unset it
+    const conflictingDoc = await users.findOne({ discordId }).exec();
+    if (conflictingDoc && (!robloxDoc || conflictingDoc.robloxId !== robloxDoc.robloxId)) {
+      // remove discordId from conflicting doc (unlink previous mapping)
+      conflictingDoc.discordId = undefined;
+      await conflictingDoc.save();
+    }
+
+    if (robloxDoc) {
+      // update discordId
+      robloxDoc.discordId = discordId;
+      await robloxDoc.save();
+    } else {
+      // create new document
+      robloxDoc = new users({
+        robloxId,
+        discordId,
+        xp: 0,
+      });
+      await robloxDoc.save();
+    }
+
+    // mark code used: remove from maps
+    codesByCode.delete(String(code));
+    codeByDiscord.delete(discordId);
+
+    // Notify the Discord user by DM (best-effort)
+    (async () => {
+      try {
+        const user = await client.users.fetch(discordId);
+        await user.send(`✅ Your Discord account has been linked to Roblox ID **${robloxId}**!\n\nRoblox account info:\n• Roblox ID: ${robloxId}\n• XP: ${robloxDoc.xp ?? 0}`);
+      } catch (dmErr) {
+        console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
+      }
+    })();
+
+    // Respond to the Roblox game that verify succeeded
+    return res.json({
+      ok: true,
+      robloxId,
+      discordId,
+      message: 'linked',
+    });
+
+  } catch (err) {
+    console.error("POST /verify error:", err);
+    return res.status(500).json({ ok: false, error: 'server-error' });
+  }
+});
+
+// === OPTIONAL: Helper endpoint to check status (debug only) ===
+// (Remove or protect in production)
+app.get('/_verify_status/:discordId', (req, res) => {
+  const discordId = req.params.discordId;
+  const code = codeByDiscord.get(discordId);
+  if (!code) return res.json({ ok: true, active: false });
+  const entry = codesByCode.get(code);
+  if (!entry) return res.json({ ok: true, active: false });
+  return res.json({ ok: true, active: true, code, expiresAt: entry.expiresAt });
+});
+
+// health check
+app.get('/', (req, res) => res.json({ ok: true }));

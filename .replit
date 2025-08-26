@@ -1,4 +1,4 @@
-modules = ["c-clang14", "cpp-clang14", "python-3.12", "nodejs-16"]
+modules = ["c-clang14", "cpp-clang14", "nodejs-16", "python-3.12"]
 run = "npm run start"
 
 [nix]
@@ -6,3 +6,11 @@ channel = "stable-25_05"
 
 [deployment]
 run = ["sh", "-c", "npm run start"]
+
+[[ports]]
+localPort = 3000
+externalPort = 3000
+
+[[ports]]
+localPort = 45987
+externalPort = 80

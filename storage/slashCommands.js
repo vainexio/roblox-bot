@@ -13,9 +13,21 @@ ATTACHMENT - 11
 */
 
 module.exports = {
-  register: false,
+  register: true,
   deleteSlashes: [],
   slashes: [
+    {
+      "name": "connect",
+      "type": 1,
+      "description": "Connect your roblox account",
+      "options": []
+    },
+    {
+      "name": "disconnect",
+      "type": 1,
+      "description": "Disconnect your roblox account",
+      "options": []
+    },
     {
       "name": "xp",
       "type": 1,
