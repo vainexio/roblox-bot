@@ -157,11 +157,11 @@ module.exports = {
   },
   permissions: [
     {
-      id: "",
-      level: 4,
+      id: "1398914377716990063",
+      level: 3,
     },
     {
-      id: "",
+      id: "1299670414162919454",
       level: 4,
     },
     {
