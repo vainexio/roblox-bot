@@ -86,6 +86,5 @@ module.exports = {
         { name: 'group', type: 3, description: 'Group name', choices: groups, required: true },
       ]
     },*/
-    
   ],
 };

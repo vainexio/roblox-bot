@@ -1,10 +1,8 @@
 // Project
 const express = require("express");
-const https = require("https");
 const app = express();
 const fetch = require("node-fetch");
 const mongoose = require("mongoose");
-const moment = require("moment");
 const cc = 'KJ0UUFNHWBJSE-WE4GFT-W4VG'
 // Discord
 const Discord = require("discord.js");
@@ -62,7 +60,7 @@ client.on("ready", async () => {
     xp: Number,
   })
 
-  users = mongoose.model("PN_Users", usersSchema);
+  users = mongoose.model("PN_Users1", usersSchema);
 
   if (slashCmd.register) {
     let discordUrl = "https://discord.com/api/v10/applications/" + client.user.id + "/commands"
@@ -91,7 +89,6 @@ client.on("ready", async () => {
     }
   }
 
-  //await handler.changeUserRank({groupId: "35042233", userId: "565644761", roleId: "191296077"})
   console.log("Successfully logged in to discord bot.");
   client.user.setPresence(config.bot.status);
 });
@@ -231,7 +228,7 @@ client.on("interactionCreate", async (inter) => {
       const groupId = group.groupId;
 
       // initial reply while processing
-      await inter.reply({ content: "-# "+emojis.loading + " Processing" });
+      await inter.reply({ content: "-# "+emojis.loading });
 
       // parse usernames (comma separated)
       const usernames = username.value
