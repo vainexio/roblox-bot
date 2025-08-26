@@ -522,7 +522,7 @@ app.post('/verify', async (req, res) => {
       }
     }
 
-    const { robloxId, code } = req.body ?? {};
+    const { robloxId, code, robloxUsername } = req.body ?? {};
     if (!robloxId || !code) {
       return res.status(400).json({ ok: false, error: "missing-robloxId-or-code" });
     }
@@ -577,7 +577,7 @@ app.post('/verify', async (req, res) => {
     (async () => {
       try {
         const user = await client.users.fetch(discordId);
-        const robloxUser = await handler.getUser(robloxId);
+        const robloxUser = await handler.getUser(robloxUsername);
         await user.send(`${emojis.check} Your Discord account has been linked to **${robloxUser.displayName} (@${robloxUser.name})**!`);
       } catch (dmErr) {
         console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
