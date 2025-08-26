@@ -64,7 +64,7 @@ module.exports = {
       "options": [
         {
           "name": "discord_user",
-          "type": 3,
+          "type": 6,
           "description": "Discord username",
           "required": false
         },

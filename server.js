@@ -401,7 +401,7 @@ client.on("interactionCreate", async (inter) => {
           if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
         } else if (discord_user) {
           // Look up DB by Discord user
-          const dbUser = await users.findOne({ discordId: discord_user.value });
+          const dbUser = await users.findOne({ discordId: discord_user.user.id });
           if (!dbUser) {
             return inter.editReply({
               content: emojis.warning + " This Discord account is not linked to any Roblox account."
