@@ -292,12 +292,12 @@ client.on("interactionCreate", async (inter) => {
             continue;
           }
           let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
-
+          let emojiState = type.value == "Add" ? emojis.green : emojis.red
           // Build embed
           const embed = new MessageEmbed()
             .setThumbnail(thumbnail)
-            .setColor(type.value.toLowerCase() === "add" ? colors.green : colors.red) // visual cue
-            .setDescription(`${emojis.check} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
+            .setColor(type.value === "Add" ? colors.green : colors.red) // visual cue
+            .setDescription(`${emojiState} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
             .setFooter({ text: "User ID: "+user.id })
             .addFields(
               { name: "Current Rank", value: userRole.name || "Unknown" },

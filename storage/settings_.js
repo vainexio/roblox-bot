@@ -176,13 +176,14 @@ module.exports = {
   colors: colors,
   theme: colors.none,
   emojis: {
-    check: '<a:CHECK:1138778694983356450>',
-    x: '<a:Xmark:1138778760628424735>',
-    loading: '<a:Loading:1138778730785943614>',
+    check: '<a:check:969936488739512340>',
+    x: '<a:Xmark:969401924736651284>',
+    loading: '<a:loading:968743431528669210>',
     warning: '<:S_warning:1108743925012902049>',
-    nboost: '<:boost:1248993578181726269>',
-    nclasic: '<a:classic:1248921754097815572>',
-    nbasic: '<:basic:1248921754097815572>'
+    on: '<:on:1107664866484953178>',
+    off: ':off:1107664839372964010>',
+    green: '<:online_:1004014930959286342>',
+    red: '<:dnd_:1004017480613773422>',
   },
   commands: [
     //
