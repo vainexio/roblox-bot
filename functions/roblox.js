@@ -56,23 +56,40 @@ module.exports = {
       thumbnail = !thumbnail.errors ? thumbnail.data[0].imageUrl : '';
       return thumbnail;
     },
-    getUser: async function(username) {
-      if (userCache[username.toLowerCase()]) {
-        console.log('User cache hit:', username.toLowerCase())
-        return userCache[username.toLowerCase()];
+    getUser: async function(usernameOrId) {
+      // If it's already cached by string key, return
+      if (userCache[usernameOrId.toLowerCase?.() || usernameOrId]) {
+        console.log('User cache hit:', usernameOrId.toLowerCase?.() || usernameOrId);
+        return userCache[usernameOrId.toLowerCase?.() || usernameOrId];
       }
-      let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
-        method: 'POST',
-        body: JSON.stringify({ usernames: [username], excludeBannedUsers: false }),
-        headers: { 'Content-Type': 'application/json' }
-      });
 
-      if (userResponse.status !== 200) return { error: userResponse.status + ": " + userResponse.statusText }
+      let user;
+      if (/^\d+$/.test(usernameOrId)) {
+        // Treat as Roblox ID
+        let userResponse = await fetch(`https://users.roblox.com/v1/users/${usernameOrId}`);
+        if (!userResponse.ok) {
+          return { error: userResponse.status + ": " + userResponse.statusText };
+        }
+        user = await userResponse.json();
+      } else {
+        // Treat as Roblox username
+        let userResponse = await fetch('https://users.roblox.com/v1/usernames/users', {
+          method: 'POST',
+          body: JSON.stringify({ usernames: [usernameOrId], excludeBannedUsers: false }),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        if (!userResponse.ok) {
+          return { error: userResponse.status + ": " + userResponse.statusText };
+        }
+        user = (await userResponse.json()).data[0];
+      }
 
-      let user = (await userResponse.json()).data[0];
       if (!user) return { error: "This roblox account doesn't exist!" }
       console.log('Designated user:', user);
-      userCache[username.toLowerCase()] = user
+
+      // Cache by lowercase username if it exists, otherwise by ID
+      const cacheKey = user.name?.toLowerCase() || String(user.id);
+      userCache[cacheKey] = user;
 
       return user;
     },

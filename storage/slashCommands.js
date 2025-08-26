@@ -44,9 +44,9 @@ module.exports = {
           ]
         },
         {
-          "name": "username",
+          "name": "usernames",
           "type": 3,
-          "description": "Roblox username",
+          "description": "Roblox usernames. Separate each name by comma (player1, player2)",
           "required": true
         },
         {
@@ -63,10 +63,16 @@ module.exports = {
       "description": "View user XP",
       "options": [
         {
-          "name": "username",
+          "name": "discord_user",
+          "type": 3,
+          "description": "Discord username",
+          "required": false
+        },
+        {
+          "name": "roblox_user",
           "type": 3,
           "description": "Roblox username",
-          "required": true
+          "required": false
         },
       ]
     },

@@ -263,7 +263,7 @@ client.on("interactionCreate", async (inter) => {
 
       const options = inter.options._hoistedOptions;
       const type = options.find(a => a.name === 'type');
-      const username = options.find(a => a.name === 'username');
+      const username = options.find(a => a.name === 'usernames');
       const amount = options.find(a => a.name === 'amount');
       const group = config.groups[0];
       const groupId = group.groupId;
@@ -377,55 +377,84 @@ client.on("interactionCreate", async (inter) => {
       // final edit to the original reply
       await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
     }
-    else if (cname === 'viewxp') {
+      else if (cname === 'viewxp') {
+        const options = inter.options._hoistedOptions;
+        const discord_user = options.find(a => a.name === 'discord_user');
+        const roblox_user = options.find(a => a.name === 'roblox_user');
 
-      const options = inter.options._hoistedOptions;
-      const username = options.find(a => a.name === 'username');
-      const group = config.groups[0]
-      const groupId = group.groupId
-      await inter.deferReply();
+        if ((!discord_user && !roblox_user) || (discord_user && roblox_user)) {
+          return inter.reply({
+            content: emojis.warning + " You must provide either a Discord user **or** a Roblox user — not both.",
+            ephemeral: true
+          });
+        }
 
-      let user = await handler.getUser(username.value);
-      if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+        const group = config.groups[0];
+        const groupId = group.groupId;
+        await inter.deferReply();
 
-      // Get existing user document or create default
-      let dbUser = await users.findOne({ robloxId: user.id });
-      if (!dbUser) {
-        dbUser = await users.create({ robloxId: user.id, xp: 0 });
+        let user;
+
+        if (roblox_user) {
+          // Fetch by Roblox username
+          user = await handler.getUser(roblox_user.value);
+          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+        } else if (discord_user) {
+          // Look up DB by Discord user
+          const dbUser = await users.findOne({ discordId: discord_user.value });
+          if (!dbUser) {
+            return inter.editReply({
+              content: emojis.warning + " This Discord account is not linked to any Roblox account."
+            });
+          }
+          // Fetch Roblox user by stored RobloxId
+          user = await handler.getUser(dbUser.robloxId.toString());
+          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+        }
+
+        // Ensure DB record exists
+        let dbUser = await users.findOne({ robloxId: user.id });
+        if (!dbUser) {
+          dbUser = await users.create({ robloxId: user.id, xp: 0 });
+        }
+
+        // Thumbnail + group role
+        let thumbnail = await handler.getUserThumbnail(user.id);
+        let userRole = await handler.getUserRole(groupId, user.id);
+        if (userRole.error) {
+          return inter.editReply({
+            content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group."
+          });
+        }
+
+        let groupRole = group.roles.find(r => r.id === userRole.id);
+        let nextRole = group.roles.find(r => r.rank === groupRole?.rank + 1);
+        let notAttainable = false;
+        if (!nextRole) nextRole = { name: "N/A" };
+        if (!nextRole.requiredXp) notAttainable = true;
+
+        let xpLeft = groupRole.requiredXp - dbUser.xp;
+        if (xpLeft <= 0) xpLeft = 0;
+
+        let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null;
+        let nextRankProgress = notAttainable
+          ? emojis.warning + " Not attainable through XP."
+          : nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP";
+
+        // Build embed
+        let embed = new MessageEmbed()
+          .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
+          .setThumbnail(thumbnail)
+          .setColor(colors.green)
+          .setFooter({ text: "User ID: " + user.id })
+          .addFields(
+            { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
+            { name: "Current Rank", value: userRole.name },
+            { name: "Next Rank", value: nextRankProgress },
+          );
+
+        await inter.editReply({ embeds: [embed] });
       }
-
-      // Get thumbnail and group
-      let thumbnail = await handler.getUserThumbnail(user.id);
-
-      let userRole = await handler.getUserRole(groupId, user.id);
-      if (userRole.error) return inter.editReply({ content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group." })
-      let groupRole = group.roles.find(r => r.id === userRole.id);
-      let nextRole = group.roles.find(r => r.rank === groupRole?.rank + 1);
-      let notAttainable = false
-      if (!nextRole) nextRole = { name: "N/A" }
-      if (!nextRole.requiredXp) notAttainable = true
-      let xpLeft = groupRole.requiredXp - dbUser.xp
-      xpLeft <= 0 ? xpLeft = 0 : null
-
-      let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null
-      let nextRankProgress = notAttainable ?
-        emojis.warning + " Not attainable through XP."
-        : nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP"
-      // Build embed
-      let embed = new MessageEmbed()
-        .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
-        .setThumbnail(thumbnail)
-        .setColor(colors.green)
-        .setFooter({ text: "User ID: " + user.id })
-        .addFields(
-          { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
-          { name: "Current Rank", value: userRole.name },
-          { name: "Next Rank", value: nextRankProgress },
-        )
-
-      // Send response
-      await inter.editReply({ embeds: [embed] });
-    }
     else if (cname === 'connect') {
       try {
         const discordId = inter.user.id;
