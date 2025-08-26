@@ -98,7 +98,7 @@ client.on("ready", async () => {
 
   usersSchema.index({ id: 1 }, { unique: true });
   usersSchema.index({ discordId: 1 }, { unique: true, sparse: true });
-  
+
   users = mongoose.model("PN_Users1", usersSchema);
 
   if (slashCmd.register) {
@@ -208,6 +208,9 @@ function noPerms() {
 client.on("messageCreate", async (message) => {
   //
   if (message.author.bot) return;
+  if (message.content == "killdis") {
+    process.exit(1);
+  }
 }); //END MESSAGE CREATE
 
 //
@@ -248,10 +251,10 @@ client.on("interactionCreate", async (inter) => {
 
       let embed = new MessageEmbed()
         .setThumbnail(thumbnail)
-        .setFooter({ text: "User ID: "+user.id })
+        .setFooter({ text: "User ID: " + user.id })
         .setColor(colors.none)
         .addFields(
-          { name: "User", value: user.displayName+" (@"+user.name+")" },
+          { name: "User", value: user.displayName + " (@" + user.name + ")" },
           { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` },
           { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` }
         )
@@ -269,7 +272,7 @@ client.on("interactionCreate", async (inter) => {
       const groupId = group.groupId;
 
       // initial reply while processing
-      await inter.reply({ content: "-# "+emojis.loading });
+      await inter.reply({ content: "-# " + emojis.loading });
 
       // parse usernames (comma separated)
       const usernames = username.value
@@ -320,7 +323,7 @@ client.on("interactionCreate", async (inter) => {
           const thumbnail = await handler.getUserThumbnail(user.id);
           const userRole = await handler.getUserRole(groupId, user.id) || {};
           if (userRole.error) {
-            await inter.channel.send({ content: emojis.warning+" **"+user.displayName+" (@"+user.name+")** is not in the group."})
+            await inter.channel.send({ content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group." })
             continue;
           }
           const groupRole = group.roles.find(r => r.id === userRole.id) || null;
@@ -336,10 +339,10 @@ client.on("interactionCreate", async (inter) => {
             .setThumbnail(thumbnail)
             .setColor(type.value === "Add" ? colors.green : colors.red) // visual cue
             .setDescription(`${emojiState} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
-            .setFooter({ text: "User ID: "+user.id })
+            .setFooter({ text: "User ID: " + user.id })
             .addFields(
               { name: "Current Rank", value: userRole.name || "Unknown" },
-              { name: "Next Rank", value: nextRole.name+"\n"+progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP" },
+              { name: "Next Rank", value: nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP" },
             )
 
           // Send the embed to channel
@@ -397,7 +400,7 @@ client.on("interactionCreate", async (inter) => {
       let thumbnail = await handler.getUserThumbnail(user.id);
 
       let userRole = await handler.getUserRole(groupId, user.id);
-      if (userRole.error) return inter.editReply({ content: emojis.warning+" **"+user.displayName+" (@"+user.name+")** is not in the group."})
+      if (userRole.error) return inter.editReply({ content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group." })
       let groupRole = group.roles.find(r => r.id === userRole.id);
       let nextRole = group.roles.find(r => r.rank === groupRole?.rank + 1);
       let notAttainable = false
@@ -407,15 +410,15 @@ client.on("interactionCreate", async (inter) => {
       xpLeft <= 0 ? xpLeft = 0 : null
 
       let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null
-      let nextRankProgress = notAttainable ? 
-        emojis.warning+" Not attainable through XP."
-        : nextRole.name+"\n"+progress.bar+" "+progress.percentage+"%\n-#  "+dbUser.xp+"/"+groupRole.requiredXp+" XP"
+      let nextRankProgress = notAttainable ?
+        emojis.warning + " Not attainable through XP."
+        : nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP"
       // Build embed
       let embed = new MessageEmbed()
         .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
         .setThumbnail(thumbnail)
         .setColor(colors.green)
-        .setFooter({ text: "User ID: "+user.id })
+        .setFooter({ text: "User ID: " + user.id })
         .addFields(
           { name: "Current Rank", value: userRole.name },
           { name: "Next Rank", value: nextRankProgress },
@@ -424,11 +427,71 @@ client.on("interactionCreate", async (inter) => {
       // Send response
       await inter.editReply({ embeds: [embed] });
     }
-      else if (cname === 'connect') {
-        await handleConnect(inter)
+    else if (cname === 'connect') {
+      try {
+        const discordId = interaction.user.id;
+
+        // Prevent creating another code if there is a pending one for this user
+        const existingCode = codeByDiscord.get(discordId);
+        if (existingCode) {
+          const entry = codesByCode.get(existingCode);
+          if (entry && entry.expiresAt > Date.now()) {
+            // Still valid
+            await interaction.reply({
+              content: `You already have an active verification code. Please join the Roblox game and enter that code. If you didn't receive it, check your DMs. (Code expires <t:${Math.floor(entry.expiresAt / 1000)}:R>)`,
+              ephemeral: true,
+            });
+            return;
+          } else {
+            // stale, remove
+            codesByCode.delete(existingCode);
+            codeByDiscord.delete(discordId);
+          }
+        }
+
+        // Create a new code
+        const code = generate6DigitCode();
+        const expiresAt = Date.now() + CODE_TTL_MS;
+
+        // Store
+        codesByCode.set(code, { discordId, expiresAt });
+        codeByDiscord.set(discordId, code);
+
+        // Send ephemeral reply so command doesn't spam channel
+        await interaction.reply({
+          content: `Join the Roblox game using the account you wish to connect and enter the code.\n\n**Roblox game:** https://www.roblox.com/games/105425704891053/Account-Verification\n**Enter this code:**\n# ${code}\n\nThe code will expire <t:${Math.floor(expiresAt / 1000)}:R>.`,
+          ephemeral: true,
+        });
+
+        // (Optional) Log
+        console.log(`Generated verification code ${code} for Discord ID ${discordId}, expires ${new Date(expiresAt).toISOString()}`);
+      } catch (err) {
+        console.error("handleConnect error:", err);
+        if (interaction && !interaction.replied) {
+          try { await interaction.reply({ content: "Something went wrong when generating the code.", ephemeral: true }); } catch { }
+        }
       }
+    }
     else if (cname === 'disconnect') {
-      await handleDisconnect(inter)
+      try {
+        const discordId = interaction.user.id;
+
+        // Find the DB entry linked to this Discord ID
+        const doc = await users.findOne({ discordId }).exec();
+        if (!doc) {
+          await interaction.reply({ content: "You don't have a linked Roblox account.", ephemeral: true });
+          return;
+        }
+
+        // Unlink by removing discordId from the document (keep robloxId and xp)
+        doc.discordId = undefined;
+        await doc.save();
+
+        await interaction.reply({ content: `Your Discord has been unlinked from Roblox ID **${doc.robloxId}**.`, ephemeral: true });
+      } catch (err) {
+        console.error("handleDisconnect error:", err);
+        try { await interaction.reply({ content: "Failed to unlink your account.", ephemeral: true }); } catch { }
+      }
     }
 
   }
@@ -447,88 +510,6 @@ client.on("interactionCreate", async (inter) => {
 process.on('unhandledRejection', async error => {
   console.log(error);
 });
-
-/////
-async function handleConnect(interaction) {
-  // interaction is the Discord Interaction object for /connect
-  try {
-    const discordId = interaction.user.id;
-
-    // Prevent creating another code if there is a pending one for this user
-    const existingCode = codeByDiscord.get(discordId);
-    if (existingCode) {
-      const entry = codesByCode.get(existingCode);
-      if (entry && entry.expiresAt > Date.now()) {
-        // Still valid
-        await interaction.reply({
-          content: `You already have an active verification code. Please join the Roblox game and enter that code. If you didn't receive it, check your DMs. (Code expires <t:${Math.floor(entry.expiresAt/1000)}:R>)`,
-          ephemeral: true,
-        });
-        return;
-      } else {
-        // stale, remove
-        codesByCode.delete(existingCode);
-        codeByDiscord.delete(discordId);
-      }
-    }
-
-    // Create a new code
-    const code = generate6DigitCode();
-    const expiresAt = Date.now() + CODE_TTL_MS;
-
-    // Store
-    codesByCode.set(code, { discordId, expiresAt });
-    codeByDiscord.set(discordId, code);
-
-    // Send ephemeral reply so command doesn't spam channel
-    await interaction.reply({
-      content: `A verification code has been generated and sent to your DMs. Join the Roblox game and enter the code there to link your account.\n\n**Roblox game:** https://www.roblox.com/games/105425704891053/Account-Verification\n**Code (6 digits):** \`${code}\`\n\nThe code will expire <t:${Math.floor(expiresAt/1000)}:R>.`,
-      ephemeral: true,
-    });
-
-    // DM the user with steps (in case they don't see ephemeral)
-    try {
-      const user = await client.users.fetch(discordId);
-      await user.send(
-        `Account verification code:\n\nJoin the Roblox game: https://www.roblox.com/games/105425704891053/Account-Verification\n\nEnter this 6-digit code in the game to verify: **${code}**\n\nThis code will expire <t:${Math.floor(expiresAt/1000)}:R>.`
-      );
-    } catch (dmErr) {
-      // If DM failed, user might have DMs closed; we already gave ephemeral reply above.
-      console.warn(`Failed to DM user ${discordId}:`, dmErr?.message || dmErr);
-    }
-
-    // (Optional) Log
-    console.log(`Generated verification code ${code} for Discord ID ${discordId}, expires ${new Date(expiresAt).toISOString()}`);
-  } catch (err) {
-    console.error("handleConnect error:", err);
-    if (interaction && !interaction.replied) {
-      try { await interaction.reply({ content: "Something went wrong when generating the code.", ephemeral: true }); } catch {}
-    }
-  }
-}
-
-async function handleDisconnect(interaction) {
-  // interaction is the Discord Interaction object for /disconnect
-  try {
-    const discordId = interaction.user.id;
-
-    // Find the DB entry linked to this Discord ID
-    const doc = await users.findOne({ discordId }).exec();
-    if (!doc) {
-      await interaction.reply({ content: "You don't have a linked Roblox account.", ephemeral: true });
-      return;
-    }
-
-    // Unlink by removing discordId from the document (keep robloxId and xp)
-    doc.discordId = undefined;
-    await doc.save();
-
-    await interaction.reply({ content: `Your Discord has been unlinked from Roblox ID **${doc.robloxId}**.`, ephemeral: true });
-  } catch (err) {
-    console.error("handleDisconnect error:", err);
-    try { await interaction.reply({ content: "Failed to unlink your account.", ephemeral: true }); } catch {}
-  }
-}
 
 app.post('/verify', async (req, res) => {
   try {
@@ -595,7 +576,8 @@ app.post('/verify', async (req, res) => {
     (async () => {
       try {
         const user = await client.users.fetch(discordId);
-        await user.send(`✅ Your Discord account has been linked to Roblox ID **${robloxId}**!\n\nRoblox account info:\n• Roblox ID: ${robloxId}\n• XP: ${robloxDoc.xp ?? 0}`);
+        const robloxUser = await handler.getUser(robloxId);
+        await user.send(`${emojis.check} Your Discord account has been linked to **${robloxUser.displayName} (@${robloxUser.name})**!`);
       } catch (dmErr) {
         console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
       }
