@@ -251,10 +251,7 @@ client.on("interactionCreate", async (inter) => {
         try {
           // fetch user
           user = await handler.getUser(uname);
-          if (user.error) {
-            await inter.channel.send({ content: emojis.warning + ` Could not fetch **${user.name}**:\n\`\`\`diff\n- ${user.error}\n\`\`\`` });
-            continue;
-          }
+          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
 
           // get or create DB user
           let dbUser = await users.findOne({ id: user.id });
@@ -323,7 +320,7 @@ client.on("interactionCreate", async (inter) => {
                 await dbUser.save();
               }
             } catch (err) {
-              await inter.channel.send({ content: emojis.warning + ` Failed to promote **${user.name}**: ${err.message}` });
+              await inter.channel.send({ content: emojis.warning + ` Failed to promote **${uname}**: ${err.message}` });
             }
           }
 
