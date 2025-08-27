@@ -381,6 +381,7 @@ client.on("interactionCreate", async (inter) => {
 
       let processedCount = 0;
       let promotedUsers = "";
+      let promotionCount = 0;
 
       for (const unameRaw of usernames) {
         const uname = String(unameRaw).trim();
@@ -499,7 +500,8 @@ client.on("interactionCreate", async (inter) => {
                 // announce promotion
                 let promotedText = `**@${user.name}** was promoted to **${nextRole.name}**!`
                 await inter.channel.send({ content: emojis.check +""+ promotedText });
-                promotedUsers += "@"+user.name+" -> "+nextRole.name+"\n"
+                promotionCount += 1
+                promotedUsers += promotionCount+". **@"+user.name+"** -> "+nextRole.name+"\n"
 
                 // reset xp after promotion
                 dbUser.xp = 0;
@@ -530,8 +532,8 @@ client.on("interactionCreate", async (inter) => {
       .addFields(
         {name: "Target Users", value: usernameOption.value },
         {name: "Promoted Users", value: promotedUsers.length > 0 ? promotedUsers : "None"},
-        {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP", inline: true },
-        {name: "Processed Users", value: `${processedCount}/${usernames.length} users`, inline: true},
+        {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP" },
+        {name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
       )
       await logs.send({ embeds: [embed] });
     }
