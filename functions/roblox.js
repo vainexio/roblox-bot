@@ -1,5 +1,5 @@
 const settings = require('../storage/settings_.js')
-const { prefix, colors, theme, commands, permissions, emojis, } = settings
+const { prefix, colors, theme, commands, permissions, emojis } = settings
 const others = require('../functions/others.js')
 //Functions
 const get = require('../functions/get.js')
@@ -14,7 +14,6 @@ async function refreshToken(cookie) {
       "Cookie": cookie
     }
   });
-
 
   if (response.status === 403) {
     csrfToken = response.headers.get('x-csrf-token')
