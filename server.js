@@ -611,6 +611,7 @@ app.post('/verify', async (req, res) => {
           if (!userRole.error) {
           let groupRole = group.roles.find(r => r.id === userRole.id);
             member.setNickname(groupRole.prefix+" "+robloxUser.name)
+            addRoles(member,groupRole.roles,guildData)
           }
         }
         let embed = new MessageEmbed()
