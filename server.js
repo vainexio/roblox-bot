@@ -1056,7 +1056,7 @@ app.post('/verify', async (req, res) => {
             let groupRole = group.roles.find(r => r.id === userRole.id);
             member.setNickname(groupRole.prefix + " " + robloxUser.name)
             
-            const result = await updateUserRolesToCurrent(String(robloxUser.id), guild, { discordId: user.id });
+            const result = await updateUserRolesToCurrent(String(robloxUser.id), guildData, { discordId: user.id });
             // Build embed from result
             const thumbnail = await handler.getUserThumbnail(robloxUser.id);
 
