@@ -603,13 +603,14 @@ app.post('/verify', async (req, res) => {
         const user = await client.users.fetch(discordId);
         const robloxUser = await handler.getUser(robloxUsername);
         const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+        const group = config.groups[0]
         
         const member = await getMember(user.id,guildData)
         if (member) {
-          let userRole = await handler.getUserRole(config.groups[0].groupId, robloxUser.id);
+          let userRole = await handler.getUserRole(group.groupId, robloxUser.id);
           if (!userRole.error) {
           let groupRole = group.roles.find(r => r.id === userRole.id);
-          await member.setNickname(groupRole.prefix+" "+robloxUser.name)
+            member.setNickname(groupRole.prefix+" "+robloxUser.name)
           }
         }
         let embed = new MessageEmbed()
