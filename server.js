@@ -604,7 +604,7 @@ app.post('/verify', async (req, res) => {
         const thumbnail = await handler.getUserThumbnail(robloxUser.id);
 
         let embed = new MessageEmbed()
-        .setTitle({ name: robloxUser.displayName + ' (@' + robloxUser.name + ')' })
+        .setTitle(robloxUser.displayName + ' (@' + robloxUser.name + ')')
         .setDescription(emojis.on+" Your account has been linked to this roblox account.")
         .setFooter({ text: "User ID: " + robloxUser.id })
         .setThumbnail(thumbnail)
