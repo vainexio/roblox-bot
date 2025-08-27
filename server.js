@@ -606,7 +606,7 @@ app.post('/verify', async (req, res) => {
         
         const member = await getMember(user.id,guildData)
         if (member) {
-          let userRole = await handler.getUserRole(groupId, user.id);
+          let userRole = await handler.getUserRole(config.groups[0].groupId, user.id);
           if (!userRole.error) {
           let groupRole = group.roles.find(r => r.id === userRole.id);
           await member.setNickname(groupRole.prefix+" "+robloxUser.name)
