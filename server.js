@@ -780,7 +780,7 @@ client.on("interactionCreate", async (inter) => {
 
         // Send ephemeral reply so command doesn't spam channel
         await inter.editReply({
-          content: `Join the Roblox game using the account you wish to connect and enter the code.\n\n**Roblox game:** https://www.roblox.com/games/105425704891053/Account-Verification\n**Enter this code:**\n# ${code}\n\nThe code will expire <t:${Math.floor(expiresAt / 1000)}:R>.`,
+          content: `Join the Roblox game using the account you wish to connect and enter the code.\n\n**Roblox game:** https://www.roblox.com/games/139036933077247/VERIFICATION\n**Enter this code:**\n# ${code}\n\nThe code will expire <t:${Math.floor(expiresAt / 1000)}:R>.`,
           ephemeral: true,
         });
 
