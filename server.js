@@ -380,7 +380,7 @@ client.on("interactionCreate", async (inter) => {
       // final edit to the original reply
       await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
     }
-      else if (cname === 'viewxp') {
+    else if (cname === 'viewxp') {
         const options = inter.options._hoistedOptions;
         const discord_user = options.find(a => a.name === 'discord_user');
         const roblox_user = options.find(a => a.name === 'roblox_user');
@@ -407,7 +407,7 @@ client.on("interactionCreate", async (inter) => {
           const dbUser = await users.findOne({ discordId: discord_user.user.id });
           if (!dbUser) {
             return inter.editReply({
-              content: emojis.warning + " This Discord account is not linked to any Roblox account."
+              content: emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account."
             });
           }
           // Fetch Roblox user by stored RobloxId
@@ -546,7 +546,6 @@ process.on('unhandledRejection', async error => {
 app.post('/verify', async (req, res) => {
   if (stopFlow) return;
   try {
-    // Optional: shared secret check
     if (VERIFY_SECRET) {
       const headerSecret = req.get('X-VERIFY-SECRET') || req.get('x-verify-secret');
       if (!headerSecret || headerSecret !== VERIFY_SECRET) {
@@ -573,10 +572,6 @@ app.post('/verify', async (req, res) => {
     }
 
     const discordId = entry.discordId;
-
-    // We now link this discordId <-> robloxId in DB.
-    // Handle unique constraints: other documents might already have this discordId set.
-    // 1) Find existing doc for robloxId
     let robloxDoc = await users.findOne({ robloxId }).exec();
 
     // 2) If another doc has this discordId but different robloxId, unset it
@@ -588,11 +583,9 @@ app.post('/verify', async (req, res) => {
     }
 
     if (robloxDoc) {
-      // update discordId
       robloxDoc.discordId = discordId;
       await robloxDoc.save();
     } else {
-      // create new document
       robloxDoc = new users({
         robloxId,
         discordId,
@@ -601,16 +594,23 @@ app.post('/verify', async (req, res) => {
       await robloxDoc.save();
     }
 
-    // mark code used: remove from maps
     codesByCode.delete(String(code));
     codeByDiscord.delete(discordId);
 
-    // Notify the Discord user by DM (best-effort)
     (async () => {
       try {
         const user = await client.users.fetch(discordId);
         const robloxUser = await handler.getUser(robloxUsername);
-        await user.send(`${emojis.check} Your Discord account has been linked to **${robloxUser.displayName} (@${robloxUser.name})**!`);
+        const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+
+        let embed = new MessageEmbed()
+        .setTitle({ name: robloxUser.displayName + ' (@' + robloxUser.name + ')' })
+        .setDescription(emojis.on+" Your account has been linked to this roblox account.")
+        .setFooter({ text: "User ID: " + robloxUser.id })
+        .setThumbnail(thumbnail)
+        .setColor(colors.green)
+        
+        await user.send({embeds: [embed]});
       } catch (dmErr) {
         console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
       }
@@ -630,8 +630,6 @@ app.post('/verify', async (req, res) => {
   }
 });
 
-// === OPTIONAL: Helper endpoint to check status (debug only) ===
-// (Remove or protect in production)
 app.get('/_verify_status/:discordId', (req, res) => {
   if (stopFlow) return;
   const discordId = req.params.discordId;
