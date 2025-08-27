@@ -1046,7 +1046,6 @@ app.post('/verify', async (req, res) => {
         const guildData = await getGuild("1287311377274372198")
         const user = await client.users.fetch(discordId);
         const robloxUser = await handler.getUser(robloxUsername);
-        const thumbnail = await handler.getUserThumbnail(robloxUser.id);
         const group = config.groups[0]
 
         const member = await getMember(user.id, guildData)
@@ -1060,9 +1059,6 @@ app.post('/verify', async (req, res) => {
             // Build embed from result
             const thumbnail = await handler.getUserThumbnail(robloxUser.id);
 
-            const added = (result.added && result.added.length > 0) ? result.added.map(r => `<@&${r}>`).join("\n") : "None";
-            const removed = (result.removed && result.removed.length > 0) ? result.removed.map(r => `<@&${r}>`).join("\n") : "None";
-
             const nicknameDisplay = result.nickname ? result.nickname : (robloxDoc && robloxDoc.discordId ? `<@${robloxDoc.discordId}>` : (robloxUser.displayName ?? robloxUser.name ?? "N/A"));
 
             // Build embed
@@ -1073,8 +1069,8 @@ app.post('/verify', async (req, res) => {
               .setFooter({ text: "Roblox ID: " + robloxUser.id })
               .addFields(
                 { name: "Nickname", value: nicknameDisplay },
-                { name: "Added Roles", value: added },
-                { name: "Removed Roles", value: removed }
+                { name: "Added Roles", value: result.added.length },
+                { name: "Removed Roles", value: result.removed.length }
               );
 
             // If there were any errors, append them in a field
@@ -1082,7 +1078,8 @@ app.post('/verify', async (req, res) => {
               embed.addField("Notes", result.errors.join("\n"));
             }
 
-            await user.send({ embeds: [embed] }).catch(err => console.log(err));
+            let logs = await getChannel("1410166975837114378")
+            logs.send({ embeds: [embed] }).catch(err => console.log(err));
           }
         }
 
@@ -1090,7 +1087,6 @@ app.post('/verify', async (req, res) => {
           .setTitle(robloxUser.displayName + ' (@' + robloxUser.name + ')')
           .setDescription(emojis.on + " Your discord has been linked to this roblox account.")
           .setFooter({ text: "User ID: " + robloxUser.id })
-          .setThumbnail(thumbnail)
           .setColor(colors.green)
 
         await user.send({ embeds: [embed] });
