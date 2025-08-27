@@ -266,7 +266,7 @@ module.exports = {
       { "groupId": 32512118, "mainRole": "1302670711856562216", "roles": [] }, // Naval Securitу Force
     ],
     channels: {
-      output: '',
+      logs: '1393519791331082332',
     },
     bot: {
       status: {

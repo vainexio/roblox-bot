@@ -329,7 +329,7 @@ client.on("interactionCreate", async (inter) => {
         const embed = new MessageEmbed()
           .setThumbnail(thumbnail)
           .setFooter({ text: "User ID: " + robloxUser.id })
-          .setColor(colors.none)
+          .setColor(colors.green)
           .addFields(
             { name: "User", value: (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")" },
             { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` },
@@ -337,6 +337,13 @@ client.on("interactionCreate", async (inter) => {
           );
 
         await inter.editReply({ content: emojis.check + ' Rank Updated', embeds: [embed] });
+
+        // Audit logging
+        let logs = await getChannel(config.channels.logs)
+        let logEmbed = new MessageEmbed(embed)
+        .setDescription(inter.user.toString()+" used `/setrank` command.")
+        await logs.send({ embeds: [logEmbed] });
+        
       } catch (err) {
         console.error('setrank handler error:', err);
         return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
@@ -373,6 +380,7 @@ client.on("interactionCreate", async (inter) => {
       const action = String(type?.value || "").toLowerCase(); // expecting "add" or "subtract"
 
       let processedCount = 0;
+      let promotedUsers = "";
 
       for (const unameRaw of usernames) {
         const uname = String(unameRaw).trim();
@@ -489,7 +497,9 @@ client.on("interactionCreate", async (inter) => {
                 await inter.channel.send({ content: emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.statusText + "```" });
               } else {
                 // announce promotion
-                await inter.channel.send({ content: emojis.check + ` **@${user.name}** was promoted to **${nextRole.name}**!` });
+                let promotedText = `**@${user.name}** was promoted to **${nextRole.name}**!`
+                await inter.channel.send({ content: emojis.check +""+ promotedText });
+                promotedUsers += "@"+user.name+" -> "+nextRole.name+"\n"
 
                 // reset xp after promotion
                 dbUser.xp = 0;
@@ -511,6 +521,19 @@ client.on("interactionCreate", async (inter) => {
 
       // final edit to the original reply
       await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
+
+      // Audit logging
+      let logs = await getChannel(config.channels.logs)
+      let embed = new MessageEmbed()
+      .setDescription(inter.user.toString()+" used `/xp` command.")
+      .setColor(colors.green)
+      .addFields(
+        {name: "Target Users", value: usernameOption.value },
+        {name: "Promoted Users", value: promotedUsers.length > 0 ? promotedUsers : "None"},
+        {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP", inline: true },
+        {name: "Processed Users", value: `${processedCount}/${usernames.length} users`, inline: true},
+      )
+      await logs.send({ embeds: [embed] });
     }
     else if (cname === 'viewxp') {
       // Grab the unified "user" option (can be a mention or a Roblox username)
