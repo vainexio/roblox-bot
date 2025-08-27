@@ -530,8 +530,8 @@ client.on("interactionCreate", async (inter) => {
       .setDescription(inter.user.toString()+" used `/xp` command.")
       .setColor(colors.green)
       .addFields(
-        {name: "Target Users", value: usernameOption.value },
-        {name: "Promoted Users", value: promotedUsers.length > 0 ? promotedUsers : "None"},
+        {name: "Target User(s)", value: usernames.join("\n") },
+        {name: "Promoted User(s)", value: promotedUsers.length > 0 ? promotedUsers : "None"},
         {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP" },
         {name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
       )
