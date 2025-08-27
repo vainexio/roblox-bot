@@ -615,7 +615,7 @@ client.on("interactionCreate", async (inter) => {
 
         const group = config.groups[0];
         const groupId = group.groupId;
-
+        const guild = await getGuild("1287311377274372198")
         await inter.deferReply();
 
         const fail = async (msg) => inter.editReply({ content: msg });
@@ -628,7 +628,7 @@ client.on("interactionCreate", async (inter) => {
           let robloxUser;       // { id, name, displayName, ... }
           let dbUserRecord;     // DB user document (PN_Users1)
           let member = null;    // GuildMember (if we can resolve)
-
+          
           if (mentionMatch || rawDiscordIdMatch) {
             // Resolve Discord user object using your existing getUser (you said it exists)
             const discordIdentifier = mentionMatch ? mentionMatch[0] : rawDiscordIdMatch[1];
@@ -649,7 +649,7 @@ client.on("interactionCreate", async (inter) => {
 
             // Resolve guild member from stored discordId (if possible)
             try {
-              member = await getMember(dbUserRecord.discordId, inter.guild);
+              member = await getMember(dbUserRecord.discordId, guild);
             } catch (e) {
               console.warn('getMember failed:', e);
             }
@@ -667,7 +667,7 @@ client.on("interactionCreate", async (inter) => {
             // Try to resolve guild member if discordId exists in DB
             if (dbUserRecord.discordId) {
               try {
-                member = await getMember(dbUserRecord.discordId, inter.guild);
+                member = await getMember(dbUserRecord.discordId, guild);
               } catch (e) {
                 console.warn('getMember failed:', e);
               }
@@ -710,8 +710,8 @@ client.on("interactionCreate", async (inter) => {
 
           // Helper to filter out role IDs that don't exist in the guild (avoid errors)
           const filterExistingRoleIds = (rids) => {
-            if (!inter.guild || !inter.guild.roles || !inter.guild.roles.cache) return rids;
-            return rids.filter(rid => inter.guild.roles.cache.has(rid));
+            if (!guild || !guild.roles || !guild.roles.cache) return rids;
+            return rids.filter(rid => guild.roles.cache.has(rid));
           };
 
           if (member) {
@@ -742,7 +742,7 @@ client.on("interactionCreate", async (inter) => {
             // Add roles the member doesn't have yet (if any)
             if (rolesToActuallyAdd.length > 0) {
               try {
-                await addRole(member, rolesToActuallyAdd, inter.guild);
+                await addRole(member, rolesToActuallyAdd, guild);
                 addedRolesDisplay = rolesToActuallyAdd.map(r => `<@&${r}>`).join("\n");
               } catch (addErr) {
                 console.warn("addRole failed:", addErr);
