@@ -1069,8 +1069,8 @@ app.post('/verify', async (req, res) => {
               .setFooter({ text: "Roblox ID: " + robloxUser.id })
               .addFields(
                 { name: "Nickname", value: nicknameDisplay },
-                { name: "Added Roles", value: result.added.length },
-                { name: "Removed Roles", value: result.removed.length }
+                { name: "Added Roles", value: result.added.length.toString() },
+                { name: "Removed Roles", value: result.removed.length.toString() }
               );
 
             // If there were any errors, append them in a field
@@ -1078,8 +1078,7 @@ app.post('/verify', async (req, res) => {
               embed.addField("Notes", result.errors.join("\n"));
             }
 
-            let logs = await getChannel("1410166975837114378")
-            logs.send({ embeds: [embed] }).catch(err => console.log(err));
+            await user.send({ embeds: [embed] }).catch(err => console.log(err));
           }
         }
 
