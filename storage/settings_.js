@@ -26,6 +26,7 @@ module.exports = {
             "prefix": "[BSC]",
             "rank": 1,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 190704122,
@@ -33,6 +34,7 @@ module.exports = {
             "prefix": "[E1]",
             "rank": 2,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 191296077,
@@ -40,6 +42,7 @@ module.exports = {
             "prefix": "[E2]",
             "rank": 3,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 190754080,
@@ -47,6 +50,7 @@ module.exports = {
             "prefix": "[E3]",
             "rank": 4,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 191380127,
@@ -54,6 +58,7 @@ module.exports = {
             "prefix": "[E4]",
             "rank": 5,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 190356134,
@@ -61,6 +66,7 @@ module.exports = {
             "prefix": "[E5]",
             "rank": 6,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 191136109,
@@ -68,96 +74,112 @@ module.exports = {
             "prefix": "[E6]",
             "rank": 7,
             "requiredXp": 100,
+            "roles": [""]
           },
           {
             "id": 190424109,
             "name": "[E7] Chief Petty Officer",
             "prefix": "[E7]",
             "rank": 8,
+            "roles": [""]
           },
           {
             "id": 191272107,
             "name": "[E8] Senior Chief Petty Officer",
             "prefix": "[E8]",
             "rank": 9,
+            "roles": [""]
           },
           {
             "id": 193674056,
             "name": "[E9] Master Chief Petty Officer",
             "prefix": "[E9]",
             "rank": 10,
+            "roles": [""]
           },
           {
             "id": 190646120,
             "name": "[O1] Ensign",
             "prefix": "[O1]",
             "rank": 11,
+            "roles": [""]
           },
           {
             "id": 190352121,
             "name": "[O2] Lieutenant Junior Grade",
             "prefix": "[O2]",
             "rank": 12,
+            "roles": [""]
           },
           {
             "id": 190548111,
             "name": "[O3] Lieutenant",
             "prefix": "[O3]",
             "rank": 13,
+            "roles": [""]
           },
           {
             "id": 191314119,
             "name": "[O4] Lieutenant Commander",
             "prefix": "[O4]",
             "rank": 14,
+            "roles": [""]
           },
           {
             "id": 190734115,
             "name": "[O5] Commander",
             "prefix": "[O5]",
             "rank": 15,
+            "roles": [""]
           },
           {
             "id": 190564114,
             "name": "[O6] Captain",
             "prefix": "[O6]",
             "rank": 16,
+            "roles": [""]
           },
           {
             "id": 190852107,
             "name": "[O7] Commodore",
             "prefix": "[O7]",
             "rank": 17,
+            "roles": [""]
           },
           {
             "id": 190358142,
             "name": "[O8] Rear Admiral",
             "prefix": "[O8]",
             "rank": 18,
+            "roles": [""]
           },
           {
             "id": 494116083,
             "name": "Chief of Naval Staff",
             "prefix": "[CNS]",
             "rank": 19,
+            "roles": [""]
           },
           {
             "id": 180894075,
             "name": "Command Master Chief of the Navy",
             "prefix": "[CMCPN]",
             "rank": 20,
+            "roles": ["1299670414162919454","1287312708084957285"]
           },
           {
             "id": 180776078,
             "name": "Vice Commander of the Philippine Navy",
             "prefix": "[VCPN]",
             "rank": 21,
+            "roles": ["1299670414162919454","1287312705937477702"]
           },
           {
             "id": 180098078,
             "name": "Flag Officer-in-Command of the Philippine Navy",
             "prefix": "[FOICPN]",
             "rank": 255,
+            "roles": ["1299670414162919454","1287312705799192618"]
           }
         ]
       }
