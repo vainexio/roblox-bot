@@ -13,7 +13,7 @@ ATTACHMENT - 11
 */
 
 module.exports = {
-  register: true,
+  register: false,
   deleteSlashes: [],
   slashes: [
     {
@@ -46,7 +46,7 @@ module.exports = {
         {
           "name": "usernames",
           "type": 3,
-          "description": "Roblox usernames. Separate each name by comma (player1, player2)",
+          "description": "Discord or Roblox usernames. Separate each name by comma (player1, player2, @User1, @User2)",
           "required": true
         },
         {
@@ -58,21 +58,28 @@ module.exports = {
       ]
     },
     {
+      "name": "update",
+      "type": 1,
+      "description": "Update user roles",
+      "options": [
+        {
+          "name": "user",
+          "type": 3,
+          "description": "Discord or Roblox username",
+          "required": false
+        },
+      ]
+    },
+    {
       "name": "viewxp",
       "type": 1,
       "description": "View user XP",
       "options": [
         {
-          "name": "discord_user",
-          "type": 6,
-          "description": "Discord username",
-          "required": false
-        },
-        {
-          "name": "roblox_user",
+          "name": "user",
           "type": 3,
-          "description": "Roblox username",
-          "required": false
+          "description": "Discord or Roblox username",
+          "required": true
         },
       ]
     },
@@ -81,7 +88,7 @@ module.exports = {
       type: 1,
       description: 'Update user rank',
       options: [
-        { name: 'username', type: 3, description: 'Roblox username', required: true },
+        { name: 'user', type: 3, description: 'Discord or Roblox username', required: true },
         { name: 'rank', type: 3, description: 'Rank', required: true },
       ]
     },

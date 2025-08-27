@@ -223,50 +223,114 @@ client.on("interactionCreate", async (inter) => {
       if (!await getPerms(inter.member, 4)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
-      const username = options.find(a => a.name === 'username');
-      const rank = options.find(a => a.name === 'rank');
+      const usernameOpt = options.find(a => a.name === 'user');
+      const rankOpt = options.find(a => a.name === 'rank');
       const group = config.groups[0];
       const groupId = group.groupId;
 
+      if (!usernameOpt || !rankOpt) {
+        return inter.reply({ content: emojis.warning + ' Missing required options.', ephemeral: true });
+      }
+
       await inter.deferReply();
 
-      let user = await handler.getUser(username.value)
-      if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" })
-      let role = await handler.getUserRole(groupId, user.id)
-      if (role.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" })
-      // Get group roles to find the target role
-      let groupRoles = await handler.getGroupRoles(groupId)
-      let targetRole = groupRoles.roles.find(r => r.name.toLowerCase().includes(rank.value.toLowerCase()));
+      // small helper to send failure and stop
+      const fail = async (msg) => inter.editReply({ content: msg });
 
-      if (!targetRole) return inter.editReply({ content: `Rank does not exist: ${rank.value}` });
-      console.log('Target role:', targetRole);
-      // Function to update the rank
-      let updateRank = await handler.changeUserRank({ groupId: groupId, userId: user.id, roleId: targetRole.id })
+      try {
+        const rawInput = String(usernameOpt.value).trim();
 
-      if (updateRank.status !== 200) return inter.editReply({ content: emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.statusText + "```" });
+        // Detect Discord mention <@!id> or raw ID (17-20 digits)
+        const mentionMatch = rawInput.match(/^<@!?(\d+)>$/);
+        const rawDiscordIdMatch = !mentionMatch && rawInput.match(/^(\d{17,20})$/);
 
-      // Get thumbnail and send response
-      let thumbnail = await handler.getUserThumbnail(user.id)
-      //let foundGroup = await handler.getGroup(groupId)
+        let robloxUser; // will hold Roblox user object { id, name, displayName, ... }
+        let dbUserRecord; // DB record for the linked robloxId (if any)
 
-      let embed = new MessageEmbed()
-        .setThumbnail(thumbnail)
-        .setFooter({ text: "User ID: " + user.id })
-        .setColor(colors.none)
-        .addFields(
-          { name: "User", value: user.displayName + " (@" + user.name + ")" },
-          { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` },
-          { name: "Previous Rank", value: `\`\`\`diff\n- ${role.name}\`\`\`` }
-        )
+        if (mentionMatch || rawDiscordIdMatch) {
+          // Resolve Discord user object using your existing getUser
+          const discordIdentifier = mentionMatch ? mentionMatch[0] : rawDiscordIdMatch[1];
+          const discordObj = await getUser(discordIdentifier);
+          if (!discordObj || discordObj.error) {
+            return fail('```diff\n- Failed to resolve the Discord user.```');
+          }
 
-      await inter.editReply({ content: emojis.check + ' Rank Updated', embeds: [embed] });
+          // Find linked robloxId in DB
+          dbUserRecord = await users.findOne({ discordId: String(discordObj.id) }).exec();
+          if (!dbUserRecord) {
+            return fail(emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link the account.");
+          }
+
+          // Get Roblox user by stored robloxId
+          robloxUser = await handler.getUser(String(dbUserRecord.robloxId));
+          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
+        } else {
+          // Treat input as Roblox username or id
+          robloxUser = await handler.getUser(rawInput);
+          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
+
+          // Get or create DB record for this roblox user
+          dbUserRecord = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
+          if (!dbUserRecord) {
+            dbUserRecord = await users.create({ robloxId: String(robloxUser.id), xp: 0 });
+          }
+        }
+
+        // Get the user's current role in the group
+        const currentRoleRes = await handler.getUserRole(groupId, robloxUser.id);
+        if (currentRoleRes.error) {
+          return fail(emojis.warning + " **" + (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")** is not in the group.");
+        }
+
+        const currentRole = currentRoleRes; // expecting { id, name, rank, ... }
+
+        // Fetch group roles and find the target role by name (case-insensitive substring)
+        const groupRolesRes = await handler.getGroupRoles(groupId);
+        if (!groupRolesRes || groupRolesRes.error) {
+          return fail(emojis.warning + " Failed to fetch group roles. Try again later.");
+        }
+
+        const targetRole = (groupRolesRes.roles || []).find(r =>
+          String(r.name).toLowerCase().includes(String(rankOpt.value).toLowerCase())
+        );
+
+        if (!targetRole) {
+          return fail(`Rank does not exist: ${rankOpt.value}`);
+        }
+
+        // Attempt to change rank
+        const updateRank = await handler.changeUserRank({ groupId: groupId, userId: robloxUser.id, roleId: targetRole.id });
+
+        if (!updateRank || updateRank.status !== 200) {
+          const statusText = updateRank?.statusText || (updateRank?.error ?? 'Unknown error');
+          return fail(emojis.warning + " Cannot change rank:\n```diff\n- " + statusText + "```");
+        }
+
+        // Build response embed
+        const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+
+        const embed = new MessageEmbed()
+          .setThumbnail(thumbnail)
+          .setFooter({ text: "User ID: " + robloxUser.id })
+          .setColor(colors.none)
+          .addFields(
+            { name: "User", value: (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")" },
+            { name: "Updated Rank", value: `\`\`\`diff\n+ ${targetRole.name}\`\`\`` },
+            { name: "Previous Rank", value: `\`\`\`diff\n- ${currentRole.name}\`\`\`` }
+          );
+
+        await inter.editReply({ content: emojis.check + ' Rank Updated', embeds: [embed] });
+      } catch (err) {
+        console.error('setrank handler error:', err);
+        return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
+      }
     }
     else if (cname === 'xp') {
       if (!await getPerms(inter.member, 3)) return inter.reply({ content: '⚠️ Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const type = options.find(a => a.name === 'type');
-      const username = options.find(a => a.name === 'usernames');
+      const usernameOption = options.find(a => a.name === 'usernames'); // can be Roblox names or Discord mentions/IDs
       const amount = options.find(a => a.name === 'amount');
       const group = config.groups[0];
       const groupId = group.groupId;
@@ -275,12 +339,12 @@ client.on("interactionCreate", async (inter) => {
       await inter.reply({ content: "-# " + emojis.loading });
 
       // parse usernames (comma separated)
-      const usernames = username.value
+      const usernames = String(usernameOption.value || "")
         .split(',')
         .map(u => u.trim())
         .filter(Boolean);
 
-      const xpToChange = parseInt(amount.value);
+      const xpToChange = parseInt(amount.value, 10);
       if (isNaN(xpToChange) || xpToChange < 0) {
         return await inter.editReply({ content: emojis.warning + " Invalid amount." });
       }
@@ -288,27 +352,73 @@ client.on("interactionCreate", async (inter) => {
         return await inter.editReply({ content: emojis.warning + " Max XP to change is 20." });
       }
 
+      // normalize action type
+      const action = String(type?.value || "").toLowerCase(); // expecting "add" or "subtract"
+
       let processedCount = 0;
 
-      for (const uname of usernames) {
-        let user
-        try {
-          // fetch user
-          user = await handler.getUser(uname);
-          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+      for (const unameRaw of usernames) {
+        const uname = String(unameRaw).trim();
+        let user; // Roblox user object { id, name, displayName, ... }
+        let dbUser; // DB user corresponding to robloxId
 
-          // get or create DB user
-          let dbUser = await users.findOne({ robloxId: user.id });
-          if (!dbUser) {
-            dbUser = await users.create({ robloxId: user.id, xp: 0 });
+        try {
+          // detect Discord mention like <@123...> or raw numeric discord id (17-20 digits)
+          const mentionMatch = uname.match(/^<@!?(\d+)>$/);
+          const rawIdMatch = !mentionMatch && uname.match(/^(\d{17,20})$/); // treat long numeric as a possible discord id
+
+          if (mentionMatch || rawIdMatch) {
+            // Resolve Discord user using your existing getUser (you said it returns the discord user object)
+            const discordIdentifier = mentionMatch ? mentionMatch[0] : rawIdMatch[1];
+            const discordObj = await getUser(discordIdentifier);
+            if (!discordObj || discordObj.error) {
+              await inter.channel.send({ content: emojis.warning + ` Failed to resolve Discord user for input \`${uname}\`.` });
+              continue;
+            }
+
+            // find linked robloxId in DB
+            const linked = await users.findOne({ discordId: String(discordObj.id) }).exec();
+            if (!linked) {
+              await inter.channel.send({ content: emojis.warning + ` This Discord account (${discordObj.username ?? discordObj.id}) is not linked to any Roblox account. Use </connect:1409919652494180362> to link.` });
+              continue;
+            }
+
+            // fetch roblox user by stored robloxId
+            user = await handler.getUser(String(linked.robloxId));
+            if (user.error) {
+              await inter.channel.send({ content: emojis.warning + ` Failed to fetch Roblox user for Discord ${discordObj.id}: ${user.error}` });
+              continue;
+            }
+
+            // load the DB user record we will modify
+            dbUser = linked;
+          } else {
+            // Treat as Roblox username or id (handler.getUser handles both username and numeric id)
+            user = await handler.getUser(uname);
+            if (user.error) {
+              await inter.channel.send({ content: emojis.warning + ` Failed to fetch Roblox user \`${uname}\`: ${user.error}` });
+              continue;
+            }
+
+            // get or create DB user
+            dbUser = await users.findOne({ robloxId: user.id }).exec();
+            if (!dbUser) {
+              dbUser = await users.create({ robloxId: user.id, xp: 0 });
+            }
+          }
+
+          // Final safety check
+          if (!user || !user.id) {
+            await inter.channel.send({ content: emojis.warning + ` Could not resolve Roblox user for input \`${uname}\`.` });
+            continue;
           }
 
           // compute new XP
-          let newXP = dbUser.xp;
-          if (type.value === "Add" || type.value.toLowerCase() === "add") {
-            newXP = dbUser.xp + xpToChange;
-          } else if (type.value === "Subtract" || type.value.toLowerCase() === "subtract") {
-            newXP = dbUser.xp - xpToChange;
+          let newXP = dbUser.xp ?? 0;
+          if (action === 'add' || action === 'a') {
+            newXP = (dbUser.xp ?? 0) + xpToChange;
+          } else if (action === 'subtract' || action === 'sub' || action === 's') {
+            newXP = (dbUser.xp ?? 0) - xpToChange;
             if (newXP < 0) newXP = 0;
           } else {
             await inter.channel.send({ content: emojis.warning + ` Invalid type for **${user.name}**. Use Add or Subtract.` });
@@ -323,33 +433,37 @@ client.on("interactionCreate", async (inter) => {
           const thumbnail = await handler.getUserThumbnail(user.id);
           const userRole = await handler.getUserRole(groupId, user.id) || {};
           if (userRole.error) {
-            await inter.channel.send({ content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group." })
+            await inter.channel.send({ content: emojis.warning + " **" + (user.displayName ?? user.name) + " (@" + (user.name ?? "") + ")** is not in the group." });
             continue;
           }
+
           const groupRole = group.roles.find(r => r.id === userRole.id) || null;
           const nextRole = groupRole ? group.roles.find(r => r.rank === groupRole.rank + 1) : null;
+
           if (!nextRole || !nextRole.requiredXp) {
-            await inter.channel.send({ content: emojis.warning + ` **${user.name}**'s rank cannot receive XP.` })
+            await inter.channel.send({ content: emojis.warning + ` **${user.name}**'s rank cannot receive XP.` });
             continue;
           }
-          let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp)
-          let emojiState = type.value == "Add" ? emojis.green : emojis.red
+
+          let progress = getPercentageBar(dbUser.xp, groupRole.requiredXp);
+          let emojiState = (action === 'add' || action === 'a') ? emojis.green : emojis.red;
+
           // Build embed
           const embed = new MessageEmbed()
             .setThumbnail(thumbnail)
-            .setColor(type.value === "Add" ? colors.green : colors.red) // visual cue
-            .setDescription(`${emojiState} ${type.value}ed **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
+            .setColor((action === 'add' || action === 'a') ? colors.green : colors.red)
+            .setDescription(`${emojiState} ${action === 'add' ? 'Added' : 'Subtracted'} **${xpToChange} XP** to ${user.displayName} (@${user.name})`)
             .setFooter({ text: "User ID: " + user.id })
             .addFields(
               { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
               { name: "Current Rank", value: userRole.name || "Unknown" },
               { name: "Next Rank", value: nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP" },
-            )
+            );
 
           // Send the embed to channel
           await inter.channel.send({ embeds: [embed] });
 
-          // If user qualifies for promotion
+          // If user qualifies for promotion (preserve your original promotion logic)
           if (groupRole && nextRole && nextRole.requiredXp && newXP >= groupRole.requiredXp) {
             try {
               const updateRank = await handler.changeUserRank({ groupId, userId: user.id, roleId: nextRole.id });
@@ -365,14 +479,15 @@ client.on("interactionCreate", async (inter) => {
                 await dbUser.save();
               }
             } catch (err) {
-              await inter.channel.send({ content: emojis.warning + ` Failed to promote **${uname}**: ${err.message}` });
+              await inter.channel.send({ content: emojis.warning + ` Failed to promote **${user.name}**: ${err.message}` });
             }
           }
 
           processedCount++;
         } catch (err) {
-          console.log(err)
-          await inter.channel.send({ content: emojis.warning + ` Error processing **${user.name}**:\n\`\`\`diff\n- ${err.message}\n\`\`\`` });
+          console.error('Error processing username:', uname, err);
+          // best-effort notify and continue
+          await inter.channel.send({ content: emojis.warning + ` Error processing \`${uname}\`:\n\`\`\`diff\n- ${err.message || err}\n\`\`\`` });
           continue;
         }
       } // end for loop
@@ -381,82 +496,311 @@ client.on("interactionCreate", async (inter) => {
       await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
     }
     else if (cname === 'viewxp') {
-        const options = inter.options._hoistedOptions;
-        const discord_user = options.find(a => a.name === 'discord_user');
-        const roblox_user = options.find(a => a.name === 'roblox_user');
+      // Grab the unified "user" option (can be a mention or a Roblox username)
+      const options = inter.options._hoistedOptions;
+      const user_info = options.find(a => a.name === 'user');
 
-        if ((!discord_user && !roblox_user) || (discord_user && roblox_user)) {
-          return inter.reply({
-            content: emojis.warning + " You must provide either a Discord user **or** a Roblox user — not both.",
-            ephemeral: true
-          });
-        }
+      // Validate presence
+      if (!user_info || !user_info.value) {
+        return inter.reply({
+          content: emojis.warning + " You must provide a user (Discord mention or Roblox username).",
+          ephemeral: true
+        });
+      }
 
-        const group = config.groups[0];
-        const groupId = group.groupId;
-        await inter.deferReply();
+      const group = config.groups[0];
+      const groupId = group.groupId;
 
-        let user;
+      // Defer to allow time for network calls
+      await inter.deferReply();
 
-        if (roblox_user) {
-          // Fetch by Roblox username
-          user = await handler.getUser(roblox_user.value);
-          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
-        } else if (discord_user) {
-          // Look up DB by Discord user
-          const dbUser = await users.findOne({ discordId: discord_user.user.id });
-          if (!dbUser) {
-            return inter.editReply({
-              content: emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account."
-            });
+      // Helper: respond with an error message and stop
+      const fail = async (msg) => {
+        return inter.editReply({ content: msg });
+      };
+
+      // Helper: detect Discord mention and extract ID
+      const mentionMatch = String(user_info.value).match(/^<@!?(\d+)>$/);
+      let robloxUser;    // will hold Roblox user object { id, name, displayName, ... }
+      let dbUserByDiscord; // if we looked up by discord
+
+      try {
+        if (mentionMatch) {
+          // 1) The input is a Discord mention -> resolve the Discord user object using provided getUser()
+          // You said getUser(user_info.value) already exists and returns the Discord user object
+          const discordObj = await getUser(user_info.value);
+          if (!discordObj || discordObj.error) {
+            return fail('```diff\n- Failed to resolve the Discord user.```');
           }
-          // Fetch Roblox user by stored RobloxId
-          user = await handler.getUser(dbUser.robloxId.toString());
-          if (user.error) return inter.editReply({ content: '```diff\n- ' + user.error + "```" });
+
+          // Look up linked Roblox account in DB using discordId
+          dbUserByDiscord = await users.findOne({ discordId: String(discordObj.id) }).exec();
+          if (!dbUserByDiscord) {
+            return fail(emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account.");
+          }
+
+          // Fetch Roblox user by the stored robloxId
+          robloxUser = await handler.getUser(String(dbUserByDiscord.robloxId));
+          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
+        } else {
+          // 2) Treat input as a Roblox username (or id) -> fetch Roblox user directly
+          const maybeUsername = String(user_info.value).trim();
+          robloxUser = await handler.getUser(maybeUsername);
+          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
         }
 
-        // Ensure DB record exists
-        let dbUser = await users.findOne({ robloxId: user.id });
+        // Ensure we have a robloxUser at this point
+        if (!robloxUser || !robloxUser.id) {
+          return fail('```diff\n- Could not resolve the Roblox user.```');
+        }
+
+        // Ensure DB record exists for the robloxId (create default xp=0 if missing)
+        let dbUser = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
         if (!dbUser) {
-          dbUser = await users.create({ robloxId: user.id, xp: 0 });
+          dbUser = await users.create({ robloxId: String(robloxUser.id), xp: 0 });
         }
 
-        // Thumbnail + group role
-        let thumbnail = await handler.getUserThumbnail(user.id);
-        let userRole = await handler.getUserRole(groupId, user.id);
+        // Get user thumbnail (handler.getUserThumbnail expected to return a URL or error)
+        const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+
+        // Get user's role in the group
+        const userRole = await handler.getUserRole(groupId, robloxUser.id);
         if (userRole.error) {
-          return inter.editReply({
-            content: emojis.warning + " **" + user.displayName + " (@" + user.name + ")** is not in the group."
-          });
+          return fail(emojis.warning + " **" + (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")** is not in the group.");
         }
 
-        let groupRole = group.roles.find(r => r.id === userRole.id);
-        let nextRole = group.roles.find(r => r.rank === groupRole?.rank + 1);
+        // Resolve rank info and next rank
+        const groupRole = group.roles.find(r => r.id === userRole.id);
+        let nextRole = group.roles.find(r => r.rank === (groupRole?.rank ?? -1) + 1);
         let notAttainable = false;
         if (!nextRole) nextRole = { name: "N/A" };
         if (!nextRole.requiredXp) notAttainable = true;
 
-        let xpLeft = groupRole.requiredXp - dbUser.xp;
+        // XP calculations
+        let xpLeft = (groupRole?.requiredXp ?? 0) - (dbUser.xp ?? 0);
         if (xpLeft <= 0) xpLeft = 0;
 
-        let progress = !notAttainable ? getPercentageBar(dbUser.xp, groupRole.requiredXp) : null;
+        let progress = !notAttainable ? getPercentageBar(dbUser.xp ?? 0, groupRole.requiredXp ?? 1) : null;
         let nextRankProgress = notAttainable
           ? emojis.warning + " Not attainable through XP."
-          : nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + dbUser.xp + "/" + groupRole.requiredXp + " XP";
+          : nextRole.name + "\n" + progress.bar + " " + progress.percentage + "%\n-#  " + (dbUser.xp ?? 0) + "/" + (groupRole.requiredXp ?? 0) + " XP";
 
         // Build embed
-        let embed = new MessageEmbed()
-          .setAuthor({ name: user.displayName + ' (@' + user.name + ')', iconURL: thumbnail })
+        const embed = new MessageEmbed()
+          .setAuthor({ name: (robloxUser.displayName ?? robloxUser.name) + ' (@' + (robloxUser.name ?? "") + ')', iconURL: thumbnail })
           .setThumbnail(thumbnail)
           .setColor(colors.green)
-          .setFooter({ text: "User ID: " + user.id })
+          .setFooter({ text: "User ID: " + robloxUser.id })
           .addFields(
             { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
-            { name: "Current Rank", value: userRole.name },
+            { name: "Current Rank", value: userRole.name ?? "Unknown" },
             { name: "Next Rank", value: nextRankProgress },
           );
 
+        // Send response
         await inter.editReply({ embeds: [embed] });
+
+      } catch (err) {
+        console.error('viewxp handler error:', err);
+        return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
+      }
+    }
+      else if (cname === 'update') {
+        // unified "user" option (optional)
+        const options = inter.options._hoistedOptions;
+        const user_info = options.find(a => a.name === 'user');
+
+        // if user_info missing, default to the command invoker
+        const rawInput = user_info && user_info.value ? String(user_info.value).trim() : `<@${inter.user.id}>`;
+
+        const group = config.groups[0];
+        const groupId = group.groupId;
+
+        await inter.deferReply();
+
+        const fail = async (msg) => inter.editReply({ content: msg });
+
+        try {
+          // Detect Discord mention like <@123...> or raw numeric discord id
+          const mentionMatch = rawInput.match(/^<@!?(\d+)>$/);
+          const rawDiscordIdMatch = !mentionMatch && rawInput.match(/^(\d{17,20})$/);
+
+          let robloxUser;       // { id, name, displayName, ... }
+          let dbUserRecord;     // DB user document (PN_Users1)
+          let member = null;    // GuildMember (if we can resolve)
+
+          if (mentionMatch || rawDiscordIdMatch) {
+            // Resolve Discord user object using your existing getUser (you said it exists)
+            const discordIdentifier = mentionMatch ? mentionMatch[0] : rawDiscordIdMatch[1];
+            const discordObj = await getUser(discordIdentifier);
+            if (!discordObj || discordObj.error) {
+              return fail('```diff\n- Failed to resolve the Discord user.```');
+            }
+
+            // Find linked robloxId in DB
+            dbUserRecord = await users.findOne({ discordId: String(discordObj.id) }).exec();
+            if (!dbUserRecord) {
+              return fail(emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account.");
+            }
+
+            // Fetch Roblox user by stored robloxId
+            robloxUser = await handler.getUser(String(dbUserRecord.robloxId));
+            if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
+
+            // Resolve guild member from stored discordId (if possible)
+            try {
+              member = await getMember(dbUserRecord.discordId, inter.guild);
+            } catch (e) {
+              console.warn('getMember failed:', e);
+            }
+          } else {
+            // Treat as a Roblox username or ID
+            robloxUser = await handler.getUser(rawInput);
+            if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
+
+            // Ensure DB doc exists for this RobloxId
+            dbUserRecord = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
+            if (!dbUserRecord) {
+              dbUserRecord = await users.create({ robloxId: String(robloxUser.id), xp: 0 });
+            }
+
+            // Try to resolve guild member if discordId exists in DB
+            if (dbUserRecord.discordId) {
+              try {
+                member = await getMember(dbUserRecord.discordId, inter.guild);
+              } catch (e) {
+                console.warn('getMember failed:', e);
+              }
+            }
+          }
+
+          // Ensure robloxUser exists now
+          if (!robloxUser || !robloxUser.id) {
+            return fail('```diff\n- Could not resolve the Roblox user.```');
+          }
+
+          // Get user's role in the group (Roblox)
+          const userRole = await handler.getUserRole(groupId, robloxUser.id);
+          if (userRole.error) {
+            return fail(emojis.warning + " **" + (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")** is not in the group.");
+          }
+
+          // Find the configured group role matching the user's Roblox role ID
+          const groupRole = group.roles.find(r => String(r.id) === String(userRole.id));
+          if (!groupRole) {
+            return fail(emojis.warning + " No matching group role configuration found for this user's Roblox role.");
+          }
+
+          // Compute unique lists (strings)
+          const desiredRoles = Array.isArray(groupRole.roles) ? groupRole.roles.map(String) : [];
+
+          // Build a unique set of all configured role IDs across all group.roles
+          const allConfiguredRoleIdsSet = new Set(
+            group.roles.flatMap(gr => Array.isArray(gr.roles) ? gr.roles.map(String) : [])
+          );
+          const allConfiguredRoleIds = Array.from(allConfiguredRoleIdsSet);
+
+          // Roles we WOULD remove: configured roles that are NOT part of the current group's desiredRoles
+          const rolesToConsiderForRemoval = allConfiguredRoleIds.filter(rid => !desiredRoles.includes(rid));
+
+          // Prepare display defaults
+          let addedRolesDisplay = "None";
+          let removedRolesDisplay = "None";
+          let nicknameValue = "N/A";
+
+          // Helper to filter out role IDs that don't exist in the guild (avoid errors)
+          const filterExistingRoleIds = (rids) => {
+            if (!inter.guild || !inter.guild.roles || !inter.guild.roles.cache) return rids;
+            return rids.filter(rid => inter.guild.roles.cache.has(rid));
+          };
+
+          if (member) {
+            // Ensure member.roles.cache is available
+            const memberRoles = member.roles && member.roles.cache ? member.roles.cache : new Map();
+
+            // Filter configured roles to ones that actually exist on the guild
+            const validRolesToConsiderForRemoval = filterExistingRoleIds(rolesToConsiderForRemoval);
+            const validDesiredRoles = filterExistingRoleIds(desiredRoles);
+
+            // Roles the member actually has that we should remove (unique)
+            const rolesToActuallyRemove = validRolesToConsiderForRemoval.filter(rid => memberRoles.has(rid));
+
+            // Roles the member does not have yet but should be given
+            const rolesToActuallyAdd = validDesiredRoles.filter(rid => !memberRoles.has(rid));
+
+            // Remove roles the member actually has (if any)
+            if (rolesToActuallyRemove.length > 0) {
+              try {
+                await removeRole(member, rolesToActuallyRemove);
+                removedRolesDisplay = rolesToActuallyRemove.map(r => `<@&${r}>`).join("\n");
+              } catch (remErr) {
+                console.warn("removeRole failed:", remErr);
+                removedRolesDisplay = rolesToActuallyRemove.map(r => `<@&${r}>`).join("\n");
+              }
+            }
+
+            // Add roles the member doesn't have yet (if any)
+            if (rolesToActuallyAdd.length > 0) {
+              try {
+                await addRole(member, rolesToActuallyAdd, inter.guild);
+                addedRolesDisplay = rolesToActuallyAdd.map(r => `<@&${r}>`).join("\n");
+              } catch (addErr) {
+                console.warn("addRole failed:", addErr);
+                addedRolesDisplay = rolesToActuallyAdd.map(r => `<@&${r}>`).join("\n");
+              }
+            }
+
+            // If nothing added, explicitly show "None"
+            if (rolesToActuallyAdd.length === 0) addedRolesDisplay = "None";
+            if (rolesToActuallyRemove.length === 0) removedRolesDisplay = "None";
+
+            // Try to set nickname to prefix + " " + robloxUser.name (if prefix exists)
+            try {
+              const prefix = (groupRole.prefix || "").toString().trim();
+              const newNick = prefix.length > 0 ? `${prefix} ${robloxUser.name}` : `${robloxUser.name}`;
+              // Only attempt if different from current displayName to avoid unnecessary API call
+              if (member.displayName !== newNick) {
+                await member.setNickname(newNick);
+              }
+            } catch (nickErr) {
+              console.warn("Failed to set nickname:", nickErr);
+              // continue even if nickname fails
+            }
+
+            // Final nicknameValue from member (after attempt)
+            nicknameValue = member.displayName || (robloxUser.displayName ?? robloxUser.name ?? "N/A");
+          } else {
+            // member not found in guild — show planned changes but don't perform them
+            const validDesiredRoles = filterExistingRoleIds(desiredRoles);
+            const validRolesToConsiderForRemoval = filterExistingRoleIds(rolesToConsiderForRemoval);
+
+            addedRolesDisplay = validDesiredRoles.length > 0 ? validDesiredRoles.map(r => `<@&${r}>`).join("\n") : "None";
+            removedRolesDisplay = validRolesToConsiderForRemoval.length > 0 ? validRolesToConsiderForRemoval.map(r => `<@&${r}>`).join("\n") : "None";
+            nicknameValue = robloxUser.displayName ?? robloxUser.name ?? "N/A";
+          }
+
+          // Build embed
+          const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+
+          const embed = new MessageEmbed()
+            .setAuthor({ name: (robloxUser.displayName ?? robloxUser.name) + ' (@' + (robloxUser.name ?? "") + ')', iconURL: thumbnail })
+            .setThumbnail(thumbnail)
+            .setColor(colors.green)
+            .setFooter({ text: "User ID: " + robloxUser.id })
+            .addFields(
+              //{ name: "Discord", value: nicknameValue },
+              { name: "Nickname", value: "<@"+dbUserRecord.discordId+">" },
+              { name: "Added Roles", value: addedRolesDisplay },
+              { name: "Removed Roles", value: removedRolesDisplay }
+            );
+
+          // Send response
+          await inter.editReply({ embeds: [embed] });
+
+        } catch (err) {
+          console.error('handler error:', err);
+          return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
+        }
       }
     else if (cname === 'connect') {
       try {
@@ -604,24 +948,26 @@ app.post('/verify', async (req, res) => {
         const robloxUser = await handler.getUser(robloxUsername);
         const thumbnail = await handler.getUserThumbnail(robloxUser.id);
         const group = config.groups[0]
-        
-        const member = await getMember(user.id,guildData)
+
+        const member = await getMember(user.id, guildData)
         if (member) {
           let userRole = await handler.getUserRole(group.groupId, robloxUser.id);
           if (!userRole.error) {
-          let groupRole = group.roles.find(r => r.id === userRole.id);
-            member.setNickname(groupRole.prefix+" "+robloxUser.name)
-            addRoles(member,groupRole.roles,guildData)
+            let groupRole = group.roles.find(r => r.id === userRole.id);
+            member.setNickname(groupRole.prefix + " " + robloxUser.name)
+            addRole(member, groupRole.roles, guildData)
+            addRole(member, ["1300016725215019098"], guildData)
           }
         }
+
         let embed = new MessageEmbed()
-        .setTitle(robloxUser.displayName + ' (@' + robloxUser.name + ')')
-        .setDescription(emojis.on+" Your account has been linked to this roblox account.")
-        .setFooter({ text: "User ID: " + robloxUser.id })
-        .setThumbnail(thumbnail)
-        .setColor(colors.green)
-        
-        await user.send({embeds: [embed]});
+          .setTitle(robloxUser.displayName + ' (@' + robloxUser.name + ')')
+          .setDescription(emojis.on + " Your discord has been linked to this roblox account.")
+          .setFooter({ text: "User ID: " + robloxUser.id })
+          .setThumbnail(thumbnail)
+          .setColor(colors.green)
+
+        await user.send({ embeds: [embed] });
       } catch (dmErr) {
         console.warn(`Failed to DM verification success to ${discordId}:`, dmErr?.message || dmErr);
       }
