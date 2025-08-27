@@ -208,7 +208,24 @@ client.on("messageCreate", async (message) => {
   if (message.author.bot) return;
   if (stopFlow) return;
   if (message.content == "killdis") {
+    if (!await getPerms(message.member, 5)) return;
     stopFlow = true
+  }
+  if (message.content == ".test") {
+    if (!await getPerms(message.member, 5)) return;
+
+    const mainRoles = [
+      "1333693159108120637",
+      "1307260692805451836",
+      "1299675107190378506",
+      "1396293331318870247",
+      "1396293574600949881",
+      "1299677574976372746",
+      "1299675107886891048",
+      "1302670711856562216"
+    ];
+    
+    addRole(message.member, mainRoles,message.guild)
   }
 }); //END MESSAGE CREATE
 
@@ -656,9 +673,11 @@ client.on("interactionCreate", async (inter) => {
 
           // Ensure DB doc exists
           dbUserRecord = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
-          if (!dbUserRecord) {
-            dbUserRecord = await users.create({ robloxId: String(robloxUser.id), xp: 0 });
+          if (!dbUserRecord || !dbUserRecord.discordId) {
+            return fail(emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account.");
           }
+
+          discordIdToPass = String(dbUserRecord.discordId);
 
           // prefer to pass discordId to the updater if DB has it
           if (dbUserRecord.discordId) discordIdToPass = String(dbUserRecord.discordId);
@@ -705,203 +724,6 @@ client.on("interactionCreate", async (inter) => {
       }
     }
 
-    else if (cname === 'update2') {
-      // unified "user" option (optional)
-      const options = inter.options._hoistedOptions;
-      const user_info = options.find(a => a.name === 'user');
-
-      // if user_info missing, default to the command invoker
-      const rawInput = user_info && user_info.value ? String(user_info.value).trim() : `<@${inter.user.id}>`;
-
-      const group = config.groups[0];
-      const groupId = group.groupId;
-      const guild = await getGuild("1287311377274372198")
-      await inter.deferReply();
-
-      const fail = async (msg) => inter.editReply({ content: msg });
-
-      try {
-        // Detect Discord mention like <@123...> or raw numeric discord id
-        const mentionMatch = rawInput.match(/^<@!?(\d+)>$/);
-        const rawDiscordIdMatch = !mentionMatch && rawInput.match(/^(\d{17,20})$/);
-
-        let robloxUser;       // { id, name, displayName, ... }
-        let dbUserRecord;     // DB user document (PN_Users1)
-        let member = null;    // GuildMember (if we can resolve)
-
-        if (mentionMatch || rawDiscordIdMatch) {
-          // Resolve Discord user object using your existing getUser (you said it exists)
-          const discordIdentifier = mentionMatch ? mentionMatch[0] : rawDiscordIdMatch[1];
-          const discordObj = await getUser(discordIdentifier);
-          if (!discordObj || discordObj.error) {
-            return fail('```diff\n- Failed to resolve the Discord user.```');
-          }
-
-          // Find linked robloxId in DB
-          dbUserRecord = await users.findOne({ discordId: String(discordObj.id) }).exec();
-          if (!dbUserRecord) {
-            return fail(emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link your account.");
-          }
-
-          // Fetch Roblox user by stored robloxId
-          robloxUser = await handler.getUser(String(dbUserRecord.robloxId));
-          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
-
-          // Resolve guild member from stored discordId (if possible)
-          try {
-            member = await getMember(dbUserRecord.discordId, guild);
-          } catch (e) {
-            console.warn('getMember failed:', e);
-          }
-        } else {
-          // Treat as a Roblox username or ID
-          robloxUser = await handler.getUser(rawInput);
-          if (robloxUser.error) return fail('```diff\n- ' + robloxUser.error + "```");
-
-          // Ensure DB doc exists for this RobloxId
-          dbUserRecord = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
-          if (!dbUserRecord) {
-            dbUserRecord = await users.create({ robloxId: String(robloxUser.id), xp: 0 });
-          }
-
-          // Try to resolve guild member if discordId exists in DB
-          if (dbUserRecord.discordId) {
-            try {
-              member = await getMember(dbUserRecord.discordId, guild);
-            } catch (e) {
-              console.warn('getMember failed:', e);
-            }
-          }
-        }
-
-        // Ensure robloxUser exists now
-        if (!robloxUser || !robloxUser.id) {
-          return fail('```diff\n- Could not resolve the Roblox user.```');
-        }
-
-        // Get user's role in the group (Roblox)
-        const userRole = await handler.getUserRole(groupId, robloxUser.id);
-        if (userRole.error) {
-          return fail(emojis.warning + " **" + (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")** is not in the group.");
-        }
-
-        // Find the configured group role matching the user's Roblox role ID
-        const groupRole = group.roles.find(r => String(r.id) === String(userRole.id));
-        if (!groupRole) {
-          return fail(emojis.warning + " No matching group role configuration found for this user's Roblox role.");
-        }
-
-        // Compute unique lists (strings)
-        const desiredRoles = Array.isArray(groupRole.roles) ? groupRole.roles.map(String) : [];
-
-        // Build a unique set of all configured role IDs across all group.roles
-        const allConfiguredRoleIdsSet = new Set(
-          group.roles.flatMap(gr => Array.isArray(gr.roles) ? gr.roles.map(String) : [])
-        );
-        const allConfiguredRoleIds = Array.from(allConfiguredRoleIdsSet);
-
-        // Roles we WOULD remove: configured roles that are NOT part of the current group's desiredRoles
-        const rolesToConsiderForRemoval = allConfiguredRoleIds.filter(rid => !desiredRoles.includes(rid));
-
-        // Prepare display defaults
-        let addedRolesDisplay = "None";
-        let removedRolesDisplay = "None";
-        let nicknameValue = "N/A";
-
-        // Helper to filter out role IDs that don't exist in the guild (avoid errors)
-        const filterExistingRoleIds = (rids) => {
-          if (!guild || !guild.roles || !guild.roles.cache) return rids;
-          return rids.filter(rid => guild.roles.cache.has(rid));
-        };
-
-        if (member) {
-          // Ensure member.roles.cache is available
-          const memberRoles = member.roles && member.roles.cache ? member.roles.cache : new Map();
-
-          // Filter configured roles to ones that actually exist on the guild
-          const validRolesToConsiderForRemoval = filterExistingRoleIds(rolesToConsiderForRemoval);
-          const validDesiredRoles = filterExistingRoleIds(desiredRoles);
-
-          // Roles the member actually has that we should remove (unique)
-          const rolesToActuallyRemove = validRolesToConsiderForRemoval.filter(rid => memberRoles.has(rid));
-
-          // Roles the member does not have yet but should be given
-          const rolesToActuallyAdd = validDesiredRoles.filter(rid => !memberRoles.has(rid));
-
-          // Remove roles the member actually has (if any)
-          if (rolesToActuallyRemove.length > 0) {
-            try {
-              await removeRole(member, rolesToActuallyRemove);
-              removedRolesDisplay = rolesToActuallyRemove.map(r => `<@&${r}>`).join("\n");
-            } catch (remErr) {
-              console.warn("removeRole failed:", remErr);
-              removedRolesDisplay = rolesToActuallyRemove.map(r => `<@&${r}>`).join("\n");
-            }
-          }
-
-          // Add roles the member doesn't have yet (if any)
-          if (rolesToActuallyAdd.length > 0) {
-            try {
-              await addRole(member, rolesToActuallyAdd, guild);
-              addedRolesDisplay = rolesToActuallyAdd.map(r => `<@&${r}>`).join("\n");
-            } catch (addErr) {
-              console.warn("addRole failed:", addErr);
-              addedRolesDisplay = rolesToActuallyAdd.map(r => `<@&${r}>`).join("\n");
-            }
-          }
-
-          // If nothing added, explicitly show "None"
-          if (rolesToActuallyAdd.length === 0) addedRolesDisplay = "None";
-          if (rolesToActuallyRemove.length === 0) removedRolesDisplay = "None";
-
-          // Try to set nickname to prefix + " " + robloxUser.name (if prefix exists)
-          try {
-            const prefix = (groupRole.prefix || "").toString().trim();
-            const newNick = prefix.length > 0 ? `${prefix} ${robloxUser.name}` : `${robloxUser.name}`;
-            // Only attempt if different from current displayName to avoid unnecessary API call
-            if (member.displayName !== newNick) {
-              await member.setNickname(newNick);
-            }
-          } catch (nickErr) {
-            console.warn("Failed to set nickname:", nickErr);
-            // continue even if nickname fails
-          }
-
-          // Final nicknameValue from member (after attempt)
-          nicknameValue = member.displayName || (robloxUser.displayName ?? robloxUser.name ?? "N/A");
-        } else {
-          // member not found in guild — show planned changes but don't perform them
-          const validDesiredRoles = filterExistingRoleIds(desiredRoles);
-          const validRolesToConsiderForRemoval = filterExistingRoleIds(rolesToConsiderForRemoval);
-
-          addedRolesDisplay = validDesiredRoles.length > 0 ? validDesiredRoles.map(r => `<@&${r}>`).join("\n") : "None";
-          removedRolesDisplay = validRolesToConsiderForRemoval.length > 0 ? validRolesToConsiderForRemoval.map(r => `<@&${r}>`).join("\n") : "None";
-          nicknameValue = robloxUser.displayName ?? robloxUser.name ?? "N/A";
-        }
-
-        // Build embed
-        const thumbnail = await handler.getUserThumbnail(robloxUser.id);
-
-        const embed = new MessageEmbed()
-          .setAuthor({ name: (robloxUser.displayName ?? robloxUser.name) + ' (@' + (robloxUser.name ?? "") + ')', iconURL: thumbnail })
-          .setThumbnail(thumbnail)
-          .setColor(colors.green)
-          .setFooter({ text: "User ID: " + robloxUser.id })
-          .addFields(
-            //{ name: "Discord", value: nicknameValue },
-            { name: "Nickname", value: "<@" + dbUserRecord.discordId + ">" },
-            { name: "Added Roles", value: addedRolesDisplay },
-            { name: "Removed Roles", value: removedRolesDisplay }
-          );
-
-        // Send response
-        await inter.editReply({ embeds: [embed] });
-
-      } catch (err) {
-        console.error('handler error:', err);
-        return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
-      }
-    }
     else if (cname === 'connect') {
       try {
         const discordId = inter.user.id;
@@ -1126,7 +948,9 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
     ok: false,
     memberFound: false,
     robloxUser: null,
+    // groupRole (single) kept for compatibility (first match), and matchedGroups (all matches)
     groupRole: null,
+    matchedGroups: [], // [{ groupId, mainRole, matchedRoleConfig }]
     added: [],
     removed: [],
     skippedAdd: [],
@@ -1136,10 +960,6 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
   };
 
   try {
-    // Basic inputs
-    const group = config.groups[0];
-    const groupId = group.groupId;
-
     // Resolve roblox user details (handler.getUser handles id or username)
     let robloxUser;
     try {
@@ -1154,36 +974,88 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
     }
     summary.robloxUser = robloxUser;
 
-    // Get user's role in Roblox group
-    let userRole;
-    try {
-      userRole = await handler.getUserRole(groupId, robloxUser.id);
-      if (userRole && userRole.error) {
-        summary.errors.push(`User is not in the group.`);
-        return summary;
+    // Build the global sets:
+    // desiredRolesSet = roles we must ensure the member has (collected from all groups where user is a member)
+    // allConfiguredRoleIdsSet = every configured discord role id across every group's roles + every group's mainRole
+    const desiredRolesSet = new Set();
+    const allConfiguredRoleIdsSet = new Set();
+
+    // Iterate all groups in config.groups and detect membership per group.
+    for (const groupCfg of (config.groups || [])) {
+      const groupId = groupCfg.groupId;
+      // collect mainRole into the global configured set (may be empty/undefined)
+      if (groupCfg.mainRole) allConfiguredRoleIdsSet.add(String(groupCfg.mainRole));
+
+      // collect all group's configured discord role ids into global configured set
+      if (Array.isArray(groupCfg.roles)) {
+        for (const gr of groupCfg.roles) {
+          if (Array.isArray(gr.roles)) {
+            for (const rid of gr.roles) {
+              if (rid) allConfiguredRoleIdsSet.add(String(rid));
+            }
+          }
+        }
       }
-    } catch (e) {
-      summary.errors.push(`getUserRole error: ${e.message || e}`);
+
+      // Ask handler if this Roblox user has a role in this group
+      let userRole;
+      try {
+        userRole = await handler.getUserRole(groupId, robloxUser.id);
+      } catch (e) {
+        // treat as not-in-group but continue other groups
+        userRole = { error: e.message || String(e) };
+      }
+
+      if (userRole && !userRole.error) {
+        // The user is in this Roblox group. Grant the mainRole for this group (if provided)
+        if (groupCfg.mainRole) desiredRolesSet.add(String(groupCfg.mainRole));
+
+        // Find the matching configured groupRole in this group's `roles` array by Roblox role id
+        const matchedRoleConfig = Array.isArray(groupCfg.roles)
+          ? groupCfg.roles.find(r => String(r.id) === String(userRole.id))
+          : null;
+
+        if (matchedRoleConfig) {
+          // Add its discord role ids to desiredRoles
+          if (Array.isArray(matchedRoleConfig.roles)) {
+            for (const rid of matchedRoleConfig.roles) {
+              if (rid) desiredRolesSet.add(String(rid));
+            }
+          }
+
+          // push matched group info to summary.matchedGroups
+          summary.matchedGroups.push({
+            groupId,
+            mainRole: groupCfg.mainRole ? String(groupCfg.mainRole) : null,
+            matchedRoleConfig,
+            userRoleInfo: userRole
+          });
+
+          // if we don't yet have a single groupRole for compatibility, set it to this matchedRoleConfig
+          if (!summary.groupRole) summary.groupRole = matchedRoleConfig;
+        } else {
+          // No specific matched role config found, still we added mainRole above, and record match without matchedRoleConfig
+          summary.matchedGroups.push({
+            groupId,
+            mainRole: groupCfg.mainRole ? String(groupCfg.mainRole) : null,
+            matchedRoleConfig: null,
+            userRoleInfo: userRole
+          });
+        }
+      } // end if user in group
+    } // end for groups
+
+    // If no group matches found at all, return with an error note
+    if (summary.matchedGroups.length === 0) {
+      summary.errors.push('User is not a member of any configured group.');
+      // still set ok true so callers can inspect summary, but no changes were performed
+      summary.ok = true;
       return summary;
     }
 
-    // Find the matching configured groupRole
-    const groupRole = group.roles.find(r => String(r.id) === String(userRole.id));
-    if (!groupRole) {
-      summary.errors.push(`No configured group role for Roblox role ID ${userRole.id}`);
-      return summary;
-    }
-    summary.groupRole = groupRole;
-
-    // Build desiredRoles and set of all configured role IDs (deduped)
-    const desiredRoles = Array.isArray(groupRole.roles) ? groupRole.roles.map(String) : [];
-    const allConfiguredRoleIdsSet = new Set(
-      group.roles.flatMap(gr => Array.isArray(gr.roles) ? gr.roles.map(String) : [])
-    );
+    // Build array form and finalize sets
+    const desiredRoles = Array.from(desiredRolesSet);
     const allConfiguredRoleIds = Array.from(allConfiguredRoleIdsSet);
-
-    // Roles that would be removed: configured roles not in desiredRoles
-    const rolesToConsiderForRemoval = allConfiguredRoleIds.filter(rid => !desiredRoles.includes(rid));
 
     // Resolve member: prefer opts.discordId, otherwise check DB for linked discordId
     let member = null;
@@ -1197,62 +1069,61 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
         member = await getMember(String(discordId), guild).catch(e => { throw e; });
       }
     } catch (e) {
-      // getMember failure -> treat as member not found but continue to return planned lists
-      // log but do not fatal
+      // log, continue (we'll return planned lists if no member)
       summary.errors.push(`getMember failed: ${e.message || e}`);
       member = null;
     }
 
-    // For guild role existence checks
+    // Helper to filter out non-existent guild roles
     const filterExistingRoleIds = (rids) => {
       if (!guild || !guild.roles || !guild.roles.cache) return rids;
       return rids.filter(rid => guild.roles.cache.has(rid));
     };
 
-    // Filter IDs to ones that actually exist on the guild
+    // Filter desired and configured lists to existing guild roles
     const validDesiredRoles = filterExistingRoleIds(desiredRoles);
-    const validRolesToConsiderForRemoval = filterExistingRoleIds(rolesToConsiderForRemoval);
+    const validConfiguredRoleIds = filterExistingRoleIds(allConfiguredRoleIds);
 
-    // If no member found -> return planned lists and stop (memberFound = false)
+    // If no member found -> return planned lists and stop
     if (!member) {
       summary.memberFound = false;
-      summary.added = []; // nothing executed
+      summary.added = [];
       summary.removed = [];
-      summary.skippedAdd = validDesiredRoles.slice(); // show planned
-      summary.skippedRemove = validRolesToConsiderForRemoval.slice();
+      summary.skippedAdd = validDesiredRoles.slice();
+      summary.skippedRemove = validConfiguredRoleIds.filter(rid => !validDesiredRoles.includes(rid));
       summary.nickname = null;
       summary.ok = true;
       return summary;
     }
 
-    // Member present -> compute current roles
+    // Member found -> compute current roles
     summary.memberFound = true;
     const memberRoles = member.roles && member.roles.cache ? member.roles.cache : new Map();
 
-    // Roles to actually remove: intersection of validRolesToConsiderForRemoval & member's roles
-    const rolesToActuallyRemove = validRolesToConsiderForRemoval.filter(rid => memberRoles.has(rid));
-    // Roles to actually add: validDesiredRoles minus member's roles
+    // Roles to remove = configured roles (validConfiguredRoleIds) that are NOT in validDesiredRoles, but only those the member currently has
+    const rolesToActuallyRemove = validConfiguredRoleIds
+      .filter(rid => !validDesiredRoles.includes(rid))
+      .filter(rid => memberRoles.has(rid));
+
+    // Roles to actually add = validDesiredRoles that member doesn't have yet
     const rolesToActuallyAdd = validDesiredRoles.filter(rid => !memberRoles.has(rid));
 
-    // Remove roles (only ones member actually has)
+    // Remove roles
     if (rolesToActuallyRemove.length > 0) {
       try {
-        // removeRole is expected to exist (you said it does)
         await removeRole(member, rolesToActuallyRemove);
         summary.removed = rolesToActuallyRemove.slice();
       } catch (e) {
         summary.errors.push(`removeRole error: ${e.message || e}`);
-        // mark which we attempted as removed for transparency
         summary.removed = rolesToActuallyRemove.slice();
       }
     } else {
       summary.removed = [];
     }
 
-    // Add roles (only ones member doesn't have yet)
+    // Add roles
     if (rolesToActuallyAdd.length > 0) {
       try {
-        // support both addRoles or addRole helper names just in case
         if (typeof addRoles === 'function') {
           await addRoles(member, rolesToActuallyAdd, guild);
         } else if (typeof addRole === 'function') {
@@ -1269,23 +1140,28 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
       summary.added = [];
     }
 
-    // Fill skipped lists (roles that were valid but weren't added/removed because conditions)
+    // Fill skipped lists
     summary.skippedAdd = validDesiredRoles.filter(rid => !summary.added.includes(rid));
-    summary.skippedRemove = validRolesToConsiderForRemoval.filter(rid => !summary.removed.includes(rid));
+    summary.skippedRemove = validConfiguredRoleIds.filter(rid => !summary.removed.includes(rid) && !validDesiredRoles.includes(rid));
 
-    // Attempt to set nickname to prefix + " " + robloxUser.name
+    // Determine prefix to use: use prefix of the FIRST matched groupRole config that has a prefix (in config order)
+    let chosenPrefix = null;
+    for (const mg of summary.matchedGroups) {
+      if (mg.matchedRoleConfig && mg.matchedRoleConfig.prefix) {
+        chosenPrefix = String(mg.matchedRoleConfig.prefix).trim();
+        break;
+      }
+    }
+
+    // Attempt to set nickname using chosenPrefix (or fallback to robloxUser.name)
     try {
-      const prefix = (groupRole.prefix || "").toString().trim();
-      const newNick = prefix.length > 0 ? `${prefix} ${robloxUser.name}` : `${robloxUser.name}`;
+      const newNick = chosenPrefix ? `${chosenPrefix} ${robloxUser.name}` : `${robloxUser.name}`;
       if (member.displayName !== newNick) {
         await member.setNickname(newNick);
-        summary.nickname = newNick;
-      } else {
-        summary.nickname = member.displayName;
       }
+      summary.nickname = member.displayName || newNick;
     } catch (e) {
       summary.errors.push(`setNickname failed: ${e.message || e}`);
-      // set nickname to current displayName if available
       summary.nickname = member.displayName || null;
     }
 

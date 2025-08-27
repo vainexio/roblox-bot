@@ -19,6 +19,7 @@ module.exports = {
     groups: [
       {
         "groupId": 35042233,
+        "mainRole": "1300016725215019098",
         "roles": [
           {
             "id": 190644070,
@@ -141,14 +142,19 @@ module.exports = {
             "name": "[O2] Lieutenant Junior Grade",
             "prefix": "[O2]",
             "rank": 12,
-            "roles": []
+            "roles": [
+              "1299673368349642856",
+            ]
           },
           {
             "id": 190548111,
             "name": "[O3] Lieutenant",
             "prefix": "[O3]",
             "rank": 13,
-            "roles": []
+            "roles": [
+              "1299673368349642856",
+              "1299670417786540052",
+            ]
           },
           {
             "id": 191314119,
@@ -248,7 +254,16 @@ module.exports = {
             ]
           }
         ]
-      }
+      },
+      { "groupId": 598767845, "mainRole": "1333693159108120637", "roles": [] }, // Naval Combat Engineer Brigade
+      //{ "groupId": 1106889876, "mainRole": "1", "roles": [] }, // Quartermaster Servіce
+      { "groupId": 13003898, "mainRole": "1307260692805451836", "roles": [] }, // Deрartment of Foreign Affairs
+      { "groupId": 13426100, "mainRole": "1299675107190378506", "roles": [] }, // Ⲟffshore Combat Force
+      { "groupId": 13426066, "mainRole": "1396293331318870247", "roles": [] }, // Naval Air Wing
+      { "groupId": 34268455, "mainRole": "1396293574600949881", "roles": [] }, // Naval Officer Candidate Course
+      { "groupId": 32512152, "mainRole": "1299677574976372746", "roles": [] }, // Naval Special Operations Command
+      { "groupId": 32512180, "mainRole": "1299675107886891048", "roles": [] }, // Naval Education & Training Doctrine Command
+      { "groupId": 32512118, "mainRole": "1302670711856562216", "roles": [] }, // Naval Securitу Force
     ],
     channels: {
       output: '',
