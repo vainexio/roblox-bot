@@ -599,10 +599,19 @@ app.post('/verify', async (req, res) => {
 
     (async () => {
       try {
+        const guildData = await getGuild("1287311377274372198")
         const user = await client.users.fetch(discordId);
         const robloxUser = await handler.getUser(robloxUsername);
         const thumbnail = await handler.getUserThumbnail(robloxUser.id);
-
+        
+        const member = await getMember(user.id,guildData)
+        if (member) {
+          let userRole = await handler.getUserRole(groupId, user.id);
+          if (!userRole.error) {
+          let groupRole = group.roles.find(r => r.id === userRole.id);
+          await member.setNickname(groupRole.prefix+" "+robloxUser.name)
+          }
+        }
         let embed = new MessageEmbed()
         .setTitle(robloxUser.displayName + ' (@' + robloxUser.name + ')')
         .setDescription(emojis.on+" Your account has been linked to this roblox account.")
