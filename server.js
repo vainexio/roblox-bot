@@ -1149,13 +1149,7 @@ async function updateUserRolesToCurrent(robloxId, guild, opts = {}) {
     // Add roles
     if (rolesToActuallyAdd.length > 0) {
       try {
-        if (typeof addRoles === 'function') {
-          await addRoles(member, rolesToActuallyAdd, guild);
-        } else if (typeof addRole === 'function') {
-          await addRole(member, rolesToActuallyAdd, guild);
-        } else {
-          throw new Error('No addRoles/addRole helper available');
-        }
+        await addRole(member, rolesToActuallyAdd, guild);
         summary.added = rolesToActuallyAdd.slice();
       } catch (e) {
         summary.errors.push(`addRole(s) error: ${e.message || e}`);

@@ -19,7 +19,7 @@ module.exports = {
     groups: [
       {
         "groupId": 35042233,
-        "mainRole": "1300016725215019098",
+        "mainRole": "1299701752525754419",
         "roles": [
           {
             "id": 190644070,
