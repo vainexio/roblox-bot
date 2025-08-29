@@ -372,8 +372,8 @@ client.on("interactionCreate", async (inter) => {
       if (isNaN(xpToChange) || xpToChange < 0) {
         return await inter.editReply({ content: emojis.warning + " Invalid amount." });
       }
-      if (xpToChange > 20 && !await getPerms(inter.member, 4)) {
-        return await inter.editReply({ content: emojis.warning + " Max XP to change is 20." });
+      if (xpToChange > 25 && !await getPerms(inter.member, 4)) {
+        return await inter.editReply({ content: emojis.warning + " Max XP to change is 25." });
       }
 
       // normalize action type

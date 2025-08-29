@@ -96,7 +96,7 @@ module.exports = {
             "name": "[E6] Petty Officer First Class",
             "prefix": "[E6]",
             "rank": 7,
-            "requiredXp": 100,
+            "requiredXp": 400,
             "roles": [
               "1299701752525754419",
               "1299675105353404426",
@@ -108,6 +108,7 @@ module.exports = {
             "name": "[E7] Chief Petty Officer",
             "prefix": "[E7]",
             "rank": 8,
+            "requiredXp": 400,
             "roles": [
               "1299701752525754419",
               "1299673369205280779",
@@ -119,6 +120,7 @@ module.exports = {
             "name": "[E8] Senior Chief Petty Officer",
             "prefix": "[E8]",
             "rank": 9,
+            "requiredXp": 400,
             "roles": [
               "1299701752525754419",
               "1299673369205280779",
