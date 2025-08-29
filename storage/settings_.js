@@ -312,6 +312,10 @@ module.exports = {
       id: "1299670414162919454",
       level: 4,
     },
+    {
+      id: "1299672438912581693", // Naval Command
+      level: 4,
+    },
    {
     id: "798521988598464542", // SWAT
     level: 4,
