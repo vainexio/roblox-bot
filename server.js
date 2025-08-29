@@ -237,7 +237,7 @@ client.on("interactionCreate", async (inter) => {
     let cname = inter.commandName
 
     if (cname === 'setrank') {
-      if (!await getPerms(inter.member, 4)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+      if (!await getPerms(inter.member, 4)) return inter.reply({ content: emojis.warning+' Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const usernameOpt = options.find(a => a.name === 'user');
@@ -350,7 +350,7 @@ client.on("interactionCreate", async (inter) => {
       }
     }
     else if (cname === 'xp') {
-      if (!await getPerms(inter.member, 3)) return inter.reply({ content: '⚠️ Insufficient Permission' });
+      if (!await getPerms(inter.member, 3)) return inter.reply({ content: emojis.warning+' Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const type = options.find(a => a.name === 'type');
@@ -535,7 +535,17 @@ client.on("interactionCreate", async (inter) => {
         {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP" },
         {name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
       )
-      await logs.send({ embeds: [embed] });
+      await logs.send({ embeds: [embed] }).catch(async err => {
+        let newEmbed = new MessageEmbed()
+        .setDescription(inter.user.toString()+" used `/xp` command.")
+        .setColor(colors.green)
+        .addFields({name: "Mass Distribution Detected", value: "Sending details in `.txt` file." })
+
+        let msgContent = "TARGET USERS:\n"+usernames.join("\n")+"\n\nPROMOTED USER(S):\n"+promotedUsers+"\n\nACTION: "+(action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP\n\nCOMPLETION RATE: "+`${processedCount}/${usernames.length} users`
+        
+        await logs.send({embeds: [newEmbed]})
+        await safeSend(logs,msgContent)
+      });
     }
     else if (cname === 'viewxp') {
       // Grab the unified "user" option (can be a mention or a Roblox username)

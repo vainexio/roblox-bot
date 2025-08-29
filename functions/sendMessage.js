@@ -7,7 +7,7 @@ module.exports = {
     if (messageContent.length > 2000) {
       // Create a .txt file from the messageContent
       const buffer = Buffer.from(messageContent, 'utf-8');
-      const attachment = new MessageAttachment(buffer, 'codes.txt');
+      const attachment = new MessageAttachment(buffer, 'content.txt');
 
       // Send the file as an attachment
       await channel.send({files: [attachment] });
