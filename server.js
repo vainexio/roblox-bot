@@ -224,8 +224,8 @@ client.on("messageCreate", async (message) => {
       "1299675107886891048",
       "1302670711856562216"
     ];
-    
-    addRole(message.member, mainRoles,message.guild)
+
+    addRole(message.member, mainRoles, message.guild)
   }
 }); //END MESSAGE CREATE
 
@@ -233,11 +233,12 @@ client.on("messageCreate", async (message) => {
 
 client.on("interactionCreate", async (inter) => {
   if (stopFlow) return;
+  if (!await getPerms(inter.member, 5)) return;
   if (inter.isCommand()) {
     let cname = inter.commandName
 
     if (cname === 'setrank') {
-      if (!await getPerms(inter.member, 4)) return inter.reply({ content: emojis.warning+' Insufficient Permission' });
+      if (!await getPerms(inter.member, 4)) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const usernameOpt = options.find(a => a.name === 'user');
@@ -320,7 +321,7 @@ client.on("interactionCreate", async (inter) => {
 
         if (!updateRank || updateRank.status !== 200) {
           const statusText = updateRank?.statusText || (updateRank?.error ?? 'Unknown error');
-          return fail(emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.status+": "+statusText + "```");
+          return fail(emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.status + ": " + statusText + "```");
         }
 
         // Build response embed
@@ -341,16 +342,16 @@ client.on("interactionCreate", async (inter) => {
         // Audit logging
         let logs = await getChannel(config.channels.logs)
         let logEmbed = new MessageEmbed(embed)
-        .setDescription(inter.user.toString()+" used `/setrank` command.")
+          .setDescription(inter.user.toString() + " used `/setrank` command.")
         await logs.send({ embeds: [logEmbed] });
-        
+
       } catch (err) {
         console.error('setrank handler error:', err);
         return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
       }
     }
     else if (cname === 'xp') {
-      if (!await getPerms(inter.member, 3)) return inter.reply({ content: emojis.warning+' Insufficient Permission' });
+      if (!await getPerms(inter.member, 3)) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const type = options.find(a => a.name === 'type');
@@ -499,9 +500,9 @@ client.on("interactionCreate", async (inter) => {
               } else {
                 // announce promotion
                 let promotedText = `**@${user.name}** was promoted to **${nextRole.name}**!`
-                await inter.channel.send({ content: emojis.check +""+ promotedText });
+                await inter.channel.send({ content: emojis.check + "" + promotedText });
                 promotionCount += 1
-                promotedUsers += promotionCount+". **@"+user.name+"** -> "+nextRole.name+"\n"
+                promotedUsers += promotionCount + ". **@" + user.name + "** -> " + nextRole.name + "\n"
 
                 // reset xp after promotion
                 dbUser.xp = 0;
@@ -527,24 +528,24 @@ client.on("interactionCreate", async (inter) => {
       // Audit logging
       let logs = await getChannel(config.channels.logs)
       let embed = new MessageEmbed()
-      .setDescription(inter.user.toString()+" used `/xp` command.")
-      .setColor(colors.green)
-      .addFields(
-        {name: "Target User(s)", value: usernames.join("\n") },
-        {name: "Promoted User(s)", value: promotedUsers.length > 0 ? promotedUsers : "None"},
-        {name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP" },
-        {name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
-      )
+        .setDescription(inter.user.toString() + " used `/xp` command.")
+        .setColor(colors.green)
+        .addFields(
+          { name: "Target User(s)", value: usernames.join("\n") },
+          { name: "Promoted User(s)", value: promotedUsers.length > 0 ? promotedUsers : "None" },
+          { name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted') + " " + xpToChange + " XP" },
+          { name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
+        )
       await logs.send({ embeds: [embed] }).catch(async err => {
         let newEmbed = new MessageEmbed()
-        .setDescription(inter.user.toString()+" used `/xp` command.")
-        .setColor(colors.green)
-        .addFields({name: "Mass Distribution Detected", value: "Sending details in `.txt` file." })
+          .setDescription(inter.user.toString() + " used `/xp` command.")
+          .setColor(colors.green)
+          .addFields({ name: "Mass Distribution Detected", value: "Sending details in `.txt` file." })
 
-        let msgContent = "TARGET USERS:\n"+usernames.join("\n")+"\n\nPROMOTED USER(S):\n"+promotedUsers+"\n\nACTION: "+(action === 'add' ? 'Added' : 'Subtracted')+" "+xpToChange+" XP\n\nCOMPLETION RATE: "+`${processedCount}/${usernames.length} users`
-        
-        await logs.send({embeds: [newEmbed]})
-        await safeSend(logs,msgContent)
+        let msgContent = "TARGET USERS:\n" + usernames.join("\n") + "\n\nPROMOTED USER(S):\n" + promotedUsers + "\n\nACTION: " + (action === 'add' ? 'Added' : 'Subtracted') + " " + xpToChange + " XP\n\nCOMPLETION RATE: " + `${processedCount}/${usernames.length} users`
+
+        await logs.send({ embeds: [newEmbed] })
+        await safeSend(logs, msgContent)
       });
     }
     else if (cname === 'viewxp') {
@@ -759,6 +760,92 @@ client.on("interactionCreate", async (inter) => {
       }
     }
 
+    else if (cname === 'selection') {
+      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1299675107886891048"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
+
+      const options = inter.options._hoistedOptions;
+      const division = options.find(a => a.name === 'division');
+      const host = options.find(a => a.name === 'host');
+      const note = options.find(a => a.name === 'note');
+      const link = options.find(a => a.name === 'link');
+      const thumbnail = options.find(a => a.name === 'promotion_image');
+      const coHost = options.find(a => a.name === 'co_host');
+
+      if (thumbnail.attachment.contentType !== 'image/png' && thumbnail.attachment.contentType !== 'image/jpeg') return inter.reply({ content: emojis.warning + ' Invalid image format. Use `.png` or `.jpg`', ephemeral: true })
+
+      await inter.deferReply()
+
+      let templates = await getChannel(config.channels.templates)
+      let msg = await templates.messages.fetch('1411234247317913610')
+      let content = msg.content
+      //content = content.replace('{division}', division.value)
+      content = content.replace('{host}', host.user.toString())
+      content = content.replace('{note}', note.value)
+      content = content.replace('{link}', link.value)
+      content = content.replace('{coHost}', coHost ? coHost.user.toString() : "N/A")
+      content = content.replace('{status}', emojis.on + " OPEN")
+
+      let embed = new MessageEmbed()
+        .setTitle(division.value+" Selection")
+        .setColor(colors.blue)
+        .setImage(thumbnail.attachment.url)
+        .setDescription(content)
+
+      let msgId = null
+      let announcement = await getChannel(config.channels.selections)
+      await announcement.send({ content: '<@&1299701752525754419>', embeds: [embed] }).then(msg => msgId = msg.id)
+
+      const row = new MessageActionRow().addComponents(
+        new MessageButton().setCustomId('toggleSelection-' + inter.user.id + "-" + msgId).setLabel('Close Selection').setStyle('SECONDARY').setEmoji(emojis.on),
+        new MessageButton().setCustomId('endSelection-' + inter.user.id + "-" + msgId).setLabel('End').setStyle('DANGER'),
+      );
+      await inter.editReply({ content: emojis.check + " Posted selection for **" + division.value + "**.\n\nSelection Controls:", components: [row] })
+    }
+    else if (cname === "training") {
+      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1299675107886891048"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
+      
+      const options = inter.options._hoistedOptions;
+      const type = options.find(a => a.name === "type");
+      const host = options.find(a => a.name === "host");
+      const note = options.find(a => a.name === "note");
+      const link = options.find(a => a.name === "link");
+      const coHost = options.find(a => a.name === "co_host");
+
+      let templates = await getChannel(config.channels.templates)
+      let msg = await templates.messages.fetch('1411234247317913610')
+      let content = msg.content
+      content = content.replace('{type}', type.value)
+      content = content.replace('{host}', host.user.toString())
+      content = content.replace('{note}', note.value)
+      content = content.replace('{link}', link.value)
+      content = content.replace('{coHost}', coHost ? coHost.user.toString() : "N/A")
+      content = content.replace('{status}', emojis.on + " OPEN")
+
+      let embed = new MessageEmbed()
+        .setTitle(type.value.toString())
+        .setColor(colors.blue)
+        .setDescription(content)
+        .setImage('https://i.imgur.com/76HiiYq.png')
+
+      let msgId = null
+      let announcement = await getChannel(config.channels.trainings)
+      await announcement.send({ content: '<@&1299675105810710571> <@&1299675105353404426> <@&1299673369205280779>', embeds: [embed] }).then(msg => msgId = msg.id)
+
+      const row = new MessageActionRow().addComponents(
+        new MessageButton()
+          .setCustomId(`toggleTraining-${inter.user.id}-${msgId}`)
+          .setLabel("Close Training")
+          .setStyle("SECONDARY")
+          .setEmoji(emojis.on),
+        new MessageButton()
+          .setCustomId(`endTraining-${inter.user.id}-${msgId}`)
+          .setLabel("End")
+          .setStyle("DANGER")
+      );
+
+      await inter.reply({ content: `${emojis.check} Posted **${type.value}**.\n\nTraining Controls:`, components: [row] });
+    }
+
     else if (cname === 'connect') {
       try {
         const discordId = inter.user.id;
@@ -830,10 +917,232 @@ client.on("interactionCreate", async (inter) => {
   }
   else if (inter.isButton()) {
     let id = inter.customId;
-    if (id.startsWith("reply-")) {
-      let reply = id.replace("reply-", "");
-      inter.reply({ content: "*" + reply + "*", ephemeral: true });
+    if (id.startsWith("toggleSelection-")) {
+      // customId looks like: toggleSelection-<userId>-<msgId>
+      const parts = id.split("-");
+      const userId = parts[1];
+      const msgId = parts[2];
+
+      if (inter.user.id !== userId) {
+        return inter.reply({
+          content: emojis.warning + " Only the host can modify this selection.",
+          ephemeral: true
+        });
+      }
+
+      await inter.deferUpdate();
+
+      // fetch the target embed-only message
+      const channel = await getChannel(config.channels.selections);
+      const targetMsg = await channel.messages.fetch(msgId);
+
+      const embed = targetMsg.embeds[0];
+      if (!embed) return;
+
+      const status = embed.description.includes(emojis.on + " OPEN") ? "OPEN" : "CLOSED";
+
+      // clone embed
+      const newEmbed = new MessageEmbed(embed);
+
+      // clone row & button from the interaction (not from targetMsg!)
+      const row = inter.message.components[0];
+      const button = row.components[0];
+
+      const newRow = new MessageActionRow();
+
+      if (status === "OPEN") {
+        // update embed text
+        newEmbed.setDescription(
+          embed.description.replace(emojis.on + " OPEN", emojis.off + " CLOSED")
+        );
+
+        // toggle button
+        const toggleButton = new MessageButton(button)
+          .setLabel("Open Selection") // user clicked, so it becomes OPENABLE again
+          .setStyle("SECONDARY")
+          .setEmoji(emojis.off);
+
+        // end button
+        const endButton = new MessageButton()
+          .setCustomId("endSelection-" + inter.user.id + "-" + msgId)
+          .setLabel("End")
+          .setStyle("DANGER");
+
+        newRow.addComponents(toggleButton, endButton);
+
+      } else {
+        newEmbed.setDescription(
+          embed.description.replace(emojis.off + " CLOSED", emojis.on + " OPEN")
+        );
+
+        // toggle button
+        const toggleButton = new MessageButton(button)
+          .setLabel("Close Selection") // user clicked, so it becomes CLOSABLE again
+          .setStyle("SECONDARY")
+          .setEmoji(emojis.on);
+
+        // end button
+        const endButton = new MessageButton()
+          .setCustomId("endSelection-" + inter.user.id + "-" + msgId)
+          .setLabel("End")
+          .setStyle("DANGER");
+
+        newRow.addComponents(toggleButton, endButton);
+      }
+
+      // ✅ edit the embed-only message
+      await targetMsg.edit({ embeds: [newEmbed] });
+
+      // ✅ update the interaction’s controls
+      await inter.editReply({ components: [newRow] });
     }
+    else if (id.startsWith("endSelection-")) {
+      // customId looks like: endSelection-<userId>-<msgId>
+      const parts = id.split("-");
+      const userId = parts[1];
+      const msgId = parts[2];
+
+      if (inter.user.id !== userId) {
+        return inter.reply({
+          content: emojis.warning + " Only the host can end this selection.",
+          ephemeral: true
+        });
+      }
+
+      await inter.deferUpdate();
+
+      // fetch the target message
+      const channel = await getChannel(config.channels.selections)
+      const targetMsg = await channel.messages.fetch(msgId);
+
+      // delete the target message
+      await targetMsg.delete().catch(() => { });
+
+      // build the "Selection Ended" disabled button
+      const endedRow = new MessageActionRow().addComponents(
+        new MessageButton()
+          .setCustomId("selectionEnded")
+          .setLabel("Selection Ended")
+          .setStyle("SECONDARY")
+          .setDisabled(true)
+          .setEmoji(emojis.red)
+      );
+
+      // update the interaction’s message to replace controls
+      await inter.editReply({
+        components: [endedRow]
+      });
+    }
+    else if (id.startsWith("toggleTraining-")) {
+      // customId looks like: toggleSelection-<userId>-<msgId>
+      const parts = id.split("-");
+      const userId = parts[1];
+      const msgId = parts[2];
+
+      if (inter.user.id !== userId) {
+        return inter.reply({
+          content: emojis.warning + " Only the host can modify this selection.",
+          ephemeral: true
+        });
+      }
+
+      await inter.deferUpdate();
+
+      const channel = await getChannel(config.channels.trainings)
+      const targetMsg = await channel.messages.fetch(msgId);
+
+      const embed = targetMsg.embeds[0];
+      if (!embed) return;
+
+      const status = embed.description.includes(emojis.on + " OPEN") ? "OPEN" : "CLOSED";
+
+      const newEmbed = new MessageEmbed(embed);
+
+      const row = inter.message.components[0];
+      const button = row.components[0];
+
+      const newRow = new MessageActionRow();
+
+      if (status === "OPEN") {
+        newEmbed.setDescription(
+          embed.description.replace(emojis.on + " OPEN", emojis.off + " CLOSED")
+        );
+
+        // toggle button
+        const toggleButton = new MessageButton(button)
+          .setLabel("Open Training") // user clicked, so it becomes OPENABLE again
+          .setStyle("SECONDARY")
+          .setEmoji(emojis.off);
+
+        // end button
+        const endButton = new MessageButton()
+          .setCustomId("endTraining-" + inter.user.id + "-" + msgId)
+          .setLabel("End")
+          .setStyle("DANGER");
+
+        newRow.addComponents(toggleButton, endButton);
+
+      } else {
+        newEmbed.setDescription(
+          embed.description.replace(emojis.off + " CLOSED", emojis.on + " OPEN")
+        );
+
+        // toggle button
+        const toggleButton = new MessageButton(button)
+          .setLabel("Close Training") // user clicked, so it becomes CLOSABLE again
+          .setStyle("SECONDARY")
+          .setEmoji(emojis.on);
+
+        // end button
+        const endButton = new MessageButton()
+          .setCustomId("endTraining-" + inter.user.id + "-" + msgId)
+          .setLabel("End")
+          .setStyle("DANGER");
+
+        newRow.addComponents(toggleButton, endButton);
+      }
+
+      await targetMsg.edit({ embeds: [newEmbed] });
+      await inter.editReply({ components: [newRow] });
+    }
+    else if (id.startsWith("endTraining-")) {
+      // customId looks like: endSelection-<userId>-<msgId>
+      const parts = id.split("-");
+      const userId = parts[1];
+      const msgId = parts[2];
+
+      if (inter.user.id !== userId) {
+        return inter.reply({
+          content: emojis.warning + " Only the host can end this training.",
+          ephemeral: true
+        });
+      }
+
+      await inter.deferUpdate();
+
+      // fetch the target message
+      const channel = await getChannel(config.channels.trainings)
+      const targetMsg = await channel.messages.fetch(msgId);
+
+      // delete the target message
+      await targetMsg.delete().catch(() => { });
+
+      // build the "Selection Ended" disabled button
+      const endedRow = new MessageActionRow().addComponents(
+        new MessageButton()
+          .setCustomId("TrainingEnded")
+          .setLabel("Training Ended")
+          .setStyle("SECONDARY")
+          .setDisabled(true)
+          .setEmoji(emojis.red)
+      );
+
+      // update the interaction’s message to replace controls
+      await inter.editReply({
+        components: [endedRow]
+      });
+    }
+
     else if (id.startsWith("none")) {
       inter.deferUpdate();
     }
@@ -911,7 +1220,7 @@ app.post('/verify', async (req, res) => {
           if (!userRole.error) {
             let groupRole = group.roles.find(r => r.id === userRole.id);
             member.setNickname(groupRole.prefix + " " + robloxUser.name)
-            
+
             const result = await updateUserRolesToCurrent(String(robloxUser.id), guildData, { discordId: user.id });
             // Build embed from result
             const thumbnail = await handler.getUserThumbnail(robloxUser.id);

@@ -16,6 +16,12 @@
 module.exports = {
   prefix: ";", // Prefix
   config: {
+    channels: {
+      logs: '1393519791331082332',
+      templates: '1411234162882515017',
+      selections: '1392701616393687111',
+      trainings: '1392701528753836124',
+    },
     groups: [
       {
         "groupId": 35042233,
@@ -288,9 +294,6 @@ module.exports = {
       { "groupId": 32512180, "mainRole": "1299675107886891048", "roles": [] }, // Naval Education & Training Doctrine Command
       { "groupId": 32512118, "mainRole": "1302670711856562216", "roles": [] }, // Naval Securitу Force
     ],
-    channels: {
-      logs: '1393519791331082332',
-    },
     bot: {
       status: {
         status: "dnd",
@@ -345,7 +348,7 @@ module.exports = {
     loading: '<a:loading:968743431528669210>',
     warning: '<:S_warning:1108743925012902049>',
     on: '<:on:1107664866484953178>',
-    off: ':off:1107664839372964010>',
+    off: '<:off:1107664839372964010>',
     green: '<:online_:1004014930959286342>',
     red: '<:dnd_:1004017480613773422>',
   },

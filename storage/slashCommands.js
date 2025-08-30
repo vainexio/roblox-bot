@@ -17,6 +17,102 @@ module.exports = {
   deleteSlashes: [],
   slashes: [
     {
+      "name": "selection",
+      "type": 1,
+      "description": "Host a selection",
+      "options": [
+        {
+          "name": "division",
+          "type": 3,
+          "description": "Choose whether to add or subtract XP",
+          "required": true,
+          "choices": [
+            { "name": "DFA", "value": "Department of Foreign Affairs" },
+            { "name": "NAW", "value": "Naval Air Wing" },
+            { "name": "NAVSOC", "value": "Naval Special Operations Command" },
+            { "name": "NCEB", "value": "Naval Combat Engineer Brigade" },
+            { "name": "NETDC", "value": "Naval Education & Training Doctrine Command" },
+            { "name": "NOCC", "value": "Naval Officer Candidate Course" },
+            { "name": "NSF", "value": "Naval Security Force" },
+            { "name": "OCF", "value": "Ⲟffshore Combat Force" },
+            { "name": "QS", "value": "Quartermaster Servіce" },
+          ]
+        },
+        {
+          "name": "host",
+          "type": 6,
+          "description": "Selection host",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": 3,
+          "description": "Selection note",
+          "required": true
+        },
+        {
+          "name": "link",
+          "type": 3,
+          "description": "Game link",
+          "required": true
+        },
+        {
+          "name": "promotion_image",
+          "type": 11,
+          "description": "The promotion image wil be put on the announcement's thumbnail",
+          "required": true
+        },
+        {
+          "name": "co_host",
+          "type": 6,
+          "description": "Selection co-host",
+          "required": false
+        },
+      ],
+    },
+    {
+      "name": "training",
+      "type": 1,
+      "description": "Host a training",
+      "options": [
+        {
+          "name": "type",
+          "type": 3,
+          "description": "Type of training",
+          "required": true,
+          "choices": [
+            { "name": "Physical Training / Calisthenics", "value": "Physical Training / Calisthenics" },
+            { "name": "Combat Training", "value": "Combat Training" },
+            { "name": "Ceremonial & Close Order Drills", "value": "Ceremonial & Close Order Drills" },
+          ]
+        },
+        {
+          "name": "host",
+          "type": 6,
+          "description": "Selection host",
+          "required": true
+        },
+        {
+          "name": "note",
+          "type": 3,
+          "description": "Selection note",
+          "required": true
+        },
+        {
+          "name": "link",
+          "type": 3,
+          "description": "Game link",
+          "required": true
+        },
+        {
+          "name": "co_host",
+          "type": 6,
+          "description": "Selection co-host",
+          "required": false
+        },
+      ],
+    },
+    {
       "name": "connect",
       "type": 1,
       "description": "Connect your roblox account",
