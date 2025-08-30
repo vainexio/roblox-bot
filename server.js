@@ -233,7 +233,6 @@ client.on("messageCreate", async (message) => {
 
 client.on("interactionCreate", async (inter) => {
   if (stopFlow) return;
-  if (!await getPerms(inter.member, 5)) return;
   if (inter.isCommand()) {
     let cname = inter.commandName
 
