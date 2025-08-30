@@ -761,7 +761,7 @@ client.on("interactionCreate", async (inter) => {
     }
 
     else if (cname === 'selection') {
-      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1299675107886891048"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
+      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1392702881349632170"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
 
       const options = inter.options._hoistedOptions;
       const division = options.find(a => a.name === 'division');
@@ -808,7 +808,7 @@ client.on("interactionCreate", async (inter) => {
       await logs.send({ embeds: [logEmbed] });
     }
     else if (cname === "training") {
-      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1299675107886891048"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
+      if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1392492838201196644"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
       
       const options = inter.options._hoistedOptions;
       const type = options.find(a => a.name === "type");
