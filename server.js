@@ -800,6 +800,12 @@ client.on("interactionCreate", async (inter) => {
         new MessageButton().setCustomId('endSelection-' + inter.user.id + "-" + msgId).setLabel('End').setStyle('DANGER'),
       );
       await inter.editReply({ content: emojis.check + " Posted selection for **" + division.value + "**.\n\nSelection Controls:", components: [row] })
+
+      // Audit logging
+      let logs = await getChannel(config.channels.logs)
+      let logEmbed = new MessageEmbed(embed)
+        .addFields({name: "Audit Log", value: inter.user.toString() + " used `/selection` command."})
+      await logs.send({ embeds: [logEmbed] });
     }
     else if (cname === "training") {
       if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1299675107886891048"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
@@ -811,6 +817,8 @@ client.on("interactionCreate", async (inter) => {
       const link = options.find(a => a.name === "link");
       const coHost = options.find(a => a.name === "co_host");
 
+      await inter.deferReply();
+      
       let templates = await getChannel(config.channels.templates)
       let msg = await templates.messages.fetch('1411234247317913610')
       let content = msg.content
@@ -843,7 +851,13 @@ client.on("interactionCreate", async (inter) => {
           .setStyle("DANGER")
       );
 
-      await inter.reply({ content: `${emojis.check} Posted **${type.value}**.\n\nTraining Controls:`, components: [row] });
+      await inter.editReply({ content: `${emojis.check} Posted **${type.value}**.\n\nTraining Controls:`, components: [row] });
+
+      // Audit logging
+      let logs = await getChannel(config.channels.logs)
+      let logEmbed = new MessageEmbed(embed)
+        .addFields({name: "Audit Log", value: inter.user.toString() + " used `/training` command."})
+      await logs.send({ embeds: [logEmbed] });
     }
 
     else if (cname === 'connect') {
