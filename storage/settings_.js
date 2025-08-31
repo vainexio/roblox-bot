@@ -32,7 +32,7 @@ module.exports = {
             "name": "Basic Sailor Course",
             "prefix": "[BSC]",
             "rank": 1,
-            "requiredXp": 100,
+            "requiredXp": 25,
             "roles": [
               "1299675104770392064"
             ]

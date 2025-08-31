@@ -652,6 +652,27 @@ client.on("interactionCreate", async (inter) => {
         // Send response
         await inter.editReply({ embeds: [embed] });
 
+        // If user qualifies for promotion (preserve your original promotion logic)
+        if (groupRole && nextRole && nextRole.requiredXp && dbUser.xp >= groupRole.requiredXp) {
+          try {
+            const updateRank = await handler.changeUserRank({ groupId, userId: robloxUser.id, roleId: nextRole.id });
+
+            if (updateRank.status !== 200) {
+              await inter.channel.send({ content: emojis.warning + " Cannot change rank:\n```diff\n- " + updateRank.statusText + "```" });
+            } else {
+              // announce promotion
+              let promotedText = `**@${robloxUser.name}** was promoted to **${nextRole.name}**!`
+              await inter.channel.send({ content: emojis.check + "" + promotedText });
+
+              // reset xp after promotion
+              dbUser.xp = 0;
+              await dbUser.save();
+            }
+          } catch (err) {
+            await inter.channel.send({ content: emojis.warning + ` Failed to promote **${robloxUser.name}**: ${err.message}` });
+          }
+        }
+
       } catch (err) {
         console.error('viewxp handler error:', err);
         return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
