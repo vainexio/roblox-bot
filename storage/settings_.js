@@ -30,7 +30,7 @@ module.exports = {
           {
             "id": 190644070,
             "name": "Basic Sailor Course",
-            "prefix": "[BSC]",
+            "prefix": "[ASN]",
             "rank": 1,
             "requiredXp": 25,
             "roles": [
@@ -39,8 +39,8 @@ module.exports = {
           },
           {
             "id": 190704122,
-            "name": "[E1] Apprentice Seaman",
-            "prefix": "[E1]",
+            "name": "[SN2] Apprentice Seaman",
+            "prefix": "[SN2]",
             "rank": 2,
             "requiredXp": 100,
             "roles": [
@@ -51,8 +51,8 @@ module.exports = {
           },
           {
             "id": 191296077,
-            "name": "[E2] Seaman Second Class",
-            "prefix": "[E2]",
+            "name": "[SN1] Seaman Second Class",
+            "prefix": "[SN1]",
             "rank": 3,
             "requiredXp": 100,
             "roles": [
@@ -75,8 +75,8 @@ module.exports = {
           },
           {
             "id": 191380127,
-            "name": "[E4] Petty Officer Third Class",
-            "prefix": "[E4]",
+            "name": "[PO3] Petty Officer Third Class",
+            "prefix": "[PO3]",
             "rank": 5,
             "requiredXp": 100,
             "roles": [
@@ -87,8 +87,8 @@ module.exports = {
           },
           {
             "id": 190356134,
-            "name": "[E5] Petty Officer Second Class",
-            "prefix": "[E5]",
+            "name": "[PO2] Petty Officer Second Class",
+            "prefix": "[PO2]",
             "rank": 6,
             "requiredXp": 100,
             "roles": [
@@ -99,8 +99,8 @@ module.exports = {
           },
           {
             "id": 191136109,
-            "name": "[E6] Petty Officer First Class",
-            "prefix": "[E6]",
+            "name": "[PO1] Petty Officer First Class",
+            "prefix": "[PO1]",
             "rank": 7,
             "requiredXp": 400,
             "roles": [
@@ -111,8 +111,8 @@ module.exports = {
           },
           {
             "id": 190424109,
-            "name": "[E7] Chief Petty Officer",
-            "prefix": "[E7]",
+            "name": "[CPO] Chief Petty Officer",
+            "prefix": "[CPO]",
             "rank": 8,
             "requiredXp": 400,
             "roles": [
@@ -123,8 +123,8 @@ module.exports = {
           },
           {
             "id": 191272107,
-            "name": "[E8] Senior Chief Petty Officer",
-            "prefix": "[E8]",
+            "name": "[SCPO] Senior Chief Petty Officer",
+            "prefix": "[SCPO]",
             "rank": 9,
             "requiredXp": 400,
             "roles": [
@@ -135,8 +135,8 @@ module.exports = {
           },
           {
             "id": 193674056,
-            "name": "[E9] Master Chief Petty Officer",
-            "prefix": "[E9]",
+            "name": "[MCPO] Master Chief Petty Officer",
+            "prefix": "[MCPO]",
             "rank": 10,
             "roles": [
               "1299701752525754419",
@@ -146,8 +146,8 @@ module.exports = {
           },
           {
             "id": 190646120,
-            "name": "[O1] Ensign",
-            "prefix": "[O1]",
+            "name": "[ENS] Ensign",
+            "prefix": "[ENS]",
             "rank": 11,
             "roles": [
               "1299701752525754419",
@@ -157,8 +157,8 @@ module.exports = {
           },
           {
             "id": 190352121,
-            "name": "[O2] Lieutenant Junior Grade",
-            "prefix": "[O2]",
+            "name": "[LTJG] Lieutenant Junior Grade",
+            "prefix": "[LTJG]",
             "rank": 12,
             "roles": [
               "1299701752525754419",
@@ -167,8 +167,8 @@ module.exports = {
           },
           {
             "id": 190548111,
-            "name": "[O3] Lieutenant",
-            "prefix": "[O3]",
+            "name": "[LT] Lieutenant",
+            "prefix": "[LT]",
             "rank": 13,
             "roles": [
               "1299701752525754419",
@@ -178,8 +178,8 @@ module.exports = {
           },
           {
             "id": 191314119,
-            "name": "[O4] Lieutenant Commander",
-            "prefix": "[O4]",
+            "name": "[LCDR] Lieutenant Commander",
+            "prefix": "[LCDR]",
             "rank": 14,
             "roles": [
               "1299701752525754419",
@@ -189,8 +189,8 @@ module.exports = {
           },
           {
             "id": 190734115,
-            "name": "[O5] Commander",
-            "prefix": "[O5]",
+            "name": "[CDR] Commander",
+            "prefix": "[CDR]",
             "rank": 15,
             "roles": [
               "1299701752525754419",
@@ -200,8 +200,8 @@ module.exports = {
           },
           {
             "id": 190564114,
-            "name": "[O6] Captain",
-            "prefix": "[O6]",
+            "name": "[CAPT] Captain",
+            "prefix": "[CAPT]",
             "rank": 16,
             "roles": [
               "1299701752525754419",
@@ -211,8 +211,8 @@ module.exports = {
           },
           {
             "id": 190852107,
-            "name": "[O7] Commodore",
-            "prefix": "[O7]",
+            "name": "[COMMO] Commodore",
+            "prefix": "[COMMO]",
             "rank": 17,
             "roles": [
               "1299701752525754419",
@@ -223,8 +223,8 @@ module.exports = {
           },
           {
             "id": 190358142,
-            "name": "[O8] Rear Admiral",
-            "prefix": "[O8]",
+            "name": "[RADM] Rear Admiral",
+            "prefix": "[RADM]",
             "rank": 18,
             "roles": [
               "1299701752525754419",
