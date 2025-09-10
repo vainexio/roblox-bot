@@ -30,7 +30,7 @@ module.exports = {
           {
             "id": 190644070,
             "name": "Basic Sailor Course",
-            "prefix": "[ASN]",
+            "prefix": "[BSC]",
             "rank": 1,
             "requiredXp": 25,
             "roles": [
@@ -39,8 +39,8 @@ module.exports = {
           },
           {
             "id": 190704122,
-            "name": "[SN2] Apprentice Seaman",
-            "prefix": "[SN2]",
+            "name": "[ASN] Apprentice Seaman",
+            "prefix": "[ASN]",
             "rank": 2,
             "requiredXp": 100,
             "roles": [
@@ -51,8 +51,8 @@ module.exports = {
           },
           {
             "id": 191296077,
-            "name": "[SN1] Seaman Second Class",
-            "prefix": "[SN1]",
+            "name": "[SN2] Seaman Second Class",
+            "prefix": "[SN2]",
             "rank": 3,
             "requiredXp": 100,
             "roles": [
@@ -63,8 +63,8 @@ module.exports = {
           },
           {
             "id": 190754080,
-            "name": "[E3] Seaman First Class",
-            "prefix": "[E3]",
+            "name": "[SN1] Seaman First Class",
+            "prefix": "[SN1]",
             "rank": 4,
             "requiredXp": 100,
             "roles": [
