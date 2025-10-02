@@ -22,6 +22,28 @@ module.exports = {
       selections: '1392701616393687111',
       trainings: '1392701528753836124',
     },
+    awards: [
+      {
+        awardName: "<:MilitaryMeritMedal:1423304030347595849> Military Merit Medal",
+        requiredMerits: 100,
+      },
+      {
+        awardName: "<:MilitaryCommendationMedal:1423304028829257758> Military Commendation Medal",
+        requiredMerits: 200,
+      },
+      {
+        awardName: "<:MeritoriousAchievementMedal:1423304033036144762> Meritorious Achievement Medal",
+        requiredMerits: 300,
+      },
+      {
+        awardName: "<:LongServiceMedal:1423304724744114217> Long Service Medal",
+        requiredMerits: 400,
+      },
+      {
+        awardName: "<:DistinguishedNavyCross:1423304354760364084> Distinguished Navy Cross",
+        requiredMerits: 500,
+      },
+    ],
     groups: [
       {
         "groupId": 35042233,

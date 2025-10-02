@@ -95,6 +95,7 @@ client.on("ready", async () => {
     robloxId: { type: String, unique: true, sparse: true },
     discordId: { type: String, unique: true, sparse: true },
     xp: { type: Number, default: 0 },
+    merit: { type: Number, default: 0 },
   });
 
   users = mongoose.model("PN_Users2", usersSchema);
@@ -779,7 +780,312 @@ client.on("interactionCreate", async (inter) => {
         return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
       }
     }
+      // ---------- MERIT (give/remove merits to officers only) ----------
+        else if (cname === 'merit') {
+          if (!await getPerms(inter.member, 3)) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
 
+          const options = inter.options._hoistedOptions;
+          const type = options.find(a => a.name === 'type');
+          const usernameOption = options.find(a => a.name === 'usernames'); // comma separated
+          const amount = options.find(a => a.name === 'amount');
+
+          await inter.reply({ content: "-# " + emojis.loading });
+
+          const usernames = String(usernameOption?.value || "")
+            .split(',')
+            .map(u => u.trim())
+            .filter(Boolean);
+
+          const meritsToChange = parseInt(amount?.value, 10);
+          if (isNaN(meritsToChange) || meritsToChange < 0) {
+            return await inter.editReply({ content: emojis.warning + " Invalid amount." });
+          }
+
+          const action = String(type?.value || "").toLowerCase(); // add / subtract
+
+          let processedCount = 0;
+          let awardedList = []; // strings like "**@name**: Medal A, Medal B"
+          let failedList = [];
+
+          const group = config.groups[0];
+          const groupId = group.groupId;
+
+          for (const unameRaw of usernames) {
+            const uname = String(unameRaw).trim();
+            try {
+              // resolve mention or discord id
+              const mentionMatch = uname.match(/^<@!?(\d+)>$/);
+              const rawIdMatch = !mentionMatch && uname.match(/^(\d{17,20})$/);
+
+              let user; // roblox user obj
+              let dbUser;
+
+              if (mentionMatch || rawIdMatch) {
+                const discordIdentifier = mentionMatch ? mentionMatch[0] : rawIdMatch[1];
+                const discordObj = await getUser(discordIdentifier);
+                if (!discordObj || discordObj.error) {
+                  await inter.channel.send({ content: emojis.warning + ` Failed to resolve Discord user for input \`${uname}\`.` });
+                  failedList.push(uname);
+                  continue;
+                }
+                const linked = await users.findOne({ discordId: String(discordObj.id) }).exec();
+                if (!linked) {
+                  await inter.channel.send({ content: emojis.warning + ` Discord account (${discordObj.username ?? discordObj.id}) is not linked to any Roblox account. Use </connect:1409919652494180362> to link.` });
+                  failedList.push(uname);
+                  continue;
+                }
+                user = await handler.getUser(String(linked.robloxId));
+                if (user.error) {
+                  await inter.channel.send({ content: emojis.warning + ` Failed to fetch Roblox user for Discord ${discordObj.id}: ${user.error}` });
+                  failedList.push(uname);
+                  continue;
+                }
+                dbUser = linked;
+              } else {
+                user = await handler.getUser(uname);
+                if (user.error) {
+                  await inter.channel.send({ content: emojis.warning + ` Failed to fetch Roblox user \`${uname}\`: ${user.error}` });
+                  failedList.push(uname);
+                  continue;
+                }
+                dbUser = await users.findOne({ robloxId: String(user.id) }).exec();
+                if (!dbUser) dbUser = await users.create({ robloxId: String(user.id), xp: 0, merit: 0 });
+              }
+
+              if (!user || !user.id) {
+                await inter.channel.send({ content: emojis.warning + ` Could not resolve Roblox user for input \`${uname}\`.` });
+                failedList.push(uname);
+                continue;
+              }
+
+              // officer check: only apply merits to officers? (You previously required officers only for medals,
+              // but you might want to allow giving merits to non-officers; keep enforcement here.)
+              const userRole = await handler.getUserRole(groupId, user.id);
+              if (userRole.error) {
+                await inter.channel.send({ content: emojis.warning + ` **${user.displayName ?? user.name} (@${user.name})** is not in the group.` });
+                failedList.push(uname);
+                continue;
+              }
+
+              // If you want to restrict *giving* merits only to officers themselves (rank >=11), uncomment:
+              // if ((userRole.rank ?? 0) < 11) {
+              //   await inter.channel.send({ content: emojis.warning + ` **${user.name}** is not an officer (rank ${userRole.rank}). Merits apply to officers only.` });
+              //   failedList.push(uname);
+              //   continue;
+              // }
+
+              const prevMerit = Number(dbUser.merit ?? 0);
+              let newMerit = prevMerit;
+              if (action === 'add' || action === 'a') {
+                newMerit = prevMerit + meritsToChange;
+              } else if (action === 'subtract' || action === 'sub' || action === 's') {
+                newMerit = prevMerit - meritsToChange;
+                if (newMerit < 0) newMerit = 0;
+              } else {
+                await inter.channel.send({ content: emojis.warning + ` Invalid type for **${user.name}**. Use Add or Subtract.` });
+                failedList.push(uname);
+                continue;
+              }
+
+              dbUser.merit = newMerit;
+              await dbUser.save();
+
+              // Determine newly crossed awards using config.awards ORDER (no sorting)
+              const awards = Array.isArray(config.awards) ? config.awards : [];
+              const newlyAwarded = [];
+              for (const award of awards) {
+                const req = parseInt(award.requiredMerits || award.requiredMerit || 0, 10) || 0;
+                if (prevMerit < req && newMerit >= req) {
+                  newlyAwarded.push(award.awardName || award.name || `Award(${req})`);
+                }
+              }
+
+              if (newlyAwarded.length) {
+                awardedList.push(`**@${user.name}**: ${newlyAwarded.join(', ')}`);
+              }
+
+              // notify in channel
+              const thumbnail = await handler.getUserThumbnail(user.id);
+              const emojiState = (action === 'add' || action === 'a') ? emojis.green : emojis.red;
+
+              const embed = new MessageEmbed()
+                .setThumbnail(thumbnail)
+                .setColor((action === 'add' || action === 'a') ? colors.green : colors.red)
+                .setDescription(`${emojiState} ${action === 'add' ? 'Added' : 'Subtracted'} **${meritsToChange} Merit(s)** to ${user.displayName} (@${user.name})`)
+                .setFooter({ text: "User ID: " + user.id })
+                .addFields(
+                  { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
+                  { name: "Officer Rank", value: userRole.name || ("Rank " + (userRole.rank ?? "Unknown")) },
+                  { name: "Merit Total", value: `${dbUser.merit} Merit(s)` }
+                );
+
+              await inter.channel.send({ embeds: [embed] });
+
+              if (newlyAwarded.length) {
+                await inter.channel.send({ content: emojis.check + ` New medal(s) for **@${user.name}**: ${newlyAwarded.join(', ')}` });
+              }
+
+              processedCount++;
+            } catch (err) {
+              console.error('Error processing merit target:', uname, err);
+              await inter.channel.send({ content: emojis.warning + ` Error processing \`${uname}\`:\n\`\`\`diff\n- ${err.message || err}\n\`\`\`` });
+              continue;
+            }
+          } // end for
+
+          await inter.editReply({ content: emojis.check + ` Processed ${processedCount}/${usernames.length} user(s).` });
+
+          // Audit logging (same pattern as your xp handler)
+          try {
+            const logs = await getChannel(config.channels.logs);
+            const embed = new MessageEmbed()
+              .setDescription(inter.user.toString() + " used `/merit` command.")
+              .setColor(colors.green)
+              .addFields(
+                { name: "Target User(s)", value: usernames.join("\n") || "None" },
+                { name: "Newly Awarded Medals", value: awardedList.length ? awardedList.join("\n") : "None" },
+                { name: "Action", value: (action === 'add' ? 'Added' : 'Subtracted') + " " + meritsToChange + " Merit(s)" },
+                { name: "Completion Rate", value: `${processedCount}/${usernames.length} users` },
+              );
+            await logs.send({ embeds: [embed] }).catch(async err => {
+              const newEmbed = new MessageEmbed()
+                .setDescription(inter.user.toString() + " used `/merit` command.")
+                .setColor(colors.green)
+                .addFields({ name: "Mass Distribution Detected", value: "Sending details in `.txt` file." });
+
+              const msgContent = "TARGET USERS:\n" + usernames.join("\n") + "\n\nNEWLY AWARDED:\n" + (awardedList.length ? awardedList.join("\n") : "None") + "\n\nACTION: " + (action === 'add' ? 'Added' : 'Subtracted') + " " + meritsToChange + " Merit(s)\n\nCOMPLETION RATE: " + `${processedCount}/${usernames.length} users`;
+              await logs.send({ embeds: [newEmbed] });
+              await safeSend(logs, msgContent);
+            });
+          } catch (err) {
+            console.error("Failed to send merit logs:", err);
+          }
+        }
+
+      // ---------- VIEWMERIT (show medals + merit progress) ----------
+          else if (cname === 'viewmerits') {
+            const options = inter.options._hoistedOptions;
+            const user_info = options.find(a => a.name === 'user');
+
+            if (!user_info || !user_info.value) {
+              return inter.reply({
+                content: emojis.warning + " You must provide a user (Discord mention or Roblox username).",
+                ephemeral: true
+              });
+            }
+
+            await inter.deferReply();
+
+            const mentionMatch = String(user_info.value).match(/^<@!?(\d+)>$/);
+            try {
+              let robloxUser;
+              let dbUser;
+
+              if (mentionMatch) {
+                const discordObj = await getUser(user_info.value);
+                if (!discordObj || discordObj.error) {
+                  return inter.editReply({ content: '```diff\n- Failed to resolve the Discord user.```' });
+                }
+
+                dbUser = await users.findOne({ discordId: String(discordObj.id) }).exec();
+                if (!dbUser) {
+                  return inter.editReply({ content: emojis.warning + " This Discord account is not linked to any Roblox account. Use the </connect:1409919652494180362> command to link." });
+                }
+
+                robloxUser = await handler.getUser(String(dbUser.robloxId));
+                if (robloxUser.error) {
+                  return inter.editReply({ content: '```diff\n- ' + robloxUser.error + '```' });
+                }
+              } else {
+                const maybeUsername = String(user_info.value).trim();
+                robloxUser = await handler.getUser(maybeUsername);
+                if (robloxUser.error) {
+                  return inter.editReply({ content: '```diff\n- ' + robloxUser.error + '```' });
+                }
+
+                dbUser = await users.findOne({ robloxId: String(robloxUser.id) }).exec();
+                if (!dbUser) dbUser = await users.create({ robloxId: String(robloxUser.id), xp: 0, merit: 0 });
+              }
+
+              if (!robloxUser || !robloxUser.id) {
+                return inter.editReply({ content: '```diff\n- Could not resolve the Roblox user.```' });
+              }
+
+              // Get role in group
+              const group = config.groups[0];
+              const groupId = group.groupId;
+              const userRole = await handler.getUserRole(groupId, robloxUser.id);
+              if (userRole.error) {
+                return inter.editReply({ content: emojis.warning + " **" + (robloxUser.displayName ?? robloxUser.name) + " (@" + (robloxUser.name ?? "") + ")** is not in the group." });
+              }
+
+              // officer check (rank 11+)
+              const isOfficer = (userRole.rank ?? 0) >= 11;
+
+              const thumbnail = await handler.getUserThumbnail(robloxUser.id);
+              const meritTotal = Number(dbUser.merit ?? 0);
+
+              if (!isOfficer) {
+                const embed = new MessageEmbed()
+                  .setAuthor({ name: (robloxUser.displayName ?? robloxUser.name) + ' (@' + (robloxUser.name ?? "") + ')', iconURL: thumbnail })
+                  .setThumbnail(thumbnail)
+                  .setColor(colors.orange ?? colors.green)
+                  .setFooter({ text: "User ID: " + robloxUser.id })
+                  .addFields(
+                    { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
+                    { name: "Officer Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
+                    { name: "Merit", value: emojis.warning + " Not applicable (merits only apply to officers)." }
+                  );
+
+                return inter.editReply({ embeds: [embed] });
+              }
+
+              // officer: derive medals from merit total using config.awards (in the order defined)
+              const awards = Array.isArray(config.awards) ? config.awards : [];
+              const earned = [];
+              for (const award of awards) {
+                const req = parseInt(award.requiredMerits || award.requiredMerit || 0, 10) || 0;
+                if (meritTotal >= req) {
+                  earned.push(award.awardName || award.name || `Award(${req})`);
+                } else {
+                  break; // since awards are expected in order, once we hit first not-earned we can break
+                }
+              }
+
+              // determine next award
+              const nextAward = awards.find(a => meritTotal < (parseInt(a.requiredMerits || a.requiredMerit || 0, 10) || 0));
+              let nextAwardFieldValue;
+              if (!nextAward) {
+                // all awards earned or no awards configured
+                const topReq = awards.length ? (parseInt(awards[awards.length - 1].requiredMerits || awards[awards.length - 1].requiredMerit || 0, 10) || meritTotal) : 100;
+                const progress = getPercentageBar(meritTotal, topReq);
+                nextAwardFieldValue = `✅ All medals earned.\n${progress.bar} ${progress.percentage}%\n-#  ${meritTotal}/${topReq} Merit`;
+              } else {
+                const req = parseInt(nextAward.requiredMerits || nextAward.requiredMerit || 0, 10) || 0;
+                const progress = getPercentageBar(meritTotal, req);
+                nextAwardFieldValue = `${nextAward.awardName || nextAward.name || "Next Medal"}\n${progress.bar} ${progress.percentage}%\n-#  ${meritTotal}/${req} Merit`;
+              }
+
+              const embed = new MessageEmbed()
+                .setAuthor({ name: (robloxUser.displayName ?? robloxUser.name) + ' (@' + (robloxUser.name ?? "") + ')', iconURL: thumbnail })
+                .setThumbnail(thumbnail)
+                .setColor(colors.green)
+                .setFooter({ text: "User ID: " + robloxUser.id })
+                .addFields(
+                  { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
+                  { name: "Officer Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
+                  { name: "Merit Total", value: `${meritTotal} Merit(s)` },
+                  { name: "Medals Earned", value: earned.length ? earned.join("\n") : "None" },
+                  { name: "Next Medal / Progress", value: nextAwardFieldValue }
+                );
+
+              await inter.editReply({ embeds: [embed] });
+
+            } catch (err) {
+              console.error('viewmerit handler error:', err);
+              return inter.editReply({ content: '```diff\n- An unexpected error occurred. Check the bot logs.```' });
+            }
+          }
     else if (cname === 'selection') {
       if (!await getPerms(inter.member, 4) && !hasRole(inter.member, ["1392702881349632170"])) return inter.reply({ content: emojis.warning + ' Insufficient Permission' });
 

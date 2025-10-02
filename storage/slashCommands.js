@@ -17,6 +17,48 @@ module.exports = {
   deleteSlashes: [],
   slashes: [
     {
+      "name": "merit",
+      "type": 1,
+      "description": "Add or subtract merit from a user",
+      "options": [
+        {
+          "name": "type",
+          "type": 3,
+          "description": "Choose whether to add or subtract merit",
+          "required": true,
+          "choices": [
+            { "name": "Add", "value": "Add" },
+            { "name": "Subtract", "value": "Subtract" }
+          ]
+        },
+        {
+          "name": "usernames",
+          "type": 3,
+          "description": "Discord or Roblox usernames. Separate each name by comma (player1, player2, @User1, @User2)",
+          "required": true
+        },
+        {
+          "name": "amount",
+          "type": 4,
+          "description": "Amount of merit to add or subtract",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "viewmerits",
+      "type": 1,
+      "description": "View user merits",
+      "options": [
+        {
+          "name": "user",
+          "type": 3,
+          "description": "Discord or Roblox username",
+          "required": true
+        },
+      ]
+    },
+    {
       "name": "selection",
       "type": 1,
       "description": "Host a selection",
