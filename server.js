@@ -1073,7 +1073,7 @@ client.on("interactionCreate", async (inter) => {
                 .setFooter({ text: "User ID: " + robloxUser.id })
                 .addFields(
                   { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
-                  { name: "Officer Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
+                  { name: "Navy Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
                   { name: "Merit Total", value: `${meritTotal} Merit(s)` },
                   { name: "Medals Earned", value: earned.length ? earned.join("\n") : "None" },
                   { name: "Next Medal / Progress", value: nextAwardFieldValue }
