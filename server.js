@@ -1033,7 +1033,7 @@ client.on("interactionCreate", async (inter) => {
                   .setFooter({ text: "User ID: " + robloxUser.id })
                   .addFields(
                     { name: "Discord", value: dbUser.discordId ? "<@" + dbUser.discordId + ">" : "Not Verified" },
-                    { name: "Officer Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
+                    { name: "Navy Rank", value: userRole.name ?? ("Rank " + (userRole.rank ?? "Unknown")) },
                     { name: "Merit", value: emojis.warning + " Not applicable (merits only apply to officers)." }
                   );
 
