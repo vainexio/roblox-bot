@@ -1020,7 +1020,7 @@ client.on("interactionCreate", async (inter) => {
               }
 
               // officer check (rank 11+)
-              const isOfficer = (userRole.rank ?? 0) >= 11;
+              const isOfficer = (userRole.rank ?? 0) >= 8;
 
               const thumbnail = await handler.getUserThumbnail(robloxUser.id);
               const meritTotal = Number(dbUser.merit ?? 0);
