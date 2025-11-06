@@ -24,24 +24,60 @@ module.exports = {
     },
     awards: [
       {
-        awardName: "<:MilitaryMeritMedal:1423304030347595849> Military Merit Medal",
+        awardName: "AFP Conduct Medal",
         requiredMerits: 100,
       },
       {
-        awardName: "<:MilitaryCommendationMedal:1423304028829257758> Military Commendation Medal",
+        awardName: "Military Civic Action Medal",
         requiredMerits: 200,
       },
       {
-        awardName: "<:MeritoriousAchievementMedal:1423304033036144762> Meritorious Achievement Medal",
+        awardName: "<:MilitaryMeritMedal:1423304030347595849> Military Merit Medal",
         requiredMerits: 300,
       },
       {
-        awardName: "<:LongServiceMedal:1423304724744114217> Long Service Medal",
+        awardName: "<:MilitaryCommendationMedal:1423304028829257758> Military Commendation Medal",
         requiredMerits: 400,
       },
       {
-        awardName: "<:DistinguishedNavyCross:1423304354760364084> Distinguished Navy Cross",
+        awardName: "Bronze Cross Medal",
         requiredMerits: 500,
+      },
+      {
+        awardName: "Distinguished Service Medal",
+        requiredMerits: 600,
+      },
+      {
+        awardName: "Outstanding Achievement Medal",
+        requiredMerits: 700,
+      },
+      {
+        awardName: "<:MeritoriousAchievementMedal:1423304033036144762> Meritorious Achievement Medal",
+        requiredMerits: 800,
+      },
+      {
+        awardName: "<:LongServiceMedal:1423304724744114217> Long Service Medal",
+        requiredMerits: 900,
+      },
+      {
+        awardName: "Silver Cross Medal",
+        requiredMerits: 1000,
+      },
+      {
+        awardName: "<:DistinguishedNavyCross:1423304354760364084> Distinguished Navy Cross",
+        requiredMerits: 1100,
+      },
+      {
+        awardName: "Gold Cross Medal",
+        requiredMerits: 1200,
+      },
+      {
+        awardName: "Distinguished Service Star",
+        requiredMerits: 1300,
+      },
+      {
+        awardName: "Distinguished Conduct Star",
+        requiredMerits: 1400,
       },
     ],
     groups: [
