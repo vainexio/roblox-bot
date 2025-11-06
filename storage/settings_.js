@@ -40,7 +40,7 @@ module.exports = {
         requiredMerits: 400,
       },
       {
-        awardName: ":BronzeCross:1435868548378525826> Bronze Cross Medal",
+        awardName: "<:BronzeCross:1435868548378525826> Bronze Cross Medal",
         requiredMerits: 500,
       },
       {
