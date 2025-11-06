@@ -24,11 +24,11 @@ module.exports = {
     },
     awards: [
       {
-        awardName: "AFP Conduct Medal",
+        awardName: "<:ArmedForcesConductMedal:1435868545690107966> AFP Conduct Medal",
         requiredMerits: 100,
       },
       {
-        awardName: "Military Civic Action Medal",
+        awardName: "<:MilitaryCivicActionMedal:1435868542519083160> Military Civic Action Medal",
         requiredMerits: 200,
       },
       {
@@ -40,44 +40,36 @@ module.exports = {
         requiredMerits: 400,
       },
       {
-        awardName: "Bronze Cross Medal",
+        awardName: ":BronzeCross:1435868548378525826> Bronze Cross Medal",
         requiredMerits: 500,
       },
       {
-        awardName: "Distinguished Service Medal",
+        awardName: "<:MeritoriousAchievementMedal:1423304033036144762> Meritorious Achievement Medal",
         requiredMerits: 600,
       },
       {
-        awardName: "Outstanding Achievement Medal",
+        awardName: "<:SilverCross:1435868556741972018> Silver Cross Medal",
         requiredMerits: 700,
       },
       {
-        awardName: "<:MeritoriousAchievementMedal:1423304033036144762> Meritorious Achievement Medal",
+        awardName: "<:DistinguishedNavyCross:1423304354760364084> Distinguished Navy Cross",
         requiredMerits: 800,
       },
       {
-        awardName: "<:LongServiceMedal:1423304724744114217> Long Service Medal",
+        awardName: "<:GoldCross:1435868561703833690> Gold Cross Medal",
         requiredMerits: 900,
       },
       {
-        awardName: "Silver Cross Medal",
+        awardName: "<:DistinguishedServiceStar:1435868553940172861> Distinguished Service Star",
         requiredMerits: 1000,
       },
       {
-        awardName: "<:DistinguishedNavyCross:1423304354760364084> Distinguished Navy Cross",
+        awardName: "<:DistinguishedConductStar:1435868564631326782> Distinguished Conduct Star",
         requiredMerits: 1100,
       },
       {
-        awardName: "Gold Cross Medal",
+        awardName: "<:OutstandingAchievementMedal:1435868550983057499> Outstanding Achievement Medal",
         requiredMerits: 1200,
-      },
-      {
-        awardName: "Distinguished Service Star",
-        requiredMerits: 1300,
-      },
-      {
-        awardName: "Distinguished Conduct Star",
-        requiredMerits: 1400,
       },
     ],
     groups: [
